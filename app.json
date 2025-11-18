@@ -1,0 +1,68 @@
+{
+  "expo": {
+    "name": "FIMS Mobile",
+    "slug": "fims-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.zpchandrapur.fims",
+      "infoPlist": {
+        "NSCameraUsageDescription": "FIMS needs access to your camera to take inspection photos.",
+        "NSPhotoLibraryUsageDescription": "FIMS needs access to your photo library to select inspection photos.",
+        "NSLocationWhenInUseUsageDescription": "FIMS needs access to your location to record inspection locations.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "FIMS needs access to your location to record inspection locations."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.zpchandrapur.fims",
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAjFLdphP7tlo99o3L6IgxbeSOHPsla9-Y"
+        }
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow FIMS to access your camera to take inspection photos."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow FIMS to use your location for inspection tracking."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "02f72d67-a9e8-4bae-b286-8ed2b79bc576"
+      }
+    }
+  }
+}
