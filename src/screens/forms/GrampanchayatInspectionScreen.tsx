@@ -1105,6 +1105,7 @@ export default function GrampanchayatInspectionScreen() {
                   value={scheme.schemeName}
                   onChangeText={(value) => updateOtherScheme(index, 'schemeName', value)}
                   placeholder="योजनेचे नाव प्रविष्ट करा"
+                  editable={index >= 5}
                 />
 
                 <Input
