@@ -17,6 +17,23 @@ import LocationPicker from '../../components/LocationPicker';
 type RouteParams = RouteProp<FormsStackParamList, 'GrampanchayatInspection'>;
 type NavigationProp = StackNavigationProp<FormsStackParamList, 'GrampanchayatInspection'>;
 
+// const STEPS = [
+//   'Basic Info',
+//   'Location Info',
+//   'Meeting Info',
+//   'Cash Book',
+//   'Tax Register',
+//   'Tax Progress',
+//   'Expenditure',
+//   'Financial Trans.',
+//   'GP Works',
+//   'Other Schemes',
+//   '14th Finance',
+//   'Officer Opinion',
+//   'Photos',
+//   'Copy'
+// ];
+
 const STEPS = [
   'Basic Info',
   'Location Info',
@@ -28,6 +45,7 @@ const STEPS = [
   'Financial Trans.',
   'GP Works',
   'Other Schemes',
+  'Schemes Progress',
   '14th Finance',
   'Officer Opinion',
   'Photos',
@@ -235,8 +253,26 @@ export default function GrampanchayatInspectionScreen() {
     setOtherSchemes(updatedSchemes);
   };
 
-  // Section 12: 14th Finance Commission (Section 14) - Simple text fields
-  const [financeCommissionDetails, setFinanceCommissionDetails] = useState('');
+  // Section 12: 14th Finance Commission (Section 14) - Table format
+  const [financeCommissionWorks, setFinanceCommissionWorks] = useState([
+    { schemeName: '14 वा वित्त आयोग', workType: 'एल.ई.डी.लाईट खरेदी', estimatedAmount: '', grantReceived: '', remarks: '' },
+    { schemeName: 'कचरा कुंडी', workType: '', estimatedAmount: '', grantReceived: '', remarks: '' },
+    { schemeName: 'फर्निचर', workType: '', estimatedAmount: '', grantReceived: '', remarks: '' },
+    { schemeName: 'टि.व्हि.संच खरेदी', workType: '', estimatedAmount: '', grantReceived: '', remarks: '' },
+    { schemeName: 'आपले सरकार सेवा केंद्र खर्च', workType: '', estimatedAmount: '', grantReceived: '', remarks: '' },
+    { schemeName: 'वाटर मिटर', workType: '', estimatedAmount: '', grantReceived: '', remarks: '' },
+    { schemeName: 'सीसीरोड', workType: '', estimatedAmount: '', grantReceived: '', remarks: '' },
+    { schemeName: 'आपले सरकार सेवा केंद्र खर्च', workType: '', estimatedAmount: '', grantReceived: '', remarks: '' },
+    { schemeName: 'फॉगिंग मशीन', workType: '', estimatedAmount: '', grantReceived: '', remarks: '' },
+    { schemeName: 'ग्रांपभवन', workType: '', estimatedAmount: '', grantReceived: '', remarks: '' },
+    { schemeName: 'कंप्युटर', workType: '', estimatedAmount: '', grantReceived: '', remarks: '' },
+  ]);
+
+  const updateFinanceCommissionWork = (index: number, field: string, value: string) => {
+    const updatedWorks = [...financeCommissionWorks];
+    updatedWorks[index] = { ...updatedWorks[index], [field]: value };
+    setFinanceCommissionWorks(updatedWorks);
+  };
 
   // Section 13: Officer's Opinion
   const [officerOpinion1, setOfficerOpinion1] = useState('');
@@ -1141,20 +1177,59 @@ export default function GrampanchayatInspectionScreen() {
 
       case 11: // 14th Finance Commission
         return (
-          <View>
+          <ScrollView>
             <Text style={styles.sectionTitle}>(14) 14 वा वित्त आयोगामधून हाती घेतलेली कामे व त्याची प्रगती</Text>
-            <Input
-              label="कामांचा तपशील"
-              value={financeCommissionDetails}
-              onChangeText={setFinanceCommissionDetails}
-              multiline
-              numberOfLines={6}
-              placeholder="योजनेचे नाव, कामाचा प्रकार, अंदाजित रक्कम, मिळालेले अनुदान, झालेला खर्च इ. तपशील प्रविष्ट करा"
-            />
+
+            {financeCommissionWorks.map((work, index) => (
+              <View key={index}>
+                <Text style={styles.questionNumber}>अ.क्र. {index + 1}</Text>
+
+                <Input
+                  label="योजनेचे नाव"
+                  value={work.schemeName}
+                  onChangeText={(value) => updateFinanceCommissionWork(index, 'schemeName', value)}
+                  placeholder="योजनेचे नाव प्रविष्ट करा"
+                  editable={false}
+                />
+
+                <Input
+                  label="कामाचा प्रकार"
+                  value={work.workType}
+                  onChangeText={(value) => updateFinanceCommissionWork(index, 'workType', value)}
+                  placeholder="कामाचा प्रकार प्रविष्ट करा"
+                />
+
+                <Input
+                  label="अंदाजित रक्कम"
+                  value={work.estimatedAmount}
+                  onChangeText={(value) => updateFinanceCommissionWork(index, 'estimatedAmount', value)}
+                  placeholder="अंदाजित रक्कम प्रविष्ट करा"
+                  keyboardType="numeric"
+                />
+
+                <Input
+                  label="मिळालेले अनुदान"
+                  value={work.grantReceived}
+                  onChangeText={(value) => updateFinanceCommissionWork(index, 'grantReceived', value)}
+                  placeholder="मिळालेले अनुदान प्रविष्ट करा"
+                  keyboardType="numeric"
+                />
+
+                <Input
+                  label="झालेला खर्च"
+                  value={work.remarks}
+                  onChangeText={(value) => updateFinanceCommissionWork(index, 'remarks', value)}
+                  placeholder="झालेला खर्च प्रविष्ट करा"
+                  multiline
+                  numberOfLines={2}
+                />
+              </View>
+            ))}
+
             <Text style={styles.helperText}>
               नोंद: एल.ई.डी.लाईट खरेदी, कचरा कुंडी, फर्निचर, टि.व्हि.संच खरेदी, आपले सरकार सेवा केंद्र खर्च, वाटर मिटर, सीसीरोड, फॉगिंग मशीन, ग्रांपभवन, कंप्युटर इ. कामांचा तपशील द्यावा.
             </Text>
-          </View>
+          </ScrollView>
         );
 
       case 12: // Officer's Opinion
