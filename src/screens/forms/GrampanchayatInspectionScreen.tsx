@@ -205,8 +205,18 @@ export default function GrampanchayatInspectionScreen() {
   const [tendersCalled, setTendersCalled] = useState('');
   const [entriesMade, setEntriesMade] = useState('');
 
-  // Section 10: GP Works (Section 12) - Simple text fields for mobile
-  const [gpWorksDetails, setGpWorksDetails] = useState('');
+  // Section 10: GP Works (Section 12) - Detailed fields
+  const [gpWorkSerialNo, setGpWorkSerialNo] = useState('');
+  const [gpWorkSchemeName, setGpWorkSchemeName] = useState('');
+  const [gpWorkType, setGpWorkType] = useState('');
+  const [gpWorkEstimatedAmount, setGpWorkEstimatedAmount] = useState('');
+  const [gpWorkGrantReceived, setGpWorkGrantReceived] = useState('');
+  const [gpWorkExpenditure, setGpWorkExpenditure] = useState('');
+  const [gpWorkStartDate, setGpWorkStartDate] = useState('');
+  const [gpWorkCompletionDate, setGpWorkCompletionDate] = useState('');
+  const [gpWorkCurrentStatus, setGpWorkCurrentStatus] = useState('');
+  const [gpWorkCertificateReceived, setGpWorkCertificateReceived] = useState('');
+  const [gpWorkRemarks, setGpWorkRemarks] = useState('');
 
   // Section 11: Other Schemes (Section 13) - Simple text fields
   const [otherSchemesDetails, setOtherSchemesDetails] = useState('');
@@ -965,20 +975,106 @@ export default function GrampanchayatInspectionScreen() {
 
       case 9: // GP Works
         return (
-          <View>
+          <ScrollView>
             <Text style={styles.sectionTitle}>(12) ग्राम पंचायताने स्वतःच्या निधीतून किंवा शासकीय/जिल्हा परिषद योजनेंतर्गत हात घेतलेल्या कामांचा तपशील</Text>
-            <Input
-              label="कामांचा तपशील"
-              value={gpWorksDetails}
-              onChangeText={setGpWorksDetails}
-              multiline
-              numberOfLines={6}
-              placeholder="योजनेचे नाव, कामाचा प्रकार, अंदाजित रक्कम, मिळालेले अनुदान, झालेला खर्च इ. तपशील प्रविष्ट करा"
-            />
-            <Text style={styles.helperText}>
-              नोंद: योजनेचे नाव, कामाचा प्रकार, अंदाजित रक्कम, मिळालेले अनुदान, झालेला खर्च, काम सुरु झाल्याची तारीख, काम पूर्ण झाल्याची तारीख, प्रगतीवर असलेल्या कामाची सद्य:स्थिती, पूर्णत्वाचे प्रमाणपत्र, शेरा यांचा तपशील द्यावा.
-            </Text>
-          </View>
+
+            <View style={styles.tableRow}>
+              <Input
+                label="अ.क्र."
+                value={gpWorkSerialNo}
+                onChangeText={setGpWorkSerialNo}
+                placeholder="अनुक्रमांक"
+                keyboardType="numeric"
+              />
+
+              <Input
+                label="योजनेचे नांव"
+                value={gpWorkSchemeName}
+                onChangeText={setGpWorkSchemeName}
+                placeholder="योजनेचे नांव प्रविष्ट करा"
+              />
+
+              <Input
+                label="कामाचा प्रकार"
+                value={gpWorkType}
+                onChangeText={setGpWorkType}
+                placeholder="कामाचा प्रकार प्रविष्ट करा"
+              />
+
+              <Input
+                label="अंदाजित रक्कम"
+                value={gpWorkEstimatedAmount}
+                onChangeText={setGpWorkEstimatedAmount}
+                keyboardType="numeric"
+                placeholder="0"
+              />
+
+              <Input
+                label="मिळालेले अनुदान"
+                value={gpWorkGrantReceived}
+                onChangeText={setGpWorkGrantReceived}
+                keyboardType="numeric"
+                placeholder="0"
+              />
+
+              <Input
+                label="झालेला खर्च"
+                value={gpWorkExpenditure}
+                onChangeText={setGpWorkExpenditure}
+                keyboardType="numeric"
+                placeholder="0"
+              />
+
+              <DateInput
+                label="काम सुरु झाल्याची तारीख"
+                value={gpWorkStartDate}
+                onChangeDate={setGpWorkStartDate}
+                placeholder="तारीख निवडा"
+                // maximumDate={new Date()}
+              />
+
+              <DateInput
+                label="काम पूर्ण झाल्याची तारीख"
+                value={gpWorkCompletionDate}
+                onChangeDate={setGpWorkCompletionDate}
+                placeholder="तारीख निवडा"
+              />
+
+              <Input
+                label="प्रगतीवर असलेल्या कामाची सद्य:स्थिती"
+                value={gpWorkCurrentStatus}
+                onChangeText={setGpWorkCurrentStatus}
+                multiline
+                numberOfLines={3}
+                placeholder="सद्य:स्थिती प्रविष्ट करा"
+              />
+
+              <Text style={styles.questionText}>पूर्णत्वाचे प्रमाणपत्र प्राप्त केले किंवा नाही</Text>
+              <View style={styles.radioGroup}>
+                <RadioButton
+                  label="होय"
+                  value="होय"
+                  selectedValue={gpWorkCertificateReceived}
+                  onSelect={setGpWorkCertificateReceived}
+                />
+                <RadioButton
+                  label="नाही"
+                  value="नाही"
+                  selectedValue={gpWorkCertificateReceived}
+                  onSelect={setGpWorkCertificateReceived}
+                />
+              </View>
+
+              <Input
+                label="शेरा"
+                value={gpWorkRemarks}
+                onChangeText={setGpWorkRemarks}
+                multiline
+                numberOfLines={3}
+                placeholder="शेरा प्रविष्ट करा"
+              />
+            </View>
+          </ScrollView>
         );
 
       case 10: // Other Schemes
