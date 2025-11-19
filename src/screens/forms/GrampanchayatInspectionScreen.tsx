@@ -1097,8 +1097,8 @@ export default function GrampanchayatInspectionScreen() {
             <Text style={styles.sectionTitle}>(13) ग्राम पंचायतांनी इतर योजनामध्ये केलेली प्रगती</Text>
 
             {otherSchemes.map((scheme, index) => (
-              <View key={index} style={styles.schemeCard}>
-                <Text style={styles.schemeNumber}>अ.क्र. {index + 1}</Text>
+              <View key={index}>
+                <Text style={styles.questionNumber}>अ.क्र. {index + 1}</Text>
 
                 <Input
                   label="योजनेचे नाव"
@@ -1446,19 +1446,5 @@ const styles = StyleSheet.create({
   halfButton: {
     flex: 1,
     marginHorizontal: 4,
-  },
-  schemeCard: {
-    backgroundColor: '#f9fafb',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#0891b2',
-  },
-  schemeNumber: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0891b2',
-    marginBottom: 12,
   },
 });
