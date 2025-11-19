@@ -1330,7 +1330,7 @@ export default function GrampanchayatInspectionScreen() {
           <View style={styles.buttonRow}>
             {currentStep > 0 && (
               <Button
-                title={t('common.previous')}
+                title='मागील'
                 onPress={handlePrevious}
                 variant="outline"
                 style={styles.button}
@@ -1338,7 +1338,7 @@ export default function GrampanchayatInspectionScreen() {
               />
             )}
             <Button
-              title={t('common.next')}
+              title='पुढे'
               onPress={handleNext}
               style={styles.button}
               disabled={loading}
@@ -1359,7 +1359,7 @@ export default function GrampanchayatInspectionScreen() {
             />
             {currentStep > 0 && (
               <Button
-                title={t('common.previous')}
+                title='मागील'
                 onPress={handlePrevious}
                 variant="outline"
                 disabled={loading}
