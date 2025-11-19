@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
 interface StepperProps {
   steps: string[];
@@ -7,49 +7,67 @@ interface StepperProps {
 }
 
 export default function Stepper({ steps, currentStep }: StepperProps) {
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    // Auto-scroll to center the active step
+    if (scrollViewRef.current) {
+      const stepWidth = 90; // stepWrapper width + stepLine width
+      const scrollPosition = Math.max(0, currentStep * stepWidth - 150);
+      scrollViewRef.current.scrollTo({ x: scrollPosition, animated: true });
+    }
+  }, [currentStep]);
+
   return (
     <View style={styles.container}>
-      <View style={styles.stepsContainer}>
-        {steps.map((step, index) => (
-          <React.Fragment key={index}>
-            <View style={styles.stepWrapper}>
-              <View
-                style={[
-                  styles.stepCircle,
-                  index < currentStep && styles.stepCompleted,
-                  index === currentStep && styles.stepActive,
-                ]}
-              >
-                <Text
+      <ScrollView
+        ref={scrollViewRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.stepsContainer}>
+          {steps.map((step, index) => (
+            <React.Fragment key={index}>
+              <View style={styles.stepWrapper}>
+                <View
                   style={[
-                    styles.stepNumber,
-                    (index <= currentStep) && styles.stepNumberActive,
+                    styles.stepCircle,
+                    index < currentStep && styles.stepCompleted,
+                    index === currentStep && styles.stepActive,
                   ]}
                 >
-                  {index + 1}
+                  <Text
+                    style={[
+                      styles.stepNumber,
+                      (index <= currentStep) && styles.stepNumberActive,
+                    ]}
+                  >
+                    {index + 1}
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    styles.stepLabel,
+                    index === currentStep && styles.stepLabelActive,
+                  ]}
+                  numberOfLines={2}
+                >
+                  {step}
                 </Text>
               </View>
-              <Text
-                style={[
-                  styles.stepLabel,
-                  index === currentStep && styles.stepLabelActive,
-                ]}
-                numberOfLines={2}
-              >
-                {step}
-              </Text>
-            </View>
-            {index < steps.length - 1 && (
-              <View
-                style={[
-                  styles.stepLine,
-                  index < currentStep && styles.stepLineCompleted,
-                ]}
-              />
-            )}
-          </React.Fragment>
-        ))}
-      </View>
+              {index < steps.length - 1 && (
+                <View
+                  style={[
+                    styles.stepLine,
+                    index < currentStep && styles.stepLineCompleted,
+                  ]}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -57,17 +75,18 @@ export default function Stepper({ steps, currentStep }: StepperProps) {
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 20,
-    paddingHorizontal: 16,
     backgroundColor: '#ffffff',
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
   },
   stepsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   stepWrapper: {
     alignItems: 'center',
-    flex: 1,
+    width: 70,
   },
   stepCircle: {
     width: 40,
@@ -96,6 +115,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#6b7280',
     textAlign: 'center',
+    width: 70,
   },
   stepLabelActive: {
     color: '#2563eb',
@@ -103,9 +123,9 @@ const styles = StyleSheet.create({
   },
   stepLine: {
     height: 2,
+    width: 20,
     backgroundColor: '#e5e7eb',
-    flex: 0.3,
-    marginHorizontal: -10,
+    marginHorizontal: 0,
   },
   stepLineCompleted: {
     backgroundColor: '#10b981',
