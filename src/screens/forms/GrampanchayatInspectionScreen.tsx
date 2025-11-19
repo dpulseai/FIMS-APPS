@@ -1345,7 +1345,18 @@ export default function GrampanchayatInspectionScreen() {
             />
           </View>
         ) : (
-          <View>
+          <View style={styles.submitButtons}>
+            <Button
+              title="तपासणी सबमिट करा"
+              onPress={handleSubmit}
+              loading={loading}
+            />
+            <Button
+              title="मसुदा सेव्ह करा"
+              onPress={handleSaveAsDraft}
+              variant="outline"
+              loading={loading}
+            />
             {currentStep > 0 && (
               <Button
                 title={t('common.previous')}
@@ -1354,19 +1365,6 @@ export default function GrampanchayatInspectionScreen() {
                 disabled={loading}
               />
             )}
-            <View style={styles.submitButtons}>
-              <Button
-                title="मसुदा सेव्ह करा"
-                onPress={handleSaveAsDraft}
-                variant="outline"
-                loading={loading}
-              />
-              <Button
-                title="तपासणी सबमिट करा"
-                onPress={handleSubmit}
-                loading={loading}
-              />
-            </View>
           </View>
         )}
       </View>
