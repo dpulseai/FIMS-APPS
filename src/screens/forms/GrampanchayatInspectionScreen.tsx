@@ -218,8 +218,22 @@ export default function GrampanchayatInspectionScreen() {
   const [gpWorkCertificateReceived, setGpWorkCertificateReceived] = useState('');
   const [gpWorkRemarks, setGpWorkRemarks] = useState('');
 
-  // Section 11: Other Schemes (Section 13) - Simple text fields
-  const [otherSchemesDetails, setOtherSchemesDetails] = useState('');
+  // Section 11: Other Schemes (Section 13) - Table format
+  const [otherSchemes, setOtherSchemes] = useState([
+    { schemeName: 'एगाविका', targetsGiven: '', progressOnDate: '', remarks: '' },
+    { schemeName: 'बॉयोगॅस', targetsGiven: '', progressOnDate: '', remarks: '' },
+    { schemeName: 'निर्धूर चुल', targetsGiven: '', progressOnDate: '', remarks: '' },
+    { schemeName: 'कुटुंब कल्याण', targetsGiven: '', progressOnDate: '', remarks: '' },
+    { schemeName: 'अल्पवचत', targetsGiven: '', progressOnDate: '', remarks: '' },
+    { schemeName: '', targetsGiven: '', progressOnDate: '', remarks: '' },
+    { schemeName: '', targetsGiven: '', progressOnDate: '', remarks: '' },
+  ]);
+
+  const updateOtherScheme = (index: number, field: string, value: string) => {
+    const updatedSchemes = [...otherSchemes];
+    updatedSchemes[index] = { ...updatedSchemes[index], [field]: value };
+    setOtherSchemes(updatedSchemes);
+  };
 
   // Section 12: 14th Finance Commission (Section 14) - Simple text fields
   const [financeCommissionDetails, setFinanceCommissionDetails] = useState('');
@@ -1079,20 +1093,49 @@ export default function GrampanchayatInspectionScreen() {
 
       case 10: // Other Schemes
         return (
-          <View>
+          <ScrollView>
             <Text style={styles.sectionTitle}>(13) ग्राम पंचायतांनी इतर योजनामध्ये केलेली प्रगती</Text>
-            <Input
-              label="योजनांचा तपशील"
-              value={otherSchemesDetails}
-              onChangeText={setOtherSchemesDetails}
-              multiline
-              numberOfLines={6}
-              placeholder="योजनेचे नाव, दिलेली उद्दिष्टे, तपासणीच्या दिनांकास प्रगती, शेरा इ. तपशील प्रविष्ट करा"
-            />
+
+            {otherSchemes.map((scheme, index) => (
+              <View key={index} style={styles.schemeCard}>
+                <Text style={styles.schemeNumber}>अ.क्र. {index + 1}</Text>
+
+                <Input
+                  label="योजनेचे नाव"
+                  value={scheme.schemeName}
+                  onChangeText={(value) => updateOtherScheme(index, 'schemeName', value)}
+                  placeholder="योजनेचे नाव प्रविष्ट करा"
+                />
+
+                <Input
+                  label="दिलेली उद्दिष्टे"
+                  value={scheme.targetsGiven}
+                  onChangeText={(value) => updateOtherScheme(index, 'targetsGiven', value)}
+                  placeholder="उद्दिष्टे प्रविष्ट करा"
+                />
+
+                <Input
+                  label="तपासणीच्या दिनांकास प्रगती"
+                  value={scheme.progressOnDate}
+                  onChangeText={(value) => updateOtherScheme(index, 'progressOnDate', value)}
+                  placeholder="प्रगती प्रविष्ट करा"
+                />
+
+                <Input
+                  label="शेरा"
+                  value={scheme.remarks}
+                  onChangeText={(value) => updateOtherScheme(index, 'remarks', value)}
+                  placeholder="शेरा प्रविष्ट करा"
+                  multiline
+                  numberOfLines={2}
+                />
+              </View>
+            ))}
+
             <Text style={styles.helperText}>
               नोंद: एगाविका, बॉयोगॅस, निर्धूर चुल, कुटुंब कल्याण, अल्पवचत इ. योजनांचा तपशील द्यावा.
             </Text>
-          </View>
+          </ScrollView>
         );
 
       case 11: // 14th Finance Commission
@@ -1403,5 +1446,19 @@ const styles = StyleSheet.create({
   halfButton: {
     flex: 1,
     marginHorizontal: 4,
+  },
+  schemeCard: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#0891b2',
+  },
+  schemeNumber: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0891b2',
+    marginBottom: 12,
   },
 });
