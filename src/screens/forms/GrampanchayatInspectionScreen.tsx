@@ -8,6 +8,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { createInspection, uploadPhoto } from '../../services/fimsService';
 import Stepper from '../../components/common/Stepper';
 import Input from '../../components/common/Input';
+import DateInput from '../../components/common/DateInput';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
 import PhotoUpload from '../../components/PhotoUpload';
@@ -375,11 +376,12 @@ export default function GrampanchayatInspectionScreen() {
             />
 
             <Text style={styles.questionNumber}>2. (क) सर्वसाधारण तपासणीची तारीख:</Text>
-            <Input
+            <DateInput
               label="तारीख"
               value={inspectionDate}
-              onChangeText={setInspectionDate}
-              placeholder="YYYY-MM-DD"
+              onChangeDate={setInspectionDate}
+              placeholder="तारीख निवडा"
+              minimumDate={new Date()}
             />
 
             <Text style={styles.questionNumber}>2. (ख) सर्वसाधारण तपासणीचे ठिकाण:</Text>
@@ -699,11 +701,12 @@ export default function GrampanchayatInspectionScreen() {
               placeholder="ठराव क्रमांक प्रविष्ट करा"
             />
 
-            <Input
+            <DateInput
               label="ठराव तारीख"
               value={resolutionDate}
-              onChangeText={setResolutionDate}
-              placeholder="YYYY-MM-DD"
+              onChangeDate={setResolutionDate}
+              placeholder="तारीख निवडा"
+              maximumDate={new Date()}
             />
 
             <Text style={styles.questionText}>फेर आकारणी करण्यासाठी कार्यवाही चालू आहे किंवा नाही ?</Text>
