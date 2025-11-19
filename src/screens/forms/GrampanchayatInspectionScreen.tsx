@@ -56,6 +56,7 @@ export default function GrampanchayatInspectionScreen() {
   const [secretaryTenure, setSecretaryTenure] = useState('');
 
   // Section 2: Location (स्थान माहिती) - handled by LocationPicker
+  const [locationVisitDate, setLocationVisitDate] = useState('');
 
   // Section 3: Meeting Information (सभा माहिती)
   const [monthlyMeetings, setMonthlyMeetings] = useState('');
@@ -426,6 +427,13 @@ export default function GrampanchayatInspectionScreen() {
         return (
           <View>
             <Text style={styles.sectionTitle}>स्थान माहिती</Text>
+            <DateInput
+              label="तारीख"
+              value={locationVisitDate}
+              onChangeDate={setLocationVisitDate}
+              placeholder="तारीख निवडा"
+              minimumDate={new Date()}
+            />
             <LocationPicker location={location} onLocationChange={setLocation} />
           </View>
         );
