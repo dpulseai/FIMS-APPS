@@ -199,6 +199,9 @@ export default function GrampanchayatInspectionScreen() {
 
   // Section 9: Financial Transactions (Section 11)
   const [budgetProvision, setBudgetProvision] = useState('');
+  const [gpApprovalGiven, setGpApprovalGiven] = useState('');
+  const [gpApprovalResolutionNo, setGpApprovalResolutionNo] = useState('');
+  const [gpApprovalDate, setGpApprovalDate] = useState('');
   const [tendersCalled, setTendersCalled] = useState('');
   const [entriesMade, setEntriesMade] = useState('');
 
@@ -909,6 +912,22 @@ export default function GrampanchayatInspectionScreen() {
                 onSelect={setBudgetProvision}
               />
             </View>
+
+            <Text style={styles.questionText}>(ख) ग्राम पंचायत खरेदीसाठी मान्यता दिली आहे काय ?</Text>
+            <Input
+              label="ठराव क्र."
+              value={gpApprovalResolutionNo}
+              onChangeText={setGpApprovalResolutionNo}
+              placeholder="ठराव क्रमांक प्रविष्ट करा"
+            />
+
+            <DateInput
+              label="दि."
+              value={gpApprovalDate}
+              onChangeDate={setGpApprovalDate}
+              placeholder="तारीख निवडा"
+              // maximumDate={new Date()}
+            />
 
             <Text style={styles.questionText}>(ग) खरेदी करण्यासाठी नियमप्रमाणे दरपत्रके मागविली होती काय ?</Text>
             <View style={styles.radioGroup}>
