@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuth } from '../hooks/useAuth';
 import { usePermissions } from '../hooks/usePermissions';
+import { runUploadDiagnostics } from '../services/fimsService';
+import offlineService from '../services/offlineService';
 
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
@@ -117,6 +119,33 @@ export default function ProfileScreen() {
         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
           <Icon name="logout" size={20} color="#ffffff" />
           <Text style={styles.signOutText}>{t('auth.signOut')}</Text>
+        </TouchableOpacity>
+
+        {/* Temporary debug button: runs upload diagnostics */}
+        <TouchableOpacity
+          style={[styles.signOutButton, { backgroundColor: '#2563eb' }]}
+          onPress={async () => {
+            try {
+              const inspections = await offlineService.getOfflineInspections();
+              let testUri = 'https://via.placeholder.com/150';
+              // try to find last photo uri from offline inspections
+              if (inspections && inspections.length > 0) {
+                const last = inspections[0];
+                if (last.photos && last.photos.length > 0) {
+                  testUri = last.photos[0].uri;
+                }
+              }
+              console.log('[debug] Running diagnostics for', testUri);
+              await runUploadDiagnostics(testUri);
+              Alert.alert('Diagnostics', 'Completed — check Metro logs for details');
+            } catch (err) {
+              console.error('Diagnostics failed:', err);
+              Alert.alert('Diagnostics error', String(err));
+            }
+          }}
+        >
+          <Icon name="bug" size={20} color="#ffffff" />
+          <Text style={styles.signOutText}>Run Upload Diagnostics</Text>
         </TouchableOpacity>
 
         <View style={styles.footer}>

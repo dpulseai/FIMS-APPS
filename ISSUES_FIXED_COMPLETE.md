@@ -207,12 +207,12 @@ export const uploadPhoto = async (
   // 2. Upload to Supabase Storage
   const filePath = `inspections/${inspectionId}/${Date.now()}_${photoName}`;
   await supabase.storage
-    .from('fims-photos')
+    .from('field-visit-images')
     .upload(filePath, blob);
 
   // 3. Get public URL
   const { data: { publicUrl } } = supabase.storage
-    .from('fims-photos')
+    .from('field-visit-images')
     .getPublicUrl(filePath);
 
   // 4. Save URL to database

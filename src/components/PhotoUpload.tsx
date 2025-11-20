@@ -13,10 +13,19 @@ import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
+import * as Location from 'expo-location';
+
+interface PhotoMeta {
+  latitude?: number;
+  longitude?: number;
+  accuracy?: number;
+}
 
 interface PhotoUploadProps {
   photos: string[];
   onPhotosChange: (photos: string[]) => void;
+  photoMetas?: PhotoMeta[];
+  onPhotoMetaChange?: (metas: PhotoMeta[]) => void;
   maxPhotos?: number;
   maxSizeKB?: number;
 }
@@ -24,6 +33,8 @@ interface PhotoUploadProps {
 export default function PhotoUpload({
   photos,
   onPhotosChange,
+  photoMetas,
+  onPhotoMetaChange,
   maxPhotos = 5,
   maxSizeKB = 5120,
 }: PhotoUploadProps) {
@@ -42,17 +53,7 @@ export default function PhotoUpload({
     return true;
   };
 
-  const requestGalleryPermissions = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(
-        'Permission Required',
-        'Gallery permission is required to select photos for inspections.'
-      );
-      return false;
-    }
-    return true;
-  };
+  // Gallery selection is intentionally disabled: photos must be taken with the camera only.
 
   const compressImage = async (uri: string): Promise<string> => {
     try {
@@ -88,7 +89,27 @@ export default function PhotoUpload({
 
       if (!result.canceled && result.assets[0]) {
         const compressedUri = await compressImage(result.assets[0].uri);
+        // Try to capture current location when photo is taken
+        let meta: PhotoMeta | undefined;
+        try {
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          if (status === 'granted') {
+            const pos = await Location.getCurrentPositionAsync({ accuracy: Location.LocationAccuracy.Balanced });
+            meta = {
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+              accuracy: pos.coords.accuracy ?? undefined,
+            };
+          }
+        } catch (locErr) {
+          console.warn('Could not fetch location for photo:', locErr);
+        }
+
         onPhotosChange([...photos, compressedUri]);
+        if (onPhotoMetaChange) {
+          const newMetas = [...(photoMetas || []), (meta || {})];
+          onPhotoMetaChange(newMetas as PhotoMeta[]);
+        }
       }
     } catch (error) {
       console.error('Error taking photo:', error);
@@ -98,35 +119,7 @@ export default function PhotoUpload({
     }
   };
 
-  const handleChooseFromGallery = async () => {
-    if (photos.length >= maxPhotos) {
-      Alert.alert(t('common.error'), t('fims.maxPhotosAllowed'));
-      return;
-    }
-
-    const hasPermission = await requestGalleryPermissions();
-    if (!hasPermission) return;
-
-    try {
-      setUploading(true);
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        const compressedUri = await compressImage(result.assets[0].uri);
-        onPhotosChange([...photos, compressedUri]);
-      }
-    } catch (error) {
-      console.error('Error choosing photo:', error);
-      Alert.alert(t('common.error'), 'Failed to select photo');
-    } finally {
-      setUploading(false);
-    }
-  };
+  // Gallery selection removed to enforce camera-only uploads.
 
   const handleRemovePhoto = (index: number) => {
     Alert.alert(
@@ -140,6 +133,10 @@ export default function PhotoUpload({
           onPress: () => {
             const newPhotos = photos.filter((_, i) => i !== index);
             onPhotosChange(newPhotos);
+            if (onPhotoMetaChange) {
+              const newMetas = (photoMetas || []).filter((_, i) => i !== index);
+              onPhotoMetaChange(newMetas);
+            }
           },
         },
       ]
@@ -147,24 +144,8 @@ export default function PhotoUpload({
   };
 
   const showPhotoOptions = () => {
-    Alert.alert(
-      'Add Photo',
-      'Choose photo source',
-      [
-        {
-          text: t('fims.takePhoto'),
-          onPress: handleTakePhoto,
-        },
-        {
-          text: t('fims.chooseFromGallery'),
-          onPress: handleChooseFromGallery,
-        },
-        {
-          text: t('common.cancel'),
-          style: 'cancel',
-        },
-      ]
-    );
+    // Only allow taking photo with camera.
+    handleTakePhoto();
   };
 
   return (
@@ -181,6 +162,12 @@ export default function PhotoUpload({
           {photos.map((photo, index) => (
             <View key={index} style={styles.photoContainer}>
               <Image source={{ uri: photo }} style={styles.photo} />
+              {/* Geo-tag indicator */}
+              {photoMetas && photoMetas[index] && (photoMetas[index].latitude !== undefined) && (
+                <View style={styles.geoIndicator}>
+                  <Icon name="map-marker" size={14} color="#10b981" />
+                </View>
+              )}
               <TouchableOpacity
                 style={styles.removeButton}
                 onPress={() => handleRemovePhoto(index)}
@@ -201,13 +188,13 @@ export default function PhotoUpload({
         >
           <Icon name="camera-plus" size={32} color="#2563eb" />
           <Text style={styles.addButtonText}>
-            {uploading ? 'Processing...' : 'Add Photo'}
+            {uploading ? 'Processing...' : t('fims.takePhoto')}
           </Text>
         </TouchableOpacity>
       )}
 
       <Text style={styles.infoText}>
-        Maximum {maxPhotos} photos. Photos will be compressed to ensure they are under {Math.floor(maxSizeKB / 1024)}MB.
+        Maximum {maxPhotos} photos. Photos must be taken with the camera; uploads from gallery or other sources are not allowed. Photos will be compressed to ensure they are under {Math.floor(maxSizeKB / 1024)}MB.
       </Text>
     </View>
   );
@@ -267,6 +254,14 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     fontSize: 12,
     fontWeight: '600',
+  },
+  geoIndicator: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    padding: 4,
+    borderRadius: 10,
   },
   addButton: {
     borderWidth: 2,

@@ -19,11 +19,12 @@ export interface UserProfile {
 
 export interface Inspection {
   id: string;
-  category_id: number;
+  category_id: string;
   category_name?: string;
   category_name_marathi?: string;
   form_type?: string;
   status: 'draft' | 'in_progress' | 'submitted' | 'approved' | 'rejected' | 'revisit';
+  location_name?: string | null;
   location_latitude: number | null;
   location_longitude: number | null;
   location_address: string | null;
@@ -47,7 +48,7 @@ export interface InspectionPhoto {
 }
 
 export interface InspectionCategory {
-  id: number;
+  id: string;
   name: string;
   name_marathi: string;
   form_type: string;
@@ -102,19 +103,19 @@ export type InspectionsStackParamList = {
 
 export type FormsStackParamList = {
   CategorySelection: undefined;
-  FIMSOfficeInspection: { categoryId: number; inspectionId?: string };
-  AnganwadiTapasani: { categoryId: number; inspectionId?: string };
-  HealthInspection: { categoryId: number; inspectionId?: string };
-  SubCenterMonitoring: { categoryId: number; inspectionId?: string };
-  BandhkamVibhag1: { categoryId: number; inspectionId?: string };
-  BandhkamVibhag2: { categoryId: number; inspectionId?: string };
-  RajyaShaishanikPrashikshan: { categoryId: number; inspectionId?: string };
-  RajyaGunwattaNirikshak: { categoryId: number; inspectionId?: string };
-  MumbaiNyayalay: { categoryId: number; inspectionId?: string };
-  PahuvaidhakiyaTapasani: { categoryId: number; inspectionId?: string };
-  MahatmaGandhiRojgarHami: { categoryId: number; inspectionId?: string };
-  GrampanchayatInspection: { categoryId: number; inspectionId?: string };
-  ZPDarMahinyala: { categoryId: number; inspectionId?: string };
+  FIMSOfficeInspection: { categoryId: string; inspectionId?: string };
+  AnganwadiTapasani: { categoryId: string; inspectionId?: string };
+  HealthInspection: { categoryId: string; inspectionId?: string };
+  SubCenterMonitoring: { categoryId: string; inspectionId?: string };
+  BandhkamVibhag1: { categoryId: string; inspectionId?: string };
+  BandhkamVibhag2: { categoryId: string; inspectionId?: string };
+  RajyaShaishanikPrashikshan: { categoryId: string; inspectionId?: string };
+  RajyaGunwattaNirikshak: { categoryId: string; inspectionId?: string };
+  MumbaiNyayalay: { categoryId: string; inspectionId?: string };
+  PahuvaidhakiyaTapasani: { categoryId: string; inspectionId?: string };
+  MahatmaGandhiRojgarHami: { categoryId: string; inspectionId?: string };
+  GrampanchayatInspection: { categoryId: string; inspectionId?: string };
+  ZPDarMahinyala: { categoryId: string; inspectionId?: string };
 };
 
 export { User };

@@ -46,6 +46,7 @@ export const getInspections = async (userId?: string, userRole?: string): Promis
       category_name_marathi: item.fims_categories?.name_marathi,
       form_type: item.fims_categories?.form_type,
       status: item.status,
+      location_name: item.location_name,
       location_latitude: item.latitude,
       location_longitude: item.longitude,
       location_address: item.address,
@@ -61,6 +62,87 @@ export const getInspections = async (userId?: string, userRole?: string): Promis
     console.error('Error fetching inspections:', error);
     return [];
   }
+};
+
+/**
+ * Diagnostic helper (in-app)
+ * - Fetches `photoUri` and logs response details
+ * - Runs a simple Supabase read (fims_categories) to verify Supabase connectivity
+ * Call this from a debug button or console in the app to see Metro logs.
+ */
+export const runUploadDiagnostics = async (photoUri: string): Promise<void> => {
+  console.log('[diagnostic] Starting upload diagnostics for:', photoUri);
+
+  try {
+    console.log('[diagnostic] Testing fetch of photo URI...');
+    const res = await fetch(photoUri as string);
+    console.log('[diagnostic] fetch.ok:', res.ok, 'status:', res.status);
+    try {
+      const buf = await res.arrayBuffer();
+      console.log('[diagnostic] fetched bytes:', buf?.byteLength ?? 'unknown');
+    } catch (readErr) {
+      console.warn('[diagnostic] could not read response body:', readErr);
+    }
+  } catch (err) {
+    console.error('[diagnostic] photo fetch error:', err);
+  }
+
+  try {
+    console.log('[diagnostic] Testing Supabase read (fims_categories)...');
+    const { data, error } = await supabase.from('fims_categories').select('*').limit(1);
+    if (error) {
+      console.error('[diagnostic] Supabase read error:', error);
+    } else {
+      console.log('[diagnostic] Supabase read success, rows:', Array.isArray(data) ? data.length : 'unknown');
+    }
+  } catch (err) {
+    console.error('[diagnostic] Supabase diagnostic error:', err);
+  }
+
+  // Attempt a storage upload (dry run) if fetch succeeded
+  try {
+    console.log('[diagnostic] Attempting storage upload (dry run)...');
+    const fetchRes = await fetch(photoUri as string);
+    if (!fetchRes.ok) {
+      console.warn('[diagnostic] Cannot upload: fetch not ok, status', fetchRes.status);
+    } else {
+      const arr = await fetchRes.arrayBuffer();
+      const fileExt = (photoUri.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '');
+      const filePath = `diagnostics/${Date.now()}_diag_test.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('field-visit-images')
+        .upload(filePath, arr, {
+          contentType: `image/${fileExt}`,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error('[diagnostic] Storage upload error:', uploadError);
+      } else {
+        console.log('[diagnostic] Storage upload succeeded for', filePath);
+        try {
+          const { data: { publicUrl } } = supabase.storage.from('field-visit-images').getPublicUrl(filePath);
+          console.log('[diagnostic] publicUrl:', publicUrl);
+        } catch (e) {
+          console.warn('[diagnostic] Could not get publicUrl:', e);
+        }
+
+        // Attempt to remove the diagnostic file to keep storage clean
+        try {
+          const { error: removeError } = await supabase.storage.from('field-visit-images').remove([filePath]);
+          if (removeError) console.warn('[diagnostic] remove error:', removeError);
+          else console.log('[diagnostic] removed diagnostic file');
+        } catch (e) {
+          console.warn('[diagnostic] remove call failed:', e);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[diagnostic] storage upload diagnostic error:', err);
+  }
+
+  console.log('[diagnostic] Completed upload diagnostics.');
 };
 
 export const getInspectionById = async (id: string): Promise<Inspection | null> => {
@@ -101,6 +183,7 @@ export const getInspectionById = async (id: string): Promise<Inspection | null> 
       category_name_marathi: data.fims_categories?.name_marathi,
       form_type: data.fims_categories?.form_type,
       status: data.status,
+      location_name: data.location_name,
       location_latitude: data.latitude,
       location_longitude: data.longitude,
       location_address: data.address,
@@ -132,9 +215,9 @@ export const createInspection = async (inspectionData: Partial<Inspection>): Pro
       inspector_id: inspectionData.inspector_id,
       filled_by_name: inspectionData.filled_by_name || '',
       status: inspectionData.status || 'draft',
-      location_latitude: inspectionData.location_latitude,
-      location_longitude: inspectionData.location_longitude,
-      location_address: inspectionData.location_address,
+      location_latitude: inspectionData.location_latitude ?? undefined,
+      location_longitude: inspectionData.location_longitude ?? undefined,
+      location_address: inspectionData.location_address ?? null,
       created_at: new Date().toISOString(),
       photos: [],
     };
@@ -145,11 +228,14 @@ export const createInspection = async (inspectionData: Partial<Inspection>): Pro
       id: offlineInspection.id,
       category_id: offlineInspection.category_id,
       status: offlineInspection.status,
-      location_latitude: offlineInspection.location_latitude,
-      location_longitude: offlineInspection.location_longitude,
-      location_address: offlineInspection.location_address,
-      inspector_id: offlineInspection.inspector_id,
+      location_name: null,
+      location_latitude: offlineInspection.location_latitude ?? null,
+      location_longitude: offlineInspection.location_longitude ?? null,
+      location_address: offlineInspection.location_address ?? null,
+      inspector_id: offlineInspection.inspector_id || '',
       filled_by_name: offlineInspection.filled_by_name,
+      assigned_by: null,
+      notes: null,
       created_at: offlineInspection.created_at,
       updated_at: offlineInspection.created_at,
       photos: [],
@@ -167,6 +253,7 @@ export const createInspection = async (inspectionData: Partial<Inspection>): Pro
         inspector_id: inspectionData.inspector_id,
         filled_by_name: inspectionData.filled_by_name,
         status: inspectionData.status || 'draft',
+        location_name: inspectionData.location_name,
         latitude: inspectionData.location_latitude,
         longitude: inspectionData.location_longitude,
         address: inspectionData.location_address,
@@ -181,6 +268,7 @@ export const createInspection = async (inspectionData: Partial<Inspection>): Pro
       id: data.id,
       category_id: data.category_id,
       status: data.status,
+      location_name: data.location_name,
       location_latitude: data.latitude,
       location_longitude: data.longitude,
       location_address: data.address,
@@ -227,6 +315,7 @@ export const updateInspection = async (id: string, updates: Partial<Inspection>)
       id: data.id,
       category_id: data.category_id,
       status: data.status,
+      location_name: data.location_name,
       location_latitude: data.latitude,
       location_longitude: data.longitude,
       location_address: data.address,
@@ -283,39 +372,72 @@ export const fetchCategories = async (): Promise<InspectionCategory[]> => {
   }
 };
 
-export const uploadPhoto = async (inspectionId: string, photoUri: string, photoName: string, order: number): Promise<void> => {
+export const uploadPhoto = async (inspectionId: string, photoUri: string, photoName: string, order: number, meta?: { latitude?: number; longitude?: number; accuracy?: number }): Promise<void> => {
   if (!isSupabaseConfigured) {
     throw new Error('Supabase client not initialized');
+  }
+  const isOnline = await offlineService.isOnline();
+  if (!isOnline) {
+    throw new Error('No network connection: cannot upload photo');
+  }
+
+  // Enforce camera-only uploads: reject remote URLs or unsupported schemes here.
+  // Acceptable schemes typically from camera: file://, content://, ph://, assets-library://
+  const uriLower = (photoUri || '').toLowerCase();
+  if (uriLower.startsWith('http://') || uriLower.startsWith('https://')) {
+    throw new Error('Uploading remote images is not allowed. Please capture photo using the device camera.');
   }
 
   try {
     const response = await fetch(photoUri);
-    const blob = await response.blob();
+    if (!response.ok) throw new Error(`Failed to fetch photo URI: ${response.status}`);
 
+    // Use arrayBuffer for React Native compatibility (consistent with offlineService)
+    const arrayBuffer = await response.arrayBuffer();
+    const fileExt = photoName.split('.').pop() || 'jpg';
     const filePath = `inspections/${inspectionId}/${Date.now()}_${photoName}`;
 
     const { error: uploadError } = await supabase.storage
-      .from('fims-photos')
-      .upload(filePath, blob);
+      .from('field-visit-images')
+      .upload(filePath, arrayBuffer, {
+        contentType: `image/${fileExt}`,
+        upsert: false,
+      });
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      console.error('Storage upload error:', uploadError);
+      throw uploadError;
+    }
 
     const { data: { publicUrl } } = supabase.storage
-      .from('fims-photos')
+      .from('field-visit-images')
       .getPublicUrl(filePath);
+
+    const insertPayload: any = {
+      inspection_id: inspectionId,
+      photo_url: publicUrl,
+      photo_name: photoName,
+      photo_order: order,
+    };
+    if (meta) {
+      try {
+        insertPayload.description = JSON.stringify({ photo_location: meta });
+      } catch (e) {
+        insertPayload.description = null;
+      }
+    }
 
     const { error: dbError } = await supabase
       .from('fims_inspection_photos')
-      .insert({
-        inspection_id: inspectionId,
-        photo_url: publicUrl,
-        photo_name: photoName,
-        photo_order: order,
-      });
+      .insert(insertPayload);
 
-    if (dbError) throw dbError;
+    if (dbError) {
+      console.error('DB insert error after photo upload:', dbError);
+      throw dbError;
+    }
   } catch (error) {
     console.error('Error uploading photo:', error);
+    // Suggest retry from caller
     throw error;
   }
 };
