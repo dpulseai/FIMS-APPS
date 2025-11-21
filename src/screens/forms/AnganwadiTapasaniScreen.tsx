@@ -25,6 +25,7 @@ import { createInspection, uploadPhoto, fetchCategories, getInspectionById, upda
 import { supabase } from '../../services/supabase';
 import Stepper from '../../components/common/Stepper';
 import Input from '../../components/common/Input';
+import DateInput from '../../components/common/DateInput';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
 import PhotoUpload from '../../components/PhotoUpload';
@@ -142,6 +143,9 @@ export default function AnganwadiTapasaniScreen() {
   const { user } = useAuth();
   const { categoryId, inspectionId } = route.params;
 
+  // default visit date: today's date in YYYY-MM-DD
+  const todayIso = new Date().toISOString().slice(0, 10);
+
   const [isEditMode, setIsEditMode] = useState<boolean>(() => {
     // If this screen was opened with an existing inspectionId, start in read-only mode.
     // Otherwise (creating new), enable editing by default.
@@ -225,7 +229,7 @@ export default function AnganwadiTapasaniScreen() {
     recommendations: '',
     action_required: '',
     suggestions: '',
-    visit_date: '',
+    visit_date: todayIso,
     inspector_designation: '',
     inspector_name: '',
   });
@@ -262,7 +266,8 @@ export default function AnganwadiTapasaniScreen() {
 
         if (!formError && formRows) {
           const { inspection_id: _ignore, ...rest } = formRows;
-          setFormData((prev: any) => ({ ...prev, ...rest }));
+          // Preserve existing visit_date if present; otherwise keep today's default
+          setFormData((prev: any) => ({ ...prev, ...rest, visit_date: rest.visit_date ?? prev.visit_date }));
         }
       } catch (err) {
         console.error('Error loading edit data:', err);
@@ -273,10 +278,19 @@ export default function AnganwadiTapasaniScreen() {
     load();
   }, [inspectionId]);
 
+  const handleToggleEdit = () => {
+    // Toggle edit mode and show a confirmation alert so we can detect presses
+    setIsEditMode((prev) => {
+      const next = !prev;
+      Alert.alert('Edit Mode', next ? 'Editing enabled' : 'Editing disabled');
+      return next;
+    });
+  };
+
   const handleNext = () => {
     if (currentStep === 0) {
-      if (!formData.anganwadi_name || !formData.supervisor_name) {
-        Alert.alert(t('common.error'), 'Please fill in required fields');
+      if (!formData.anganwadi_name || !formData.supervisor_name || !formData.visit_date) {
+        Alert.alert(t('common.error'), 'Please fill in required fields (name, supervisor and visit date)');
         return;
       }
     }
@@ -698,6 +712,14 @@ export default function AnganwadiTapasaniScreen() {
               placeholder="Enter supervisor name"
             />
 
+            <DateInput
+              label="भेटीची तारीख / Visit Date *"
+              value={formData.visit_date}
+              onChangeDate={(d) => updateFormData('visit_date', d)}
+              minimumDate={new Date()}
+              maximumDate={new Date()}
+            />
+
             <Input
               editable={isEditMode}
               label="सहायकाचे नाव"
@@ -1007,13 +1029,22 @@ export default function AnganwadiTapasaniScreen() {
             <Text style={[styles.sectionTitle, styles.marginTop]}>तपासणी अधिकारी माहिती</Text>
             <Text style={styles.sectionSubtitle}>Inspector Information</Text>
 
-            <Input
-              editable={isEditMode}
-              label="भेटीची तारीख / Visit Date"
-              value={formData.visit_date}
-              onChangeText={(text) => updateFormData('visit_date', text)}
-              placeholder="DD/MM/YYYY"
-            />
+            {isEditMode ? (
+              <DateInput
+                label="भेटीची तारीख / Visit Date"
+                value={formData.visit_date}
+                onChangeDate={(d) => updateFormData('visit_date', d)}
+                // Restrict selection to today only
+                minimumDate={new Date()}
+                maximumDate={new Date()}
+              />
+            ) : (
+              <Input
+                editable={false}
+                label="भेटीची तारीख / Visit Date"
+                value={formData.visit_date}
+              />
+            )}
 
             <Input
               editable={isEditMode}
@@ -1098,11 +1129,11 @@ export default function AnganwadiTapasaniScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      {inspectionId && !isEditMode && (
+      {inspectionId && (
         <View style={{ paddingHorizontal: 16, paddingTop: 12, alignItems: 'flex-end' }}>
           <Button
-            title={t('common.edit') || 'Edit'}
-            onPress={() => setIsEditMode(true)}
+            title={isEditMode ? (t('common.view') || 'View') : (t('common.edit') || 'Edit')}
+            onPress={handleToggleEdit}
             variant="outline"
             style={{ minWidth: 100 }}
           />
@@ -1121,7 +1152,7 @@ export default function AnganwadiTapasaniScreen() {
               title={t('common.previous')}
               onPress={handlePrevious}
               variant="outline"
-              style={styles.navigationButton}
+              style={styles.button}
               disabled={loading}
             />
           )}
@@ -1129,7 +1160,7 @@ export default function AnganwadiTapasaniScreen() {
             <Button
               title={t('common.next')}
               onPress={handleNext}
-              style={styles.navigationButton}
+              style={styles.button}
               disabled={loading}
             />
           ) : (
@@ -1138,14 +1169,14 @@ export default function AnganwadiTapasaniScreen() {
                 <Button
                   title={'Save Changes'}
                   onPress={handleSaveEdits}
-                  style={styles.submitButton}
+                  style={styles.button}
                   loading={loading}
                 />
                 <Button
                   title={t('common.cancel') || 'Cancel'}
                   onPress={() => setIsEditMode(false)}
                   variant="outline"
-                  style={styles.submitButton}
+                  style={styles.button}
                   disabled={loading}
                 />
               </View>
@@ -1155,13 +1186,13 @@ export default function AnganwadiTapasaniScreen() {
                   title={t('fims.saveAsDraft')}
                   onPress={handleSaveAsDraft}
                   variant="outline"
-                  style={styles.submitButton}
+                  style={styles.button}
                   loading={loading}
                 />
                 <Button
                   title={t('fims.submitInspection')}
                   onPress={handleSubmit}
-                  style={styles.submitButton}
+                  style={styles.button}
                   loading={loading}
                 />
               </View>
@@ -1231,32 +1262,24 @@ const styles = StyleSheet.create({
   },
   footer: {
     backgroundColor: '#ffffff',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 8,
   },
   buttonRow: {
     flexDirection: 'row',
-    gap: 10,
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  navigationButton: {
+  button: {
     flex: 1,
     minHeight: 44,
+    marginHorizontal: 6,
   },
   submitButtons: {
     flexDirection: 'row',
-    flex: 1,
-    gap: 10,
-  },
-  submitButton: {
-    flex: 1,
-    minHeight: 44,
+    marginTop: 12,
+    justifyContent: 'space-between',
   },
   inputGroup: {
     marginBottom: 20,

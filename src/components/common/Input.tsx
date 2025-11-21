@@ -20,10 +20,10 @@ export default function Input({
   return (
     <View style={[styles.container, containerStyle]}>
       {label && <Text style={styles.label}>{label}</Text>}
-      <View style={[styles.inputContainer, error && styles.inputError]}>
+      <View style={[styles.inputContainer, error ? styles.inputError : undefined]}>
         {icon && <Icon name={icon} size={20} color="#6b7280" style={styles.icon} />}
         <TextInput
-          style={[styles.input, icon && styles.inputWithIcon, style]}
+          style={[styles.input, icon ? styles.inputWithIcon : undefined, style]}
           placeholderTextColor="#9ca3af"
           {...props}
         />

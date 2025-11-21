@@ -78,7 +78,8 @@ export default function CategorySelectionScreen() {
     const routeName = formTypeMap[category.form_type] || formTypeMap[category.form_type.toLowerCase()];
 
     if (routeName) {
-      navigation.navigate(routeName, { categoryId: category.id });
+      // routeName is computed at runtime; narrow to any to satisfy navigation overloads
+      navigation.navigate(routeName as any, { categoryId: category.id });
     } else {
       console.log('Unmapped form_type:', category.form_type);
       Alert.alert(
