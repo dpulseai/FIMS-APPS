@@ -61,6 +61,7 @@ export default function GrampanchayatInspectionScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [photoMetas, setPhotoMetas] = useState<Array<{ latitude?: number; longitude?: number; accuracy?: number }>>([]);
   const [location, setLocation] = useState<LocationData | null>(null);
 
   // Section 1: Basic Information (मूळ माहिती)
@@ -338,7 +339,8 @@ export default function GrampanchayatInspectionScreen() {
         location_address: location?.address || null,
       });
       for (let i = 0; i < photos.length; i++) {
-        await uploadPhoto(inspection.id, photos[i], `photo${i + 1}.jpg`, i + 1);
+        const meta = photoMetas[i];
+        await uploadPhoto(inspection.id, photos[i], `photo${i + 1}.jpg`, i + 1, meta);
       }
       Alert.alert(t('common.success'), 'तपासणी यशस्वीरित्या सबमिट झाली');
       navigation.navigate('CategorySelection');
@@ -1292,7 +1294,15 @@ export default function GrampanchayatInspectionScreen() {
         return (
           <View>
             <Text style={styles.sectionTitle}>फोटो अपलोड</Text>
-            <PhotoUpload photos={photos} onPhotosChange={setPhotos} />
+            <PhotoUpload
+              photos={photos}
+              onPhotosChange={(p) => {
+                setPhotos(p);
+                if (photoMetas.length > p.length) setPhotoMetas(photoMetas.slice(0, p.length));
+              }}
+              photoMetas={photoMetas}
+              onPhotoMetaChange={setPhotoMetas}
+            />
           </View>
         );
 
