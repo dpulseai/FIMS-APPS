@@ -48,9 +48,11 @@ export const usePermissions = (user: User | null): PermissionCheck => {
           throw userRolesError;
         }
 
-        const roleIds = userRolesData?.map(ur => ur.role_id) || [];
-        const primaryRole = userRolesData?.[0]?.roles?.name || null;
-        const roleDescription = userRolesData?.[0]?.roles?.description || null;
+        // supabase may return joined rows in nested objects; cast to any to read fields safely
+        const roleRows = userRolesData as any[] | undefined;
+        const roleIds = roleRows?.map((ur: any) => ur.role_id) || [];
+        const primaryRole = roleRows?.[0]?.roles?.name || null;
+        const roleDescription = roleRows?.[0]?.roles?.description || null;
 
         setUserRole(primaryRole);
 
@@ -72,14 +74,19 @@ export const usePermissions = (user: User | null): PermissionCheck => {
             console.error('Error fetching permissions:', permsError);
             permissionsData = [];
           } else {
-            permissionsData = permsData?.map(p => ({
-              application_name: p.application_name,
-              can_read: p.can_read,
-              can_write: p.can_write,
-              can_delete: p.can_delete,
-              can_admin: p.can_admin,
-              role_name: p.roles?.name || primaryRole || 'unknown'
-            })) || [];
+            permissionsData = permsData?.map((p: any) => {
+                // `roles` may be returned as an array of joined rows or a single object
+                const roleFromPerm = p.roles;
+                const roleName = Array.isArray(roleFromPerm) ? roleFromPerm[0]?.name : roleFromPerm?.name;
+                return {
+                  application_name: p.application_name,
+                  can_read: p.can_read,
+                  can_write: p.can_write,
+                  can_delete: p.can_delete,
+                  can_admin: p.can_admin,
+                  role_name: roleName || primaryRole || 'unknown'
+                };
+              }) || [];
           }
         }
 

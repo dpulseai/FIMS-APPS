@@ -1,133 +1,106 @@
-import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 
 interface StepperProps {
   steps: string[];
   currentStep: number;
 }
 
-export default function Stepper({ steps, currentStep }: StepperProps) {
-  const scrollViewRef = useRef<ScrollView>(null);
+const { width } = Dimensions.get('window');
+const isSmallDevice = width < 375;
 
-  useEffect(() => {
-    // Auto-scroll to center the active step
-    if (scrollViewRef.current) {
-      const stepWidth = 90; // stepWrapper width + stepLine width
-      const scrollPosition = Math.max(0, currentStep * stepWidth - 150);
-      scrollViewRef.current.scrollTo({ x: scrollPosition, animated: true });
-    }
-  }, [currentStep]);
+export default function Stepper({ steps, currentStep }: StepperProps) {
+  const progress = ((currentStep + 1) / steps.length) * 100;
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        ref={scrollViewRef}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <View style={styles.stepsContainer}>
-          {steps.map((step, index) => (
-            <React.Fragment key={index}>
-              <View style={styles.stepWrapper}>
-                <View
-                  style={[
-                    styles.stepCircle,
-                    index < currentStep && styles.stepCompleted,
-                    index === currentStep && styles.stepActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.stepNumber,
-                      (index <= currentStep) && styles.stepNumberActive,
-                    ]}
-                  >
-                    {index + 1}
-                  </Text>
-                </View>
-                <Text
-                  style={[
-                    styles.stepLabel,
-                    index === currentStep && styles.stepLabelActive,
-                  ]}
-                  numberOfLines={2}
-                >
-                  {step}
-                </Text>
-              </View>
-              {index < steps.length - 1 && (
-                <View
-                  style={[
-                    styles.stepLine,
-                    index < currentStep && styles.stepLineCompleted,
-                  ]}
-                />
-              )}
-            </React.Fragment>
-          ))}
-        </View>
-      </ScrollView>
+      {/* Progress Bar */}
+      <View style={styles.progressBarContainer}>
+        <View style={[styles.progressBar, { width: `${progress}%` }]} />
+      </View>
+
+      {/* Step Info */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.stepCounter}>
+          Step {currentStep + 1} of {steps.length}
+        </Text>
+        <Text style={styles.stepTitle}>{steps[currentStep]}</Text>
+      </View>
+
+      {/* Optional: Dot Indicators */}
+      <View style={styles.dotsContainer}>
+        {steps.map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.dot,
+              index === currentStep && styles.dotActive,
+              index < currentStep && styles.dotCompleted,
+            ]}
+          />
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 20,
     backgroundColor: '#ffffff',
-  },
-  scrollContent: {
+    paddingVertical: 16,
     paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
   },
-  stepsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  stepWrapper: {
-    alignItems: 'center',
-    width: 70,
-  },
-  stepCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  progressBarContainer: {
+    height: 6,
     backgroundColor: '#e5e7eb',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#2563eb',
+    borderRadius: 3,
+  },
+  infoContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  stepCounter: {
+    fontSize: isSmallDevice ? 12 : 13,
+    fontWeight: '600',
+    color: '#2563eb',
+    letterSpacing: 0.3,
+  },
+  stepTitle: {
+    fontSize: isSmallDevice ? 13 : 14,
+    fontWeight: '600',
+    color: '#1f2937',
+    flex: 1,
+    textAlign: 'right',
+    marginLeft: 12,
+  },
+  dotsContainer: {
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    gap: 6,
   },
-  stepCompleted: {
-    backgroundColor: '#10b981',
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#d1d5db',
   },
-  stepActive: {
+  dotActive: {
+    width: 20,
     backgroundColor: '#2563eb',
   },
-  stepNumber: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6b7280',
-  },
-  stepNumberActive: {
-    color: '#ffffff',
-  },
-  stepLabel: {
-    fontSize: 11,
-    color: '#6b7280',
-    textAlign: 'center',
-    width: 70,
-  },
-  stepLabelActive: {
-    color: '#2563eb',
-    fontWeight: '600',
-  },
-  stepLine: {
-    height: 2,
-    width: 20,
-    backgroundColor: '#e5e7eb',
-    marginHorizontal: 0,
-  },
-  stepLineCompleted: {
+  dotCompleted: {
     backgroundColor: '#10b981',
   },
 });

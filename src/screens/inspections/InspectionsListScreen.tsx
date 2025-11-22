@@ -36,7 +36,9 @@ export default function InspectionsListScreen() {
 
   const loadInspections = useCallback(async () => {
     try {
-      const data = await getInspections(user?.id, userRole);
+      // ensure we pass undefined (not null) when user id is not available
+      const userId = user?.id ?? undefined;
+      const data = await getInspections(userId, userRole ?? undefined);
       setInspections(data);
       setFilteredInspections(data);
     } catch (error) {
@@ -79,7 +81,23 @@ export default function InspectionsListScreen() {
   };
 
   const handleEditInspection = (inspection: Inspection) => {
-    Alert.alert(t('common.info'), 'Edit functionality coming soon');
+    // Navigate to the appropriate form screen for editing.
+    // Cast to any to allow cross-stack navigation without TypeScript errors.
+    const params = { categoryId: inspection.category_id, inspectionId: inspection.id };
+    // Determine route based on form_type or fallback to Anganwadi for now
+    const route = (inspection.form_type === 'anganwadi' || inspection.category_name?.toLowerCase().includes('anganwadi'))
+      ? 'AnganwadiTapasani'
+      : 'InspectionDetail';
+
+    if (route === 'InspectionDetail') {
+      navigation.navigate('InspectionDetail', { inspectionId: inspection.id });
+    } else {
+      // navigate to the NewInspection tab and open the nested AnganwadiTapasani screen
+      (navigation as any).navigate('NewInspection', {
+        screen: 'AnganwadiTapasani',
+        params,
+      });
+    }
   };
 
   const handleDeleteInspection = (inspection: Inspection) => {

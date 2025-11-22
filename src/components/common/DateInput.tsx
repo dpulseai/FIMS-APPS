@@ -67,12 +67,12 @@ export default function DateInput({
       {label && <Text style={styles.label}>{label}</Text>}
 
       <TouchableOpacity
-        style={[styles.inputContainer, error && styles.inputError]}
+        style={[styles.inputContainer, error ? styles.inputError : undefined]}
         onPress={handlePress}
         activeOpacity={0.7}
       >
         <Icon name="calendar" size={20} color="#6b7280" style={styles.icon} />
-        <Text style={[styles.text, isPlaceholder && styles.placeholder]}>
+        <Text style={[styles.text, isPlaceholder ? styles.placeholder : undefined]}>
           {displayValue}
         </Text>
       </TouchableOpacity>

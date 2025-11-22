@@ -11,7 +11,7 @@ export interface OfflineInspection {
   category_id: string;
   inspector_id?: string;
   filled_by_name: string;
-  status: string;
+  status: 'draft' | 'in_progress' | 'submitted' | 'approved' | 'rejected' | 'revisit';
   location_latitude?: number;
   location_longitude?: number;
   location_address?: string | null;
@@ -23,8 +23,15 @@ export interface OfflineInspection {
 export interface OfflinePhoto {
   inspection_id: string;
   uri: string;
-  photo_number: number;
+  photo_order: number;
   filename: string;
+  meta?: PhotoMeta;
+}
+
+export interface PhotoMeta {
+  latitude?: number;
+  longitude?: number;
+  accuracy?: number;
 }
 
 export interface SyncStatus {
@@ -145,7 +152,7 @@ export const offlineService = {
               const filePath = `${newInspection.id}/${photo.filename}`;
 
               const { error: uploadError } = await supabase.storage
-                .from('inspection-photos')
+                .from('field-visit-images')
                 .upload(filePath, arrayBuffer, {
                   contentType: `image/${fileExt}`,
                   upsert: false,
@@ -158,14 +165,24 @@ export const offlineService = {
               }
 
               const { data: { publicUrl } } = supabase.storage
-                .from('inspection-photos')
+                .from('field-visit-images')
                 .getPublicUrl(filePath);
 
-              await supabase.from('fims_inspection_photos').insert({
+              const insertPayload: any = {
                 inspection_id: newInspection.id,
                 photo_url: publicUrl,
-                photo_number: photo.photo_number,
-              });
+                photo_name: photo.filename,
+                photo_order: photo.photo_order,
+              };
+              if (photo.meta) {
+                try {
+                  insertPayload.description = JSON.stringify({ photo_location: photo.meta });
+                } catch (e) {
+                  insertPayload.description = null;
+                }
+              }
+
+              await supabase.from('fims_inspection_photos').insert(insertPayload);
             } catch (photoError) {
               console.error('Error syncing photo:', photoError);
               status.errors.push(`Failed to sync photo: ${photoError}`);
