@@ -5,7 +5,7 @@ import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { FormsStackParamList, LocationData } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import { createInspection, uploadPhoto } from '../../services/fimsService';
+import { createInspection, uploadPhoto, saveGrampanchayatInspectionForm } from '../../services/fimsService';
 import Stepper from '../../components/common/Stepper';
 import Input from '../../components/common/Input';
 import DateInput from '../../components/common/DateInput';
@@ -90,12 +90,14 @@ export default function GrampanchayatInspectionScreen() {
 
   // Section 5 & 6: Cash Book Details (रोकड वहीचा तपशील) - Section 7
   // First table: Gram Nidhi & Water Supply
+  const [srNoGramNidhi, setSrNoGramNidhi] = useState('');
   const [gramNidhiRegisterBalance, setGramNidhiRegisterBalance] = useState('');
   const [gramNidhiBankBalance, setGramNidhiBankBalance] = useState('');
   const [gramNidhiPostBalance, setGramNidhiPostBalance] = useState('');
   const [gramNidhiHandBalance, setGramNidhiHandBalance] = useState('');
   const [gramNidhiCheck, setGramNidhiCheck] = useState('');
 
+  const [srNoWaterSupply, setSrNoWaterSupply] = useState('');
   const [waterSupplyRegisterBalance, setWaterSupplyRegisterBalance] = useState('');
   const [waterSupplyBankBalance, setWaterSupplyBankBalance] = useState('');
   const [waterSupplyPostBalance, setWaterSupplyPostBalance] = useState('');
@@ -103,90 +105,105 @@ export default function GrampanchayatInspectionScreen() {
   const [waterSupplyCheck, setWaterSupplyCheck] = useState('');
 
   // Second table: 17 Funds
+  const [srNo14thFinance, setSrNo14thFinance] = useState('');
   const [_14thFinanceRegisterBalance, set14thFinanceRegisterBalance] = useState('');
   const [_14thFinanceBankBalance, set14thFinanceBankBalance] = useState('');
   const [_14thFinancePostBalance, set14thFinancePostBalance] = useState('');
   const [_14thFinanceHandBalance, set14thFinanceHandBalance] = useState('');
   const [_14thFinanceCheck, set14thFinanceCheck] = useState('');
 
+  const [srNoEngGhaYo, setSrNoEngGhaYo] = useState('');
   const [engGhaYoRegisterBalance, setEngGhaYoRegisterBalance] = useState('');
   const [engGhaYoBankBalance, setEngGhaYoBankBalance] = useState('');
   const [engGhaYoPostBalance, setEngGhaYoPostBalance] = useState('');
   const [engGhaYoHandBalance, setEngGhaYoHandBalance] = useState('');
   const [engGhaYoCheck, setEngGhaYoCheck] = useState('');
 
+  const [srNoScDevelopment, setSrNoScDevelopment] = useState('');
   const [scDevelopmentRegisterBalance, setScDevelopmentRegisterBalance] = useState('');
   const [scDevelopmentBankBalance, setScDevelopmentBankBalance] = useState('');
   const [scDevelopmentPostBalance, setScDevelopmentPostBalance] = useState('');
   const [scDevelopmentHandBalance, setScDevelopmentHandBalance] = useState('');
   const [scDevelopmentCheck, setScDevelopmentCheck] = useState('');
 
+  const [srNoLaborDepartment, setSrNoLaborDepartment] = useState('');
   const [laborDeptRegisterBalance, setLaborDeptRegisterBalance] = useState('');
   const [laborDeptBankBalance, setLaborDeptBankBalance] = useState('');
   const [laborDeptPostBalance, setLaborDeptPostBalance] = useState('');
   const [laborDeptHandBalance, setLaborDeptHandBalance] = useState('');
   const [laborDeptCheck, setLaborDeptCheck] = useState('');
 
+  const [srNoThakkarBappa, setSrNoThakkarBappa] = useState('');
   const [thakkarBappaRegisterBalance, setThakkarBappaRegisterBalance] = useState('');
   const [thakkarBappaBankBalance, setThakkarBappaBankBalance] = useState('');
   const [thakkarBappaPostBalance, setThakkarBappaPostBalance] = useState('');
   const [thakkarBappaHandBalance, setThakkarBappaHandBalance] = useState('');
   const [thakkarBappaCheck, setThakkarBappaCheck] = useState('');
 
+  const [srNoGramKoshMoney, setSrNoGramKoshMoney] = useState('');
   const [gramKoshMoneyRegisterBalance, setGramKoshMoneyRegisterBalance] = useState('');
   const [gramKoshMoneyBankBalance, setGramKoshMoneyBankBalance] = useState('');
   const [gramKoshMoneyPostBalance, setGramKoshMoneyPostBalance] = useState('');
   const [gramKoshMoneyHandBalance, setGramKoshMoneyHandBalance] = useState('');
   const [gramKoshMoneyCheck, setGramKoshMoneyCheck] = useState('');
 
+  const [srNoCivicFacilities, setSrNoCivicFacilities] = useState('');
   const [civicFacilitiesRegisterBalance, setCivicFacilitiesRegisterBalance] = useState('');
   const [civicFacilitiesBankBalance, setCivicFacilitiesBankBalance] = useState('');
   const [civicFacilitiesPostBalance, setCivicFacilitiesPostBalance] = useState('');
   const [civicFacilitiesHandBalance, setCivicFacilitiesHandBalance] = useState('');
   const [civicFacilitiesCheck, setCivicFacilitiesCheck] = useState('');
 
+  const [srNoDalitBastiDevelopment, setSrNoDalitBastiDevelopment] = useState('');
   const [dalitBastiRegisterBalance, setDalitBastiRegisterBalance] = useState('');
   const [dalitBastiBankBalance, setDalitBastiBankBalance] = useState('');
   const [dalitBastiPostBalance, setDalitBastiPostBalance] = useState('');
   const [dalitBastiHandBalance, setDalitBastiHandBalance] = useState('');
   const [dalitBastiCheck, setDalitBastiCheck] = useState('');
 
+  const [srNoTantaMuktYojana, setSrNoTantaMuktYojana] = useState('');
   const [tantaMuktRegisterBalance, setTantaMuktRegisterBalance] = useState('');
   const [tantaMuktBankBalance, setTantaMuktBankBalance] = useState('');
   const [tantaMuktPostBalance, setTantaMuktPostBalance] = useState('');
   const [tantaMuktHandBalance, setTantaMuktHandBalance] = useState('');
   const [tantaMuktCheck, setTantaMuktCheck] = useState('');
 
+  const [srNoJanSuvidha, setSrNoJanSuvidha] = useState('');
   const [janSuvidhaRegisterBalance, setJanSuvidhaRegisterBalance] = useState('');
   const [janSuvidhaBankBalance, setJanSuvidhaBankBalance] = useState('');
   const [janSuvidhaPostBalance, setJanSuvidhaPostBalance] = useState('');
   const [janSuvidhaHandBalance, setJanSuvidhaHandBalance] = useState('');
   const [janSuvidhaCheck, setJanSuvidhaCheck] = useState('');
 
+  const [srNoPayka, setSrNoPayka] = useState('');
   const [paykaRegisterBalance, setPaykaRegisterBalance] = useState('');
   const [paykaBankBalance, setPaykaBankBalance] = useState('');
   const [paykaPostBalance, setPaykaPostBalance] = useState('');
   const [paykaHandBalance, setPaykaHandBalance] = useState('');
   const [paykaCheck, setPaykaCheck] = useState('');
 
+  const [srNoPanchayatSamitiYojana, setSrNoPanchayatSamitiYojana] = useState('');
   const [panchayatSamitiRegisterBalance, setPanchayatSamitiRegisterBalance] = useState('');
   const [panchayatSamitiBankBalance, setPanchayatSamitiBankBalance] = useState('');
   const [panchayatSamitiPostBalance, setPanchayatSamitiPostBalance] = useState('');
   const [panchayatSamitiHandBalance, setPanchayatSamitiHandBalance] = useState('');
   const [panchayatSamitiCheck, setPanchayatSamitiCheck] = useState('');
 
+  const [srNoSbm, setSrNoSbm] = useState('');
   const [sbmRegisterBalance, setSbmRegisterBalance] = useState('');
   const [sbmBankBalance, setSbmBankBalance] = useState('');
   const [sbmPostBalance, setSbmPostBalance] = useState('');
   const [sbmHandBalance, setSbmHandBalance] = useState('');
   const [sbmCheck, setSbmCheck] = useState('');
 
+  const [srNoTirthakshetraDevelopmentFund, setSrNoTirthakshetraDevelopmentFund] = useState('');
   const [tirthakshetraRegisterBalance, setTirthakshetraRegisterBalance] = useState('');
   const [tirthakshetraBankBalance, setTirthakshetraBankBalance] = useState('');
   const [tirthakshetraPostBalance, setTirthakshetraPostBalance] = useState('');
   const [tirthakshetraHandBalance, setTirthakshetraHandBalance] = useState('');
   const [tirthakshetraCheck, setTirthakshetraCheck] = useState('');
 
+  const [srNoMinorityDevelopmentFund, setSrNoMinorityDevelopmentFund] = useState('');
   const [minorityFundRegisterBalance, setMinorityFundRegisterBalance] = useState('');
   const [minorityFundBankBalance, setMinorityFundBankBalance] = useState('');
   const [minorityFundPostBalance, setMinorityFundPostBalance] = useState('');
@@ -285,6 +302,24 @@ export default function GrampanchayatInspectionScreen() {
   const [officerOpinion7, setOfficerOpinion7] = useState('');
   const [officerOpinion8, setOfficerOpinion8] = useState('');
 
+  // Section 14: Forms tracking
+  const [form1, setForm1] = useState('');
+  const [form2, setForm2] = useState('');
+  const [form3, setForm3] = useState('');
+  const [form4, setForm4] = useState('');
+  const [form5, setForm5] = useState('');
+  const [form6, setForm6] = useState('');
+  const [form7, setForm7] = useState('');
+  const [form8, setForm8] = useState('');
+
+  // Copy fields
+  const [copy1, setCopy1] = useState('');
+  const [copy2, setCopy2] = useState('');
+  const [copy3, setCopy3] = useState('');
+  const [copyToCeo, setCopyToCeo] = useState('');
+  const [copyToBdo, setCopyToBdo] = useState('');
+  const [copyToSecretary, setCopyToSecretary] = useState('');
+
   const handleNext = () => {
     if (currentStep === 0 && !gpName) {
       Alert.alert(t('common.error'), 'कृपया ग्राम पंचायतीचे नाव भरा');
@@ -338,6 +373,263 @@ export default function GrampanchayatInspectionScreen() {
         location_longitude: location?.longitude,
         location_address: location?.address || null,
       });
+
+      // Save grampanchayat inspection form data
+      const formData = {
+        gram_panchayat_name: gpName,
+        panchayat_samiti: psName,
+        general_inspection_date: inspectionDate || null,
+        general_inspection_place: inspectionPlace,
+        inspection_officer_name: officerName,
+        inspection_officer_post: officerPost,
+        secretary_name: secretaryName,
+        secretary_tenure: secretaryTenure,
+        monthly_meetings: monthlyMeetings,
+        meeting_agenda_up_to_date: agendaUpToDate,
+        receipt_up_to_date: receiptUpToDate,
+        reassessment_done: reassessmentDone,
+        reassessment_action: reassessmentAction,
+        resolution_no: resolutionNo,
+        resolution_date: resolutionDate || null,
+        previous_year_house_tax_arrears: previousYearHouseTaxArrears ? parseFloat(previousYearHouseTaxArrears) : null,
+        previous_year_water_tax_arrears: previousYearWaterTaxArrears ? parseFloat(previousYearWaterTaxArrears) : null,
+        current_year_house_tax_demand: currentYearHouseTaxDemand ? parseFloat(currentYearHouseTaxDemand) : null,
+        current_year_water_tax_demand: currentYearWaterTaxDemand ? parseFloat(currentYearWaterTaxDemand) : null,
+        total_house_tax_demand: totalHouseTaxDemand ? parseFloat(totalHouseTaxDemand) : null,
+        total_water_tax_demand: totalWaterTaxDemand ? parseFloat(totalWaterTaxDemand) : null,
+        total_house_tax_collection: totalHouseTaxCollection ? parseFloat(totalHouseTaxCollection) : null,
+        total_water_tax_collection: totalWaterTaxCollection ? parseFloat(totalWaterTaxCollection) : null,
+        balance_house_tax_collection: balanceHouseTaxCollection ? parseFloat(balanceHouseTaxCollection) : null,
+        balance_water_tax_collection: balanceWaterTaxCollection ? parseFloat(balanceWaterTaxCollection) : null,
+        house_tax_percentage: houseTaxPercentage ? parseFloat(houseTaxPercentage) : null,
+        water_tax_percentage: waterTaxPercentage ? parseFloat(waterTaxPercentage) : null,
+        remarks: remarks,
+        gram_panchayat_total_income: gramPanchayatTotalIncome ? parseFloat(gramPanchayatTotalIncome) : null,
+        fifteen_percent_amount: fifteenPercentAmount ? parseFloat(fifteenPercentAmount) : null,
+        previous_balance: previousBalance ? parseFloat(previousBalance) : null,
+        total_expense: totalExpense ? parseFloat(totalExpense) : null,
+        expense_till_inspection_date: expenseTillInspectionDate ? parseFloat(expenseTillInspectionDate) : null,
+        balance_expense: balanceExpense ? parseFloat(balanceExpense) : null,
+        budget_provision: budgetProvision,
+        tenders_called: tendersCalled,
+        entries_made: entriesMade,
+        sr_no_gram_nidhi: srNoGramNidhi,
+        gram_nidhi_register_balance: gramNidhiRegisterBalance,
+        gram_nidhi_bank_balance: gramNidhiBankBalance,
+        gram_nidhi_post_balance: gramNidhiPostBalance,
+        gram_nidhi_hand_balance: gramNidhiHandBalance,
+        gram_nidhi_check: gramNidhiCheck,
+        sr_no_water_supply: srNoWaterSupply,
+        water_supply_register_balance: waterSupplyRegisterBalance,
+        water_supply_bank_balance: waterSupplyBankBalance,
+        water_supply_post_balance: waterSupplyPostBalance,
+        water_supply_hand_balance: waterSupplyHandBalance,
+        water_supply_check: waterSupplyCheck,
+        sr_no_14th_finance_commission: srNo14thFinance,
+        _14th_finance_commission_register_balance: _14thFinanceRegisterBalance,
+        _14th_finance_commission_bank_balance: _14thFinanceBankBalance,
+        _14th_finance_commission_post_balance: _14thFinancePostBalance,
+        _14th_finance_commission_hand_balance: _14thFinanceHandBalance,
+        _14th_finance_commission_check: _14thFinanceCheck,
+        sr_no_eng_gha_yo: srNoEngGhaYo,
+        eng_gha_yo_register_balance: engGhaYoRegisterBalance,
+        eng_gha_yo_bank_balance: engGhaYoBankBalance,
+        eng_gha_yo_post_balance: engGhaYoPostBalance,
+        eng_gha_yo_hand_balance: engGhaYoHandBalance,
+        eng_gha_yo_check: engGhaYoCheck,
+        sr_no_sc_development: srNoScDevelopment,
+        sc_development_register_balance: scDevelopmentRegisterBalance,
+        sc_development_bank_balance: scDevelopmentBankBalance,
+        sc_development_post_balance: scDevelopmentPostBalance,
+        sc_development_hand_balance: scDevelopmentHandBalance,
+        sc_development_check: scDevelopmentCheck,
+        sr_no_labor_department: srNoLaborDepartment,
+        labor_department_register_balance: laborDeptRegisterBalance,
+        labor_department_bank_balance: laborDeptBankBalance,
+        labor_department_post_balance: laborDeptPostBalance,
+        labor_department_hand_balance: laborDeptHandBalance,
+        labor_department_check: laborDeptCheck,
+        sr_no_thakkar_bappa: srNoThakkarBappa,
+        thakkar_bappa_register_balance: thakkarBappaRegisterBalance,
+        thakkar_bappa_bank_balance: thakkarBappaBankBalance,
+        thakkar_bappa_post_balance: thakkarBappaPostBalance,
+        thakkar_bappa_hand_balance: thakkarBappaHandBalance,
+        thakkar_bappa_check: thakkarBappaCheck,
+        sr_no_gram_kosh_money: srNoGramKoshMoney,
+        gram_kosh_money_register_balance: gramKoshMoneyRegisterBalance,
+        gram_kosh_money_bank_balance: gramKoshMoneyBankBalance,
+        gram_kosh_money_post_balance: gramKoshMoneyPostBalance,
+        gram_kosh_money_hand_balance: gramKoshMoneyHandBalance,
+        gram_kosh_money_check: gramKoshMoneyCheck,
+        sr_no_civic_facilities: srNoCivicFacilities,
+        civic_facilities_register_balance: civicFacilitiesRegisterBalance,
+        civic_facilities_bank_balance: civicFacilitiesBankBalance,
+        civic_facilities_post_balance: civicFacilitiesPostBalance,
+        civic_facilities_hand_balance: civicFacilitiesHandBalance,
+        civic_facilities_check: civicFacilitiesCheck,
+        sr_no_dalit_basti_development: srNoDalitBastiDevelopment,
+        dalit_basti_development_register_balance: dalitBastiRegisterBalance,
+        dalit_basti_development_bank_balance: dalitBastiBankBalance,
+        dalit_basti_development_post_balance: dalitBastiPostBalance,
+        dalit_basti_development_hand_balance: dalitBastiHandBalance,
+        dalit_basti_development_check: dalitBastiCheck,
+        sr_no_tanta_mukt_yojana: srNoTantaMuktYojana,
+        tanta_mukt_yojana_register_balance: tantaMuktRegisterBalance,
+        tanta_mukt_yojana_bank_balance: tantaMuktBankBalance,
+        tanta_mukt_yojana_post_balance: tantaMuktPostBalance,
+        tanta_mukt_yojana_hand_balance: tantaMuktHandBalance,
+        tanta_mukt_yojana_check: tantaMuktCheck,
+        sr_no_jan_suvidha: srNoJanSuvidha,
+        jan_suvidha_register_balance: janSuvidhaRegisterBalance,
+        jan_suvidha_bank_balance: janSuvidhaBankBalance,
+        jan_suvidha_post_balance: janSuvidhaPostBalance,
+        jan_suvidha_hand_balance: janSuvidhaHandBalance,
+        jan_suvidha_check: janSuvidhaCheck,
+        sr_no_payka: srNoPayka,
+        payka_register_balance: paykaRegisterBalance,
+        payka_bank_balance: paykaBankBalance,
+        payka_post_balance: paykaPostBalance,
+        payka_hand_balance: paykaHandBalance,
+        payka_check: paykaCheck,
+        sr_no_panchayat_samiti_yojana: srNoPanchayatSamitiYojana,
+        panchayat_samiti_yojana_register_balance: panchayatSamitiRegisterBalance,
+        panchayat_samiti_yojana_bank_balance: panchayatSamitiBankBalance,
+        panchayat_samiti_yojana_post_balance: panchayatSamitiPostBalance,
+        panchayat_samiti_yojana_hand_balance: panchayatSamitiHandBalance,
+        panchayat_samiti_yojana_check: panchayatSamitiCheck,
+        sr_no_sbm: srNoSbm,
+        sbm_register_balance: sbmRegisterBalance,
+        sbm_bank_balance: sbmBankBalance,
+        sbm_post_balance: sbmPostBalance,
+        sbm_hand_balance: sbmHandBalance,
+        sbm_check: sbmCheck,
+        sr_no_tirthakshetra_development_fund: srNoTirthakshetraDevelopmentFund,
+        tirthakshetra_development_fund_register_balance: tirthakshetraRegisterBalance,
+        tirthakshetra_development_fund_bank_balance: tirthakshetraBankBalance,
+        tirthakshetra_development_fund_post_balance: tirthakshetraPostBalance,
+        tirthakshetra_development_fund_hand_balance: tirthakshetraHandBalance,
+        tirthakshetra_development_fund_check: tirthakshetraCheck,
+        sr_no_minority_development_fund: srNoMinorityDevelopmentFund,
+        minority_development_fund_register_balance: minorityFundRegisterBalance,
+        minority_development_fund_bank_balance: minorityFundBankBalance,
+        minority_development_fund_post_balance: minorityFundPostBalance,
+        minority_development_fund_hand_balance: minorityFundHandBalance,
+        minority_development_fund_check: minorityFundCheck,
+        sr_no_egavika: otherSchemes[0]?.schemeName || null,
+        egavika_objectives: otherSchemes[0]?.targetsGiven || null,
+        egavika_status: otherSchemes[0]?.progressOnDate || null,
+        egavika_remarks: otherSchemes[0]?.remarks || null,
+        sr_no_biogas: otherSchemes[1]?.schemeName || null,
+        biogas_objectives: otherSchemes[1]?.targetsGiven || null,
+        biogas_status: otherSchemes[1]?.progressOnDate || null,
+        biogas_remarks: otherSchemes[1]?.remarks || null,
+        sr_no_smokeless_chul: otherSchemes[2]?.schemeName || null,
+        smokeless_chul_objectives: otherSchemes[2]?.targetsGiven || null,
+        smokeless_chul_status: otherSchemes[2]?.progressOnDate || null,
+        smokeless_chul_remarks: otherSchemes[2]?.remarks || null,
+        sr_no_family_welfare: otherSchemes[3]?.schemeName || null,
+        family_welfare_objectives: otherSchemes[3]?.targetsGiven || null,
+        family_welfare_status: otherSchemes[3]?.progressOnDate || null,
+        family_welfare_remarks: otherSchemes[3]?.remarks || null,
+        sr_no_alpavachnat: otherSchemes[4]?.schemeName || null,
+        alpavachnat_objectives: otherSchemes[4]?.targetsGiven || null,
+        alpavachnat_status: otherSchemes[4]?.progressOnDate || null,
+        alpavachnat_remarks: otherSchemes[4]?.remarks || null,
+        sr_no_6: otherSchemes[5]?.schemeName || null,
+        sr_no_6_objectives: otherSchemes[5]?.targetsGiven || null,
+        sr_no_6_status: otherSchemes[5]?.progressOnDate || null,
+        sr_no_6_remarks: otherSchemes[5]?.remarks || null,
+        sr_no_7: otherSchemes[6]?.schemeName || null,
+        sr_no_7_objectives: otherSchemes[6]?.targetsGiven || null,
+        sr_no_7_status: otherSchemes[6]?.progressOnDate || null,
+        sr_no_7_remarks: otherSchemes[6]?.remarks || null,
+        sr_no_14_finance_scheme_1: financeCommissionWorks[0]?.schemeName || null,
+        _14_finance_scheme_1_type: financeCommissionWorks[0]?.workType || null,
+        _14_finance_scheme_1_estimate_amount: financeCommissionWorks[0]?.estimatedAmount ? parseFloat(financeCommissionWorks[0].estimatedAmount) : null,
+        _14_finance_scheme_1_grant_received: financeCommissionWorks[0]?.grantReceived ? parseFloat(financeCommissionWorks[0].grantReceived) : null,
+        _14_finance_scheme_1_expense: null,
+        sr_no_14_finance_scheme_2: financeCommissionWorks[1]?.schemeName || null,
+        _14_finance_scheme_2_type: financeCommissionWorks[1]?.workType || null,
+        _14_finance_scheme_2_estimate_amount: financeCommissionWorks[1]?.estimatedAmount ? parseFloat(financeCommissionWorks[1].estimatedAmount) : null,
+        _14_finance_scheme_2_grant_received: financeCommissionWorks[1]?.grantReceived ? parseFloat(financeCommissionWorks[1].grantReceived) : null,
+        _14_finance_scheme_2_expense: null,
+        sr_no_14_finance_scheme_3: financeCommissionWorks[2]?.schemeName || null,
+        _14_finance_scheme_3_type: financeCommissionWorks[2]?.workType || null,
+        _14_finance_scheme_3_estimate_amount: financeCommissionWorks[2]?.estimatedAmount ? parseFloat(financeCommissionWorks[2].estimatedAmount) : null,
+        _14_finance_scheme_3_grant_received: financeCommissionWorks[2]?.grantReceived ? parseFloat(financeCommissionWorks[2].grantReceived) : null,
+        _14_finance_scheme_3_expense: null,
+        sr_no_14_finance_scheme_4: financeCommissionWorks[3]?.schemeName || null,
+        _14_finance_scheme_4_type: financeCommissionWorks[3]?.workType || null,
+        _14_finance_scheme_4_estimate_amount: financeCommissionWorks[3]?.estimatedAmount ? parseFloat(financeCommissionWorks[3].estimatedAmount) : null,
+        _14_finance_scheme_4_grant_received: financeCommissionWorks[3]?.grantReceived ? parseFloat(financeCommissionWorks[3].grantReceived) : null,
+        _14_finance_scheme_4_expense: null,
+        sr_no_14_finance_scheme_5: financeCommissionWorks[4]?.schemeName || null,
+        _14_finance_scheme_5_type: financeCommissionWorks[4]?.workType || null,
+        _14_finance_scheme_5_estimate_amount: financeCommissionWorks[4]?.estimatedAmount ? parseFloat(financeCommissionWorks[4].estimatedAmount) : null,
+        _14_finance_scheme_5_grant_received: financeCommissionWorks[4]?.grantReceived ? parseFloat(financeCommissionWorks[4].grantReceived) : null,
+        _14_finance_scheme_5_expense: null,
+        sr_no_14_finance_scheme_6: financeCommissionWorks[5]?.schemeName || null,
+        _14_finance_scheme_6_type: financeCommissionWorks[5]?.workType || null,
+        _14_finance_scheme_6_estimate_amount: financeCommissionWorks[5]?.estimatedAmount ? parseFloat(financeCommissionWorks[5].estimatedAmount) : null,
+        _14_finance_scheme_6_grant_received: financeCommissionWorks[5]?.grantReceived ? parseFloat(financeCommissionWorks[5].grantReceived) : null,
+        _14_finance_scheme_6_expense: null,
+        sr_no_14_finance_scheme_7: financeCommissionWorks[6]?.schemeName || null,
+        _14_finance_scheme_7_type: financeCommissionWorks[6]?.workType || null,
+        _14_finance_scheme_7_estimate_amount: financeCommissionWorks[6]?.estimatedAmount ? parseFloat(financeCommissionWorks[6].estimatedAmount) : null,
+        _14_finance_scheme_7_grant_received: financeCommissionWorks[6]?.grantReceived ? parseFloat(financeCommissionWorks[6].grantReceived) : null,
+        _14_finance_scheme_7_expense: null,
+        sr_no_14_finance_scheme_8: financeCommissionWorks[7]?.schemeName || null,
+        _14_finance_scheme_8_type: financeCommissionWorks[7]?.workType || null,
+        _14_finance_scheme_8_estimate_amount: financeCommissionWorks[7]?.estimatedAmount ? parseFloat(financeCommissionWorks[7].estimatedAmount) : null,
+        _14_finance_scheme_8_grant_received: financeCommissionWorks[7]?.grantReceived ? parseFloat(financeCommissionWorks[7].grantReceived) : null,
+        _14_finance_scheme_8_expense: null,
+        sr_no_14_finance_scheme_9: financeCommissionWorks[8]?.schemeName || null,
+        _14_finance_scheme_9_type: financeCommissionWorks[8]?.workType || null,
+        _14_finance_scheme_9_estimate_amount: financeCommissionWorks[8]?.estimatedAmount ? parseFloat(financeCommissionWorks[8].estimatedAmount) : null,
+        _14_finance_scheme_9_grant_received: financeCommissionWorks[8]?.grantReceived ? parseFloat(financeCommissionWorks[8].grantReceived) : null,
+        _14_finance_scheme_9_expense: null,
+        sr_no_14_finance_scheme_10: financeCommissionWorks[9]?.schemeName || null,
+        _14_finance_scheme_10_type: financeCommissionWorks[9]?.workType || null,
+        _14_finance_scheme_10_estimate_amount: financeCommissionWorks[9]?.estimatedAmount ? parseFloat(financeCommissionWorks[9].estimatedAmount) : null,
+        _14_finance_scheme_10_grant_received: financeCommissionWorks[9]?.grantReceived ? parseFloat(financeCommissionWorks[9].grantReceived) : null,
+        _14_finance_scheme_10_expense: null,
+        sr_no_14_finance_scheme_11: financeCommissionWorks[10]?.schemeName || null,
+        _14_finance_scheme_11_type: financeCommissionWorks[10]?.workType || null,
+        _14_finance_scheme_11_estimate_amount: financeCommissionWorks[10]?.estimatedAmount ? parseFloat(financeCommissionWorks[10].estimatedAmount) : null,
+        _14_finance_scheme_11_grant_received: financeCommissionWorks[10]?.grantReceived ? parseFloat(financeCommissionWorks[10].grantReceived) : null,
+        _14_finance_scheme_11_expense: null,
+        work_start_date_1: gpWorkStartDate || null,
+        work_completion_date_1: gpWorkCompletionDate || null,
+        progress_status_1: gpWorkCurrentStatus,
+        certificate_received_1: gpWorkCertificateReceived,
+        remarks_1: gpWorkRemarks,
+        inspection_officer_opinion_1: officerOpinion1,
+        inspection_officer_opinion_2: officerOpinion2,
+        inspection_officer_opinion_3: officerOpinion3,
+        inspection_officer_opinion_4: officerOpinion4,
+        inspection_officer_opinion_5: officerOpinion5,
+        inspection_officer_opinion_6: officerOpinion6,
+        inspection_officer_opinion_7: officerOpinion7,
+        inspection_officer_opinion_8: officerOpinion8,
+        form1: form1,
+        form2: form2,
+        form3: form3,
+        form4: form4,
+        form5: form5,
+        form6: form6,
+        form7: form7,
+        form8: form8,
+        copy1: copy1,
+        copy2: copy2,
+        copy3: copy3,
+        copy_to_ceo: copyToCeo,
+        copy_to_bdo: copyToBdo,
+        copy_to_secretary: copyToSecretary,
+        filled_by_name: secretaryName || user?.email || '',
+      };
+
+      await saveGrampanchayatInspectionForm(inspection.id, formData);
+
       for (let i = 0; i < photos.length; i++) {
         const meta = photoMetas[i];
         await uploadPhoto(inspection.id, photos[i], `photo${i + 1}.jpg`, i + 1, meta);
