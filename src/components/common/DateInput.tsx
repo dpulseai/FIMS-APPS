@@ -13,6 +13,7 @@ interface DateInputProps {
   containerStyle?: ViewStyle;
   minimumDate?: Date;
   maximumDate?: Date;
+  disabled?: boolean;
 }
 
 export default function DateInput({
@@ -24,6 +25,7 @@ export default function DateInput({
   containerStyle,
   minimumDate,
   maximumDate,
+  disabled = false,
 }: DateInputProps) {
   const [showPicker, setShowPicker] = useState(false);
 
@@ -41,6 +43,7 @@ export default function DateInput({
   const currentDate = getDateFromValue();
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
+    console.log('DateInput.handleDateChange', { label, event, selectedDate });
     if (Platform.OS === 'android') {
       setShowPicker(false);
     }
@@ -52,6 +55,8 @@ export default function DateInput({
   };
 
   const handlePress = () => {
+    console.log('DateInput.handlePress', { label, disabled });
+    if (disabled) return;
     setShowPicker(true);
   };
 
@@ -70,6 +75,7 @@ export default function DateInput({
         style={[styles.inputContainer, error ? styles.inputError : undefined]}
         onPress={handlePress}
         activeOpacity={0.7}
+        disabled={disabled}
       >
         <Icon name="calendar" size={20} color="#6b7280" style={styles.icon} />
         <Text style={[styles.text, isPlaceholder ? styles.placeholder : undefined]}>
@@ -83,7 +89,7 @@ export default function DateInput({
         <DateTimePicker
           value={currentDate}
           mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          display={Platform.OS === 'ios' ? 'spinner' : 'calendar'}
           onChange={handleDateChange}
           minimumDate={minimumDate}
           maximumDate={maximumDate}
