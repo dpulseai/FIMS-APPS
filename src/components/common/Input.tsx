@@ -23,7 +23,12 @@ export default function Input({
       <View style={[styles.inputContainer, error ? styles.inputError : undefined]}>
         {icon && <Icon name={icon} size={20} color="#6b7280" style={styles.icon} />}
         <TextInput
-          style={[styles.input, icon ? styles.inputWithIcon : undefined, style]}
+          style={[
+            styles.input,
+            icon ? styles.inputWithIcon : undefined,
+            props.multiline ? styles.multilineInput : undefined,
+            style
+          ]}
           placeholderTextColor="#9ca3af"
           {...props}
         />
@@ -60,9 +65,14 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    height: 48,
+    minHeight: 48,
     fontSize: 16,
     color: '#1f2937',
+    paddingVertical: 8,
+  },
+  multilineInput: {
+    minHeight: 100,
+    textAlignVertical: 'top',
   },
   inputWithIcon: {
     paddingLeft: 0,

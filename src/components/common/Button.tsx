@@ -50,7 +50,16 @@ export default function Button({
       {loading ? (
         <ActivityIndicator color={variant === 'outline' ? '#2563eb' : '#ffffff'} />
       ) : (
-        <Text style={textStyles}>{title}</Text>
+        <Text
+          style={textStyles}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.6}
+          allowFontScaling
+          ellipsizeMode="tail"
+        >
+          {title}
+        </Text>
       )}
     </TouchableOpacity>
   );
@@ -58,8 +67,8 @@ export default function Button({
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -86,6 +95,7 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 16,
     fontWeight: '600',
+    textAlign: 'center',
   },
   primaryText: {
     color: '#ffffff',
