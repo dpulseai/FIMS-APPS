@@ -98,7 +98,22 @@ export default function InspectionsListScreen() {
     if (inspection.form_type === 'anganwadi' || inspection.category_name?.toLowerCase().includes('anganwadi')) {
       (navigation as any).navigate('NewInspection', {
         screen: 'AnganwadiTapasani',
-        params,
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
+    // If it's a Bandhakam / Zilla Parishad construction form, open BandhkamVibhag1
+    const cat = inspection.category_name?.toLowerCase() ?? '';
+    if (
+      inspection.form_type === 'bandhakam_vibhag1' ||
+      cat.includes('bandhkam') ||
+      cat.includes('zilla parishad') ||
+      cat.includes('construction')
+    ) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'BandhkamVibhag1',
+        params: { ...params, edit: true },
       });
       return;
     }

@@ -286,6 +286,32 @@ export const createInspection = async (inspectionData: Partial<Inspection>): Pro
   }
 };
 
+/**
+ * Save or update a grampanchayat inspection form row linked to an inspection
+ * 
+ * 
+ */
+
+export const saveGrampanchayatInspectionForm = async (inspectionId: string, formData: any): Promise<void> => {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase client not initialized');
+  }
+
+  try {
+    const { error } = await supabase
+      .from('grampanchayat_inspection_form')
+      .insert({
+        inspection_id: inspectionId,
+        ...formData,
+      });
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error saving grampanchayat inspection form:', error);
+    throw error;
+  }
+};
+
 export const updateInspection = async (id: string, updates: Partial<Inspection>): Promise<Inspection> => {
   if (!isSupabaseConfigured) {
     throw new Error('Supabase client not initialized');
