@@ -254,7 +254,26 @@ export default function AnganwadiTapasaniScreen() {
             timestamp: Date.now(),
           });
           if (inspection.photos && inspection.photos.length > 0) {
-            setPhotos(inspection.photos.map((p: any) => p.photo_url));
+            const urls = inspection.photos.map((p: any) => p.photo_url);
+            setPhotos(urls);
+            // Parse photo metadata (description) when available so addresses/icons show
+            const metas = inspection.photos.map((p: any) => {
+              try {
+                const desc = p.description;
+                if (!desc) return {} as any;
+                const parsed = typeof desc === 'string' ? JSON.parse(desc) : desc;
+                if (parsed && parsed.photo_location) {
+                  const pl = parsed.photo_location;
+                  return { latitude: pl.latitude, longitude: pl.longitude, accuracy: pl.accuracy ?? undefined, address: pl.address ?? pl.name ?? undefined };
+                }
+                if (typeof parsed === 'string') return { address: parsed } as any;
+                if (parsed && parsed.address) return { address: parsed.address } as any;
+              } catch (e) {
+                // ignore parse errors
+              }
+              return {} as any;
+            });
+            setPhotoMetas(metas as any[]);
           }
         }
 
@@ -531,8 +550,11 @@ export default function AnganwadiTapasaniScreen() {
       }
 
       for (let i = 0; i < photos.length; i++) {
+        const uri = photos[i] || '';
+        // Skip already-uploaded remote images (they are stored in DB)
+        if (uri.toLowerCase().startsWith('http')) continue;
         const meta = photoMetas[i];
-        await uploadPhoto(inspection.id, photos[i], `photo_${i + 1}.jpg`, i + 1, meta);
+        await uploadPhoto(inspection.id, uri, `photo_${i + 1}.jpg`, i + 1, meta);
       }
 
       Alert.alert(t('common.success'), t('fims.inspectionSubmitted'));
@@ -651,10 +673,12 @@ export default function AnganwadiTapasaniScreen() {
 
       // Upload any local photos (basic check for non-http URIs)
       for (let i = 0; i < photos.length; i++) {
-        if (photos[i] && !photos[i].startsWith('http')) {
-          const meta = photoMetas[i];
-          await uploadPhoto(inspectionId, photos[i], `photo_${i + 1}.jpg`, i + 1, meta);
-        }
+        const uri = photos[i] || '';
+        if (!uri) continue;
+        // Skip remote URLs (already uploaded)
+        if (uri.toLowerCase().startsWith('http')) continue;
+        const meta = photoMetas[i];
+        await uploadPhoto(inspectionId, uri, `photo_${i + 1}.jpg`, i + 1, meta);
       }
 
       Alert.alert(t('common.success'), 'Changes saved');
@@ -1115,6 +1139,7 @@ export default function AnganwadiTapasaniScreen() {
               }}
               photoMetas={photoMetas}
               onPhotoMetaChange={(m) => { if (!isEditMode) return; setPhotoMetas(m); }}
+              disabled={!isEditMode}
             />
           </View>
         );
@@ -1146,58 +1171,69 @@ export default function AnganwadiTapasaniScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <View style={styles.buttonRow}>
-          {currentStep > 0 && (
+        <View style={styles.footerRow}>
+          <View style={styles.slot}>
             <Button
               title={t('common.previous')}
               onPress={handlePrevious}
               variant="outline"
-              style={styles.button}
-              disabled={loading}
+              style={{ ...styles.button, ...styles.smallButton }}
+              disabled={currentStep === 0 || loading}
             />
-          )}
-          {currentStep < STEPS.length - 1 ? (
-            <Button
-              title={t('common.next')}
-              onPress={handleNext}
-              style={styles.button}
-              disabled={loading}
-            />
-          ) : (
-            inspectionId && isEditMode ? (
-              <View style={styles.submitButtons}>
-                <Button
-                  title={'Save Changes'}
-                  onPress={handleSaveEdits}
-                  style={styles.button}
-                  loading={loading}
-                />
-                <Button
-                  title={t('common.cancel') || 'Cancel'}
-                  onPress={() => setIsEditMode(false)}
-                  variant="outline"
-                  style={styles.button}
-                  disabled={loading}
-                />
-              </View>
+          </View>
+
+          <View style={styles.slot}>
+            {currentStep < STEPS.length - 1 ? (
+              <Button
+                title={t('common.next')}
+                onPress={handleNext}
+                style={{ ...styles.button, ...styles.smallButton }}
+                disabled={loading}
+              />
+            ) : inspectionId && isEditMode ? (
+              <Button
+                title={'Save Changes'}
+                onPress={handleSaveEdits}
+                style={{ ...styles.button, ...styles.smallButton }}
+                loading={loading}
+              />
             ) : (
-              <View style={styles.submitButtons}>
-                <Button
-                  title={t('fims.saveAsDraft')}
-                  onPress={handleSaveAsDraft}
-                  variant="outline"
-                  style={styles.button}
-                  loading={loading}
-                />
-                <Button
-                  title={t('fims.submitInspection')}
-                  onPress={handleSubmit}
-                  style={styles.button}
-                  loading={loading}
-                />
-              </View>
-            )
-          )}
+              <Button
+                title={t('fims.saveAsDraft')}
+                onPress={handleSaveAsDraft}
+                variant="outline"
+                style={{ ...styles.button, ...styles.smallButton }}
+                loading={loading}
+              />
+            )}
+          </View>
+
+          <View style={styles.slot}>
+            {currentStep < STEPS.length - 1 ? (
+              <Button
+                title={''}
+                onPress={() => {}}
+                variant="outline"
+                style={{ ...styles.button, ...styles.smallButton, opacity: 0 }}
+                disabled
+              />
+            ) : inspectionId && isEditMode ? (
+              <Button
+                title={t('common.cancel') || 'Cancel'}
+                onPress={() => setIsEditMode(false)}
+                variant="outline"
+                style={{ ...styles.button, ...styles.smallButton }}
+                disabled={loading}
+              />
+            ) : (
+              <Button
+                title={t('fims.submitInspection')}
+                onPress={handleSubmit}
+                style={{ ...styles.button, ...styles.smallButton }}
+                loading={loading}
+              />
+            )}
+          </View>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -1276,6 +1312,22 @@ const styles = StyleSheet.create({
     minHeight: 44,
     marginHorizontal: 6,
   },
+  smallButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 19,
+    minHeight: 36,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  slot: {
+    width: '32%',
+  },
+  fullWidthButton: {
+    width: '100%',
+  },
   submitButtons: {
     flexDirection: 'row',
     marginTop: 12,
@@ -1311,12 +1363,15 @@ const styles = StyleSheet.create({
   pickerContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'space-between',
     gap: 8,
   },
   pickerButton: {
-    flex: 1,
-    minWidth: '45%',
-    minHeight: 40,
+    width: '48%',
+    minHeight: 44,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 8,
   },
   divider: {
     height: 1,

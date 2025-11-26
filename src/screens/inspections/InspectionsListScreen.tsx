@@ -85,19 +85,41 @@ export default function InspectionsListScreen() {
     // Cast to any to allow cross-stack navigation without TypeScript errors.
     const params = { categoryId: inspection.category_id, inspectionId: inspection.id };
     // Determine route based on form_type or fallback to Anganwadi for now
-    const route = (inspection.form_type === 'anganwadi' || inspection.category_name?.toLowerCase().includes('anganwadi'))
-      ? 'AnganwadiTapasani'
-      : 'InspectionDetail';
+    // If this is an office form, open the office form screen in the NewInspection navigator
+    if (inspection.form_type === 'office' || inspection.category_name?.toLowerCase().includes('office')) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'FIMSOfficeInspection',
+        params: { categoryId: inspection.category_id, inspectionId: inspection.id, edit: true },
+      });
+      return;
+    }
 
-    if (route === 'InspectionDetail') {
-      navigation.navigate('InspectionDetail', { inspectionId: inspection.id });
-    } else {
-      // navigate to the NewInspection tab and open the nested AnganwadiTapasani screen
+    // If it's an anganwadi form, open the Anganwadi screen inside NewInspection
+    if (inspection.form_type === 'anganwadi' || inspection.category_name?.toLowerCase().includes('anganwadi')) {
       (navigation as any).navigate('NewInspection', {
         screen: 'AnganwadiTapasani',
-        params,
+        params: { ...params, edit: true },
       });
+      return;
     }
+
+    // If it's a Bandhakam / Zilla Parishad construction form, open BandhkamVibhag1
+    const cat = inspection.category_name?.toLowerCase() ?? '';
+    if (
+      inspection.form_type === 'bandhakam_vibhag1' ||
+      cat.includes('bandhkam') ||
+      cat.includes('zilla parishad') ||
+      cat.includes('construction')
+    ) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'BandhkamVibhag1',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
+    // Fallback: show the inspection detail view
+    navigation.navigate('InspectionDetail', { inspectionId: inspection.id });
   };
 
   const handleDeleteInspection = (inspection: Inspection) => {

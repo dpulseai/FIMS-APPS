@@ -17,9 +17,10 @@ const GOOGLE_API_KEY = 'AIzaSyAjFLdphP7tlo99o3L6IgxbeSOHPsla9-Y';
 interface LocationPickerProps {
   location: LocationData | null;
   onLocationChange: (location: LocationData) => void;
+  disabled?: boolean;
 }
 
-export default function LocationPicker({ location, onLocationChange }: LocationPickerProps) {
+export default function LocationPicker({ location, onLocationChange, disabled = false }: LocationPickerProps) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
@@ -34,6 +35,7 @@ export default function LocationPicker({ location, onLocationChange }: LocationP
   };
 
   const requestLocationPermission = async () => {
+    if (disabled) return false;
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
@@ -64,6 +66,7 @@ export default function LocationPicker({ location, onLocationChange }: LocationP
   };
 
   const handleGetCurrentLocation = async () => {
+    if (disabled) return;
     if (!permissionGranted) {
       const granted = await requestLocationPermission();
       if (!granted) return;
@@ -139,7 +142,7 @@ export default function LocationPicker({ location, onLocationChange }: LocationP
           <TouchableOpacity
             style={styles.updateButton}
             onPress={handleGetCurrentLocation}
-            disabled={loading}
+            disabled={loading || disabled}
           >
             {loading ? (
               <ActivityIndicator color="#2563eb" />
@@ -155,7 +158,7 @@ export default function LocationPicker({ location, onLocationChange }: LocationP
         <TouchableOpacity
           style={styles.captureButton}
           onPress={handleGetCurrentLocation}
-          disabled={loading}
+          disabled={loading || disabled}
         >
           {loading ? (
             <>

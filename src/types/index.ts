@@ -103,7 +103,7 @@ export type InspectionsStackParamList = {
 
 export type FormsStackParamList = {
   CategorySelection: undefined;
-  FIMSOfficeInspection: { categoryId: string; inspectionId?: string };
+  FIMSOfficeInspection: { categoryId: string; inspectionId?: string; edit?: boolean };
   AnganwadiTapasani: { categoryId: string; inspectionId?: string };
   HealthInspection: { categoryId: string; inspectionId?: string };
   SubCenterMonitoring: { categoryId: string; inspectionId?: string };
