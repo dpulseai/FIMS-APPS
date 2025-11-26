@@ -118,6 +118,19 @@ export default function InspectionsListScreen() {
       return;
     }
 
+    // If it's a Grampanchayat form, open the Grampanchayat screen
+    if (
+      inspection.form_type === 'grampanchayat' ||
+      cat.includes('grampanchayat') ||
+      cat.includes('gram panchayat')
+    ) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'GrampanchayatInspection',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
     // Fallback: show the inspection detail view
     navigation.navigate('InspectionDetail', { inspectionId: inspection.id });
   };
