@@ -360,9 +360,9 @@ export default function GrampanchayatInspectionScreen() {
           }
         }
 
-        // Load form data from grampanchayat_inspection table
+        // Load form data from grampanchayat_inspection_form table
         const { data: formRows, error: formErr } = await supabase
-          .from('grampanchayat_inspection')
+          .from('grampanchayat_inspection_form')
           .select('*')
           .eq('inspection_id', inspectionId)
           .order('updated_at', { ascending: false })
