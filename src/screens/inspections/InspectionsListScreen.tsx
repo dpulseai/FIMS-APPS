@@ -103,12 +103,28 @@ export default function InspectionsListScreen() {
       return;
     }
 
-    // If it's a Bandhakam / Zilla Parishad construction form, open BandhkamVibhag1
+    // If it's a Bandhakam / Zilla Parishad construction form, decide between Vibhag2 vs Vibhag1
     const cat = inspection.category_name?.toLowerCase() ?? '';
+    const formType = (inspection.form_type || '').toString();
+
+    // Prefer Vibhag2 when the form_type explicitly indicates the Zilla Parishad Construction Inspection Format
     if (
-      inspection.form_type === 'bandhakam_vibhag1' ||
+      formType === 'bandhkam_vibhag2' ||
+      formType === 'Zilla Parishad Construction Inspection Format' ||
+      formType.toLowerCase().includes('zilla parishad') && formType.toLowerCase().includes('inspection') ||
+      cat.includes('zilla parishad') && cat.includes('inspection')
+    ) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'BandhkamVibhag2',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
+    // Otherwise fall back to BandhkamVibhag1 for other Bandhakam / construction categories
+    if (
+      formType === 'bandhkam_vibhag1' ||
       cat.includes('bandhkam') ||
-      cat.includes('zilla parishad') ||
       cat.includes('construction')
     ) {
       (navigation as any).navigate('NewInspection', {
