@@ -1055,17 +1055,7 @@ export default function GrampanchayatInspectionScreen() {
         filled_by_name: secretaryName || user?.email || '',
       };
 
-      const { error: formError } = await supabase
-        .from('grampanchayat_inspection_form')
-        .insert({
-          inspection_id: inspectionIdToUse,
-          ...formData,
-        });
-
-      if (formError) {
-        console.error('Form insert error:', formError);
-        throw formError;
-      }
+      await saveGrampanchayatInspectionForm(inspectionIdToUse, formData);
 
       Alert.alert(t('common.success'), 'मसुदा यशस्वीरित्या सेव्ह झाला');
       navigation.goBack();
@@ -1377,14 +1367,23 @@ export default function GrampanchayatInspectionScreen() {
 
       await saveGrampanchayatInspectionForm(inspectionIdToUse, formData);
 
+      // Only upload new photos (skip photos that are already uploaded - HTTP URLs)
       for (let i = 0; i < photos.length; i++) {
+        const photoUri = photos[i];
+        // Skip if photo is already uploaded (starts with http:// or https://)
+        if (photoUri.toLowerCase().startsWith('http://') || photoUri.toLowerCase().startsWith('https://')) {
+          console.log('Skipping already uploaded photo:', photoUri);
+          continue;
+        }
         const meta = photoMetas[i];
-        await uploadPhoto(inspectionIdToUse, photos[i], `photo${i + 1}.jpg`, i + 1, meta);
+        await uploadPhoto(inspectionIdToUse, photoUri, `photo${i + 1}.jpg`, i + 1, meta);
       }
       Alert.alert(t('common.success'), 'तपासणी यशस्वीरित्या सबमिट झाली');
       navigation.navigate('CategorySelection');
-    } catch (error) {
-      Alert.alert(t('common.error'), 'सबमिट करताना त्रुटी');
+    } catch (error: any) {
+      console.error('Submit error:', error);
+      const errorMessage = error?.message || error?.toString() || 'सबमिट करताना त्रुटी';
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
     }

@@ -298,14 +298,33 @@ export const saveGrampanchayatInspectionForm = async (inspectionId: string, form
   }
 
   try {
-    const { error } = await supabase
+    // Check if a form already exists for this inspection
+    const { data: existingForms, error: fetchError } = await supabase
       .from('grampanchayat_inspection_form')
-      .insert({
-        inspection_id: inspectionId,
-        ...formData,
-      });
+      .select('id')
+      .eq('inspection_id', inspectionId);
 
-    if (error) throw error;
+    if (fetchError) throw fetchError;
+
+    if (existingForms && existingForms.length > 0) {
+      // Update existing form (updates all matching rows to handle duplicates)
+      const { error } = await supabase
+        .from('grampanchayat_inspection_form')
+        .update(formData)
+        .eq('inspection_id', inspectionId);
+
+      if (error) throw error;
+    } else {
+      // Insert new form
+      const { error } = await supabase
+        .from('grampanchayat_inspection_form')
+        .insert({
+          inspection_id: inspectionId,
+          ...formData,
+        });
+
+      if (error) throw error;
+    }
   } catch (error) {
     console.error('Error saving grampanchayat inspection form:', error);
     throw error;
