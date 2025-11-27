@@ -237,7 +237,7 @@ export default function GrampanchayatInspectionScreen() {
 
   // Section 9: Financial Transactions (Section 11)
   const [budgetProvision, setBudgetProvision] = useState('');
-  const [gpApprovalGiven, setGpApprovalGiven] = useState('');
+  const [gpApprovalGiven, setGpApprovalGiven] = useState<string>('');
   const [gpApprovalResolutionNo, setGpApprovalResolutionNo] = useState('');
   const [gpApprovalDate, setGpApprovalDate] = useState('');
   const [tendersCalled, setTendersCalled] = useState('');
@@ -423,6 +423,9 @@ export default function GrampanchayatInspectionScreen() {
           setExpenseTillInspectionDate(formData.expense_till_inspection_date?.toString() || '');
           setBalanceExpense(formData.balance_expense?.toString() || '');
           setBudgetProvision(formData.budget_provision || '');
+          setGpApprovalGiven(formData.gp_approval_given === true ? 'होय' : formData.gp_approval_given === false ? 'नाही' : '');
+          setGpApprovalResolutionNo(formData.gp_approval_resolution_no || '');
+          setGpApprovalDate(formData.gp_approval_date || '');
           setTendersCalled(formData.tenders_called || '');
           setEntriesMade(formData.entries_made || '');
 
@@ -667,9 +670,9 @@ export default function GrampanchayatInspectionScreen() {
         expense_till_inspection_date: expenseTillInspectionDate ? parseFloat(expenseTillInspectionDate) : null,
         balance_expense: balanceExpense ? parseFloat(balanceExpense) : null,
         budget_provision: budgetProvision,
-        // gp_approval_given: gpApprovalGiven,
-        // gp_approval_resolution_no: gpApprovalResolutionNo,
-        // gp_approval_date: gpApprovalDate || null,
+        gp_approval_given: gpApprovalGiven === 'होय' ? true : gpApprovalGiven === 'नाही' ? false : null,
+        gp_approval_resolution_no: gpApprovalResolutionNo,
+        gp_approval_date: gpApprovalDate || null,
         tenders_called: tendersCalled,
         entries_made: entriesMade,
         sr_no_gram_nidhi: srNoGramNidhi,
@@ -987,9 +990,9 @@ export default function GrampanchayatInspectionScreen() {
         expense_till_inspection_date: expenseTillInspectionDate ? parseFloat(expenseTillInspectionDate) : null,
         balance_expense: balanceExpense ? parseFloat(balanceExpense) : null,
         budget_provision: budgetProvision,
-        // gp_approval_given: gpApprovalGiven,
-        // gp_approval_resolution_no: gpApprovalResolutionNo,
-        // gp_approval_date: gpApprovalDate || null,
+        gp_approval_given: gpApprovalGiven === 'होय' ? true : gpApprovalGiven === 'नाही' ? false : null,
+        gp_approval_resolution_no: gpApprovalResolutionNo,
+        gp_approval_date: gpApprovalDate || null,
         tenders_called: tendersCalled,
         entries_made: entriesMade,
         sr_no_gram_nidhi: srNoGramNidhi,
