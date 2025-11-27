@@ -298,19 +298,39 @@ export const saveGrampanchayatInspectionForm = async (inspectionId: string, form
   }
 
   try {
-    const { error } = await supabase
+    // Check if a form already exists for this inspection
+    const { data: existingForms, error: fetchError } = await supabase
       .from('grampanchayat_inspection_form')
-      .insert({
-        inspection_id: inspectionId,
-        ...formData,
-      });
+      .select('id')
+      .eq('inspection_id', inspectionId);
 
-    if (error) throw error;
+    if (fetchError) throw fetchError;
+
+    if (existingForms && existingForms.length > 0) {
+      // Update existing form (updates all matching rows to handle duplicates)
+      const { error } = await supabase
+        .from('grampanchayat_inspection_form')
+        .update(formData)
+        .eq('inspection_id', inspectionId);
+
+      if (error) throw error;
+    } else {
+      // Insert new form
+      const { error } = await supabase
+        .from('grampanchayat_inspection_form')
+        .insert({
+          inspection_id: inspectionId,
+          ...formData,
+        });
+
+      if (error) throw error;
+    }
   } catch (error) {
     console.error('Error saving grampanchayat inspection form:', error);
     throw error;
   }
 };
+
 
 export const updateInspection = async (id: string, updates: Partial<Inspection>): Promise<Inspection> => {
   if (!isSupabaseConfigured) {
@@ -395,6 +415,76 @@ export const fetchCategories = async (): Promise<InspectionCategory[]> => {
   } catch (error) {
     console.error('Error fetching categories:', error);
     return [];
+  }
+};
+
+/**
+ * Create a new Adarsha Shala record
+ */
+export const createAdarshaShalaForm = async (formData: any) => {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase client not initialized');
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('adarsha_shala')
+      .insert(formData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating adarsha_shala form:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update Adarsha Shala record by inspection_id
+ */
+export const updateAdarshaShalaFormByInspectionId = async (inspectionId: string, updates: any) => {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase client not initialized');
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('adarsha_shala')
+      .update(updates)
+      .eq('inspection_id', inspectionId)
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating adarsha_shala by inspection_id:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update Adarsha Shala record by primary id
+ */
+export const updateAdarshaShalaFormById = async (id: string, updates: any) => {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase client not initialized');
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('adarsha_shala')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating adarsha_shala by id:', error);
+    throw error;
   }
 };
 
