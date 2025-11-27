@@ -565,13 +565,172 @@ export default function GrampanchayatInspectionScreen() {
           setMinorityFundHandBalance(formData.minority_development_fund_hand_balance || '');
           setMinorityFundCheck(formData.minority_development_fund_check || '');
 
-          // Other schemes and financial transactions would continue here
-          // For brevity, I'm showing the pattern - you can add more fields as needed
+          // Section 10: GP Works
+          setGpWorkSerialNo(formData.gp_work_serial_no || '');
+          setGpWorkSchemeName(formData.gp_work_scheme_name || '');
+          setGpWorkType(formData.gp_work_type || '');
+          setGpWorkEstimatedAmount(formData.gp_work_estimated_amount?.toString() || '');
+          setGpWorkGrantReceived(formData.gp_work_grant_received?.toString() || '');
+          setGpWorkExpenditure(formData.gp_work_expenditure?.toString() || '');
+          setGpWorkStartDate(formData.work_start_date_1 || '');
+          setGpWorkCompletionDate(formData.work_completion_date_1 || '');
+          setGpWorkCurrentStatus(formData.progress_status_1 || '');
+          setGpWorkCertificateReceived(formData.certificate_received_1 || '');
+          setGpWorkRemarks(formData.remarks_1 || '');
+
+          // Section 11: Other Schemes
+          const loadedOtherSchemes = [
+            {
+              schemeName: formData.sr_no_egavika || 'एगाविका',
+              targetsGiven: formData.egavika_objectives || '',
+              progressOnDate: formData.egavika_status || '',
+              remarks: formData.egavika_remarks || '',
+            },
+            {
+              schemeName: formData.sr_no_biogas || 'बॉयोगॅस',
+              targetsGiven: formData.biogas_objectives || '',
+              progressOnDate: formData.biogas_status || '',
+              remarks: formData.biogas_remarks || '',
+            },
+            {
+              schemeName: formData.sr_no_smokeless_chul || 'निर्धूर चुल',
+              targetsGiven: formData.smokeless_chul_objectives || '',
+              progressOnDate: formData.smokeless_chul_status || '',
+              remarks: formData.smokeless_chul_remarks || '',
+            },
+            {
+              schemeName: formData.sr_no_family_welfare || 'कुटुंब कल्याण',
+              targetsGiven: formData.family_welfare_objectives || '',
+              progressOnDate: formData.family_welfare_status || '',
+              remarks: formData.family_welfare_remarks || '',
+            },
+            {
+              schemeName: formData.sr_no_alpavachnat || 'अल्पवचत',
+              targetsGiven: formData.alpavachnat_objectives || '',
+              progressOnDate: formData.alpavachnat_status || '',
+              remarks: formData.alpavachnat_remarks || '',
+            },
+            {
+              schemeName: formData.sr_no_6 || '',
+              targetsGiven: formData.sr_no_6_objectives || '',
+              progressOnDate: formData.sr_no_6_status || '',
+              remarks: formData.sr_no_6_remarks || '',
+            },
+            {
+              schemeName: formData.sr_no_7 || '',
+              targetsGiven: formData.sr_no_7_objectives || '',
+              progressOnDate: formData.sr_no_7_status || '',
+              remarks: formData.sr_no_7_remarks || '',
+            },
+          ];
+          setOtherSchemes(loadedOtherSchemes);
+
+          // Section 12: 14th Finance Commission Works
+          const loadedFinanceWorks = [
+            {
+              schemeName: formData.sr_no_14_finance_scheme_1 || '14 वा वित्त आयोग',
+              workType: formData._14_finance_scheme_1_type || 'एल.ई.डी.लाईट खरेदी',
+              estimatedAmount: formData._14_finance_scheme_1_estimate_amount?.toString() || '',
+              grantReceived: formData._14_finance_scheme_1_grant_received?.toString() || '',
+              remarks: '',
+            },
+            {
+              schemeName: formData.sr_no_14_finance_scheme_2 || 'कचरा कुंडी',
+              workType: formData._14_finance_scheme_2_type || '',
+              estimatedAmount: formData._14_finance_scheme_2_estimate_amount?.toString() || '',
+              grantReceived: formData._14_finance_scheme_2_grant_received?.toString() || '',
+              remarks: '',
+            },
+            {
+              schemeName: formData.sr_no_14_finance_scheme_3 || 'फर्निचर',
+              workType: formData._14_finance_scheme_3_type || '',
+              estimatedAmount: formData._14_finance_scheme_3_estimate_amount?.toString() || '',
+              grantReceived: formData._14_finance_scheme_3_grant_received?.toString() || '',
+              remarks: '',
+            },
+            {
+              schemeName: formData.sr_no_14_finance_scheme_4 || 'टि.व्हि.संच खरेदी',
+              workType: formData._14_finance_scheme_4_type || '',
+              estimatedAmount: formData._14_finance_scheme_4_estimate_amount?.toString() || '',
+              grantReceived: formData._14_finance_scheme_4_grant_received?.toString() || '',
+              remarks: '',
+            },
+            {
+              schemeName: formData.sr_no_14_finance_scheme_5 || 'आपले सरकार सेवा केंद्र खर्च',
+              workType: formData._14_finance_scheme_5_type || '',
+              estimatedAmount: formData._14_finance_scheme_5_estimate_amount?.toString() || '',
+              grantReceived: formData._14_finance_scheme_5_grant_received?.toString() || '',
+              remarks: '',
+            },
+            {
+              schemeName: formData.sr_no_14_finance_scheme_6 || 'वाटर मिटर',
+              workType: formData._14_finance_scheme_6_type || '',
+              estimatedAmount: formData._14_finance_scheme_6_estimate_amount?.toString() || '',
+              grantReceived: formData._14_finance_scheme_6_grant_received?.toString() || '',
+              remarks: '',
+            },
+            {
+              schemeName: formData.sr_no_14_finance_scheme_7 || 'सीसीरोड',
+              workType: formData._14_finance_scheme_7_type || '',
+              estimatedAmount: formData._14_finance_scheme_7_estimate_amount?.toString() || '',
+              grantReceived: formData._14_finance_scheme_7_grant_received?.toString() || '',
+              remarks: '',
+            },
+            {
+              schemeName: formData.sr_no_14_finance_scheme_8 || 'आपले सरकार सेवा केंद्र खर्च',
+              workType: formData._14_finance_scheme_8_type || '',
+              estimatedAmount: formData._14_finance_scheme_8_estimate_amount?.toString() || '',
+              grantReceived: formData._14_finance_scheme_8_grant_received?.toString() || '',
+              remarks: '',
+            },
+            {
+              schemeName: formData.sr_no_14_finance_scheme_9 || 'फॉगिंग मशीन',
+              workType: formData._14_finance_scheme_9_type || '',
+              estimatedAmount: formData._14_finance_scheme_9_estimate_amount?.toString() || '',
+              grantReceived: formData._14_finance_scheme_9_grant_received?.toString() || '',
+              remarks: '',
+            },
+            {
+              schemeName: formData.sr_no_14_finance_scheme_10 || 'ग्रांपभवन',
+              workType: formData._14_finance_scheme_10_type || '',
+              estimatedAmount: formData._14_finance_scheme_10_estimate_amount?.toString() || '',
+              grantReceived: formData._14_finance_scheme_10_grant_received?.toString() || '',
+              remarks: '',
+            },
+            {
+              schemeName: formData.sr_no_14_finance_scheme_11 || 'कंप्युटर',
+              workType: formData._14_finance_scheme_11_type || '',
+              estimatedAmount: formData._14_finance_scheme_11_estimate_amount?.toString() || '',
+              grantReceived: formData._14_finance_scheme_11_grant_received?.toString() || '',
+              remarks: '',
+            },
+          ];
+          setFinanceCommissionWorks(loadedFinanceWorks);
+
+          // Section 13: Officer's Opinion
+          setOfficerOpinion1(formData.inspection_officer_opinion_1 || '');
+          setOfficerOpinion2(formData.inspection_officer_opinion_2 || '');
+          setOfficerOpinion3(formData.inspection_officer_opinion_3 || '');
+          setOfficerOpinion4(formData.inspection_officer_opinion_4 || '');
+          setOfficerOpinion5(formData.inspection_officer_opinion_5 || '');
+          setOfficerOpinion6(formData.inspection_officer_opinion_6 || '');
+          setOfficerOpinion7(formData.inspection_officer_opinion_7 || '');
+          setOfficerOpinion8(formData.inspection_officer_opinion_8 || '');
+
+          // Section 14: Forms tracking
+          setForm1(formData.form1 || '');
+          setForm2(formData.form2 || '');
+          setForm3(formData.form3 || '');
+          setForm4(formData.form4 || '');
+          setForm5(formData.form5 || '');
+          setForm6(formData.form6 || '');
+          setForm7(formData.form7 || '');
+          setForm8(formData.form8 || '');
 
           // Copy fields
-          setCopy1(formData.copy_1 || '');
-          setCopy2(formData.copy_2 || '');
-          setCopy3(formData.copy_3 || '');
+          setCopy1(formData.copy1 || '');
+          setCopy2(formData.copy2 || '');
+          setCopy3(formData.copy3 || '');
           setCopyToCeo(formData.copy_to_ceo || '');
           setCopyToBdo(formData.copy_to_bdo || '');
           setCopyToSecretary(formData.copy_to_secretary || '');
