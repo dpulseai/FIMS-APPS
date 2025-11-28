@@ -131,6 +131,22 @@ export default function InspectionsListScreen() {
       return;
     }
 
+    // Rajya Shaishanik (Education Training) form
+    if (
+      inspection.form_type === 'rajya_shaishanik' ||
+      cat.includes('rajya') ||
+      cat.includes('shaishanik') ||
+      cat.includes('शै') ||
+      cat.includes('शिक्ष') ||
+      (inspection.category_name && inspection.category_name.toLowerCase().includes('education'))
+    ) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'RajyaShaishanikPrashikshan',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
     // Fallback: show the inspection detail view
     navigation.navigate('InspectionDetail', { inspectionId: inspection.id });
   };

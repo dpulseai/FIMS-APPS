@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,19 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
-import { createAdarshaShalaForm } from '../../services/fimsService';
+import {
+  createAdarshaShalaForm,
+  createInspection,
+  uploadPhoto,
+  getAdarshaShalaByInspectionId,
+  updateAdarshaShalaFormByInspectionId,
+  getInspectionById,
+  updateInspection,
+} from '../../services/fimsService';
+import { useAuth } from '../../hooks/useAuth';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { FormsStackParamList } from '../../types';
 
 interface ClassEnrollment {
   enrollment: number;
@@ -93,7 +105,16 @@ const MANAGEMENT_TYPES = [
 
 const GRADE_OPTIONS = ['A', 'B', 'C', 'D'];
 
+type RouteParams = RouteProp<FormsStackParamList, 'RajyaShaishanikPrashikshan'>;
+type NavigationProp = StackNavigationProp<FormsStackParamList, 'RajyaShaishanikPrashikshan'>;
+
 export default function RajyaShaishanikPrashikshanScreen() {
+  const { user } = useAuth();
+  const route = useRoute<RouteParams>();
+  const navigation = useNavigation<NavigationProp>();
+  const { categoryId } = route.params;
+  // If navigation passes an inspectionId, we treat this screen as edit mode
+  const { inspectionId } = (route.params || {}) as any;
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -102,7 +123,10 @@ export default function RajyaShaishanikPrashikshanScreen() {
   const [showManagementPicker, setShowManagementPicker] = useState(false);
   const [showSelfGradePicker, setShowSelfGradePicker] = useState(false);
   const [showExternalGradePicker, setShowExternalGradePicker] = useState(false);
-  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
+  const [uploadedPhotos, setUploadedPhotos] = useState<Array<{ uri: string; locationName?: string }>>([]);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [existingInspectionId, setExistingInspectionId] = useState<string | null>(null);
+  const [existingFormId, setExistingFormId] = useState<string | null>(null);
 
   const initializeClassData = (): { [key: string]: ClassEnrollment } => {
     const classes = [
@@ -227,6 +251,16 @@ export default function RajyaShaishanikPrashikshanScreen() {
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
     if (selectedDate && currentDateField) {
+      // Prevent selecting previous dates for visit fields
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const picked = new Date(selectedDate);
+      picked.setHours(0, 0, 0, 0);
+      if ((currentDateField === 'visit_date' || currentDateField === 'visit_date_inspector') && picked < startOfToday) {
+        Alert.alert('त्रुटी', 'कृपया मागील तारीख निवडू नका. केवळ आजची किंवा भविष्यातील तारीख निवडा');
+        return;
+      }
+
       // Use ISO date format YYYY-MM-DD for Postgres compatibility
       const formattedDate = selectedDate.toISOString().split('T')[0];
       updateFormData(currentDateField, formattedDate);
@@ -237,6 +271,152 @@ export default function RajyaShaishanikPrashikshanScreen() {
     setCurrentDateField(field);
     setShowDatePicker(true);
   };
+
+  const getPickerValue = () => {
+    try {
+      const val: any = (formData as any)[currentDateField];
+      return val ? new Date(val) : new Date();
+    } catch (e) {
+      return new Date();
+    }
+  };
+
+  // Load existing form data when editing
+  useEffect(() => {
+    const loadExisting = async () => {
+      if (!inspectionId) return;
+      setLoading(true);
+      try {
+        const inspection = await getInspectionById(inspectionId);
+        const adarsha = await getAdarshaShalaByInspectionId(inspectionId as string);
+
+        if (inspection) {
+          setExistingInspectionId(inspectionId as string);
+          // prefill some inspection fields
+          if (inspection.location_name) updateFormData('location_name', inspection.location_name);
+          if (inspection.location_latitude) updateFormData('latitude', inspection.location_latitude);
+          if (inspection.location_longitude) updateFormData('longitude', inspection.location_longitude);
+          if (inspection.location_address) updateFormData('location_name', inspection.location_address || inspection.location_name || '');
+          if ((inspection as any).planned_date) updateFormData('planned_date', (inspection as any).planned_date || '');
+        }
+
+        if (adarsha) {
+          setIsEditMode(true);
+          setExistingFormId(adarsha.id);
+
+          // Map values back into formData
+          const newData: any = {};
+          newData.visit_date = adarsha.visit_date || '';
+          newData.school_name = adarsha.school_name || '';
+          newData.school_address = adarsha.school_address || '';
+          newData.principal_name = adarsha.principal_name || '';
+          newData.principal_mobile = adarsha.principal_mobile_no ? String(adarsha.principal_mobile_no) : '';
+          newData.udise_number = adarsha.udise_code || '';
+          newData.center = adarsha.center || '';
+          newData.taluka = adarsha.taluka || '';
+          newData.district = adarsha.district || '';
+          newData.management_type = adarsha.management_type || '';
+          newData.school_achievement_self = adarsha.self_assessment_grade || '';
+          newData.school_achievement_external = adarsha.external_assessment_grade || '';
+          newData.sanctioned_posts = adarsha.sanctioned_posts || 0;
+          newData.working_posts = adarsha.working_posts || 0;
+          newData.present_teachers = adarsha.present_teachers || 0;
+          newData.math_teachers_count = adarsha.math_teachers_count || 0;
+          newData.khan_registered_teachers = adarsha.registered_teachers || 0;
+          newData.khan_registered_students = adarsha.registered_students || 0;
+          newData.khan_active_students = adarsha.active_students || 0;
+          newData.khan_usage_method = adarsha.question1 || '';
+          newData.sqdp_prepared = adarsha.question2 || '';
+          newData.sqdp_objectives_achieved = adarsha.question3 || '';
+          newData.nipun_bharat_verification = adarsha.question4 || '';
+          newData.learning_outcomes_assessment = adarsha.question5 || '';
+          newData.officer_feedback = adarsha.question6 || '';
+          newData.innovative_initiatives = adarsha.question7 || '';
+          newData.suggested_changes = adarsha.question8 || '';
+          newData.srujanrang_articles = adarsha.question9 || '';
+          newData.future_articles = adarsha.question10 || '';
+          newData.ngo_involvement = adarsha.question11 || '';
+          newData.inspector_name = adarsha.inspector_name || '';
+          newData.inspector_designation = adarsha.inspector_designation || '';
+          newData.visit_date_inspector = adarsha.visit_date_inspector || '';
+
+          // class_data
+          try {
+            const classDataArr = adarsha.class_data ? JSON.parse(adarsha.class_data) : [];
+            const classMap: any = { ...formData.class_enrollment };
+            classDataArr.forEach((c: any) => {
+              const cls = String(c.class);
+              if (!classMap[cls]) classMap[cls] = { enrollment: 0, attendance: 0 };
+              classMap[cls].enrollment = c.total || 0;
+            });
+            newData.class_enrollment = classMap;
+          } catch (e) {
+            // ignore
+          }
+
+          // subject_performance
+          try {
+            const subjArr = adarsha.subject_performance ? JSON.parse(adarsha.subject_performance) : [];
+            const subjMap: any = {};
+            ['1','2','3','4','5','6','7','8'].forEach(s => subjMap[s] = {});
+            subjArr.forEach((s: any) => {
+              const subjKeyMap: any = {
+                'Marathi': 'मराठी',
+                'English': 'इंग्रजी',
+                'Math': 'गणित',
+                'Science': 'प.अ./विज्ञान',
+                'Social Studies': 'इतिहास',
+              } as any;
+              const mar = subjKeyMap[s.subject] || s.subject;
+              for (let i = 1; i <= 8; i++) {
+                const val = s[`class_${i}`];
+                subjMap[String(i)][mar] = val || 0;
+              }
+            });
+            newData.subject_learning_outcomes = subjMap;
+          } catch (e) {
+            // ignore
+          }
+
+          // material_usage
+          try {
+            const matArr = adarsha.material_usage ? JSON.parse(adarsha.material_usage) : [];
+            const matMap: any = { ...formData.materials_usage };
+            matArr.forEach((m: any) => {
+              if (matMap[m.material]) {
+                matMap[m.material] = {
+                  available: m.available || false,
+                  usage_status: m.usage || '',
+                  suggestions: m.suggestions || '',
+                };
+              } else {
+                // add unknown material keys
+                matMap[m.material] = {
+                  available: m.available || false,
+                  usage_status: m.usage || '',
+                  suggestions: m.suggestions || '',
+                };
+              }
+            });
+            newData.materials_usage = matMap;
+          } catch (e) {
+            // ignore
+          }
+
+          // apply newData
+          Object.keys(newData).forEach(k => updateFormData(k, (newData as any)[k]));
+        }
+      } catch (error) {
+        console.error('Error loading existing form data:', error);
+        Alert.alert('त्रुटी', 'प्रपत्राचे विद्यमान डेटा लोड करताना त्रुटी आली');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExisting();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inspectionId]);
 
   const getCurrentLocation = async () => {
     try {
@@ -298,8 +478,9 @@ export default function RajyaShaishanikPrashikshanScreen() {
       });
 
       if (!result.canceled && result.assets) {
-        const newPhotos = result.assets.map(asset => asset.uri);
-        setUploadedPhotos([...uploadedPhotos, ...newPhotos]);
+        // For gallery selection we don't have precise capture location; use current form location if present
+        const newPhotos = result.assets.map(asset => ({ uri: asset.uri, locationName: formData.location_name || '' }));
+        setUploadedPhotos(prev => [...prev, ...newPhotos]);
         Alert.alert('यश', `${newPhotos.length} फोटो निवडले`);
       }
     } catch (error) {
@@ -327,7 +508,23 @@ export default function RajyaShaishanikPrashikshanScreen() {
       });
 
       if (!result.canceled && result.assets && result.assets[0]) {
-        setUploadedPhotos([...uploadedPhotos, result.assets[0].uri]);
+        const uri = result.assets[0].uri;
+
+        // Try to capture current location for the photo
+        let locationName = formData.location_name || '';
+        try {
+          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+          const geocode = await Location.reverseGeocodeAsync({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+          if (geocode && geocode.length > 0) {
+            const addr = geocode[0];
+            locationName = `${addr.name || ''}${addr.street ? ', ' + addr.street : ''}${addr.city ? ', ' + addr.city : ''}`.replace(/^, |, ,/g, ',').trim();
+          }
+        } catch (e) {
+          // fallback to existing form location_name
+          console.warn('Could not capture geolocation for photo:', e);
+        }
+
+        setUploadedPhotos(prev => [...prev, { uri, locationName }]);
         Alert.alert('यश', 'फोटो कॅप्चर केला');
       }
     } catch (error) {
@@ -433,16 +630,17 @@ export default function RajyaShaishanikPrashikshanScreen() {
       }));
 
       const payload: any = {
+        // ensure required DB fields are non-null (DB schema requires these)
         visit_date: formData.visit_date || new Date().toISOString().split('T')[0],
         school_name: formData.school_name || '',
-        school_address: formData.school_address || null,
-        principal_name: formData.principal_name || null,
-        principal_mobile_no: formData.principal_mobile ? parseInt(formData.principal_mobile) : null,
-        udise_code: formData.udise_number || null,
-        center: formData.center || null,
-        taluka: formData.taluka || null,
-        district: formData.district || null,
-        management_type: formData.management_type || null,
+        school_address: formData.school_address || '',
+        principal_name: formData.principal_name || '',
+        principal_mobile_no: formData.principal_mobile ? parseInt(formData.principal_mobile) : 0,
+        udise_code: formData.udise_number || '',
+        center: formData.center || '',
+        taluka: formData.taluka || '',
+        district: formData.district || '',
+        management_type: formData.management_type || '',
         self_assessment_grade: formData.school_achievement_self || null,
         external_assessment_grade: formData.school_achievement_external || null,
         sanctioned_posts: formData.sanctioned_posts || 0,
@@ -471,9 +669,106 @@ export default function RajyaShaishanikPrashikshanScreen() {
         visit_date_inspector: formData.visit_date_inspector || null,
       };
 
-      await createAdarshaShalaForm(payload);
+      // Ensure user is authenticated (RLS policies require auth user)
+      if (!user || !user.id) {
+        Alert.alert('Authentication required', 'कृपया सबमिशन करण्यापूर्वी लॉग इन करा');
+        setLoading(false);
+        return;
+      }
 
-      Alert.alert('यश', 'प्रपत्र यशस्वीरित्या सबमिट केले');
+      // If we are editing an existing inspection/form, update instead of creating
+      if (isEditMode && existingInspectionId) {
+        // update inspection metadata
+        try {
+          await updateInspection(existingInspectionId, {
+            status: 'submitted',
+            location_latitude: formData.latitude ?? undefined,
+            location_longitude: formData.longitude ?? undefined,
+            location_address: formData.location_name || formData.school_address || undefined,
+            filled_by_name: user?.email || undefined,
+          } as any);
+        } catch (e) {
+          console.warn('Could not update inspection metadata:', e);
+        }
+
+        // attach existing inspection id and update form row
+        payload.inspection_id = existingInspectionId;
+        await updateAdarshaShalaFormByInspectionId(existingInspectionId, payload);
+
+        // Upload any new photos and attach metadata
+        try {
+          const inspectionIdToUse = existingInspectionId;
+          await Promise.all(
+            uploadedPhotos.map(async (item, idx) => {
+              const uri = (item as any).uri || item;
+              if (!uri || /^https?:\/\//i.test(uri)) return; // skip already-uploaded urls
+              const photoName = (uri.split('/').pop() || `photo_${Date.now()}`).split('?')[0];
+              const meta: any = {
+                latitude: formData.latitude ?? undefined,
+                longitude: formData.longitude ?? undefined,
+                accuracy: formData.location_accuracy ?? undefined,
+                locationName: (item as any).locationName || formData.location_name || null,
+              };
+              try {
+                await uploadPhoto(inspectionIdToUse, uri, photoName, idx + 1, meta);
+              } catch (e) {
+                console.warn('Photo upload failed for', uri, e);
+              }
+            })
+          );
+        } catch (e) {
+          console.warn('Error uploading photos on update:', e);
+        }
+
+        Alert.alert('यश', 'प्रपत्र यशस्वीरित्या अपडेट केले');
+      } else {
+        // Create a fims_inspections row so we can link adarsha_shala.inspection_id
+        const inspectionPayload: any = {
+          category_id: categoryId,
+          inspector_id: user?.id,
+          filled_by_name: user?.email || null,
+          location_name: formData.location_name || formData.school_name || 'Adarsha Shala',
+          location_latitude: formData.latitude ?? null,
+          location_longitude: formData.longitude ?? null,
+          location_address: formData.location_name || formData.school_address || null,
+          planned_date: formData.planned_date || null,
+          status: 'submitted'
+        };
+
+        const inspectionResult = await createInspection(inspectionPayload);
+
+        // attach inspection id to payload
+        payload.inspection_id = inspectionResult.id;
+
+        await createAdarshaShalaForm(payload);
+
+        // Upload photos for new inspection
+        try {
+          const inspectionIdToUse = payload.inspection_id;
+          await Promise.all(
+            uploadedPhotos.map(async (item, idx) => {
+              const uri = (item as any).uri || item;
+              if (!uri || /^https?:\/\//i.test(uri)) return;
+              const photoName = (uri.split('/').pop() || `photo_${Date.now()}`).split('?')[0];
+              const meta: any = {
+                latitude: formData.latitude ?? undefined,
+                longitude: formData.longitude ?? undefined,
+                accuracy: formData.location_accuracy ?? undefined,
+                locationName: (item as any).locationName || formData.location_name || null,
+              };
+              try {
+                await uploadPhoto(inspectionIdToUse, uri, photoName, idx + 1, meta);
+              } catch (e) {
+                console.warn('Photo upload failed for', uri, e);
+              }
+            })
+          );
+        } catch (e) {
+          console.warn('Error uploading photos on create:', e);
+        }
+
+        Alert.alert('यश', 'प्रपत्र यशस्वीरित्या सबमिट केले');
+      }
       // Optionally reset or navigate back
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -489,13 +784,112 @@ export default function RajyaShaishanikPrashikshanScreen() {
       const payload: any = {
         visit_date: formData.visit_date || new Date().toISOString().split('T')[0],
         school_name: formData.school_name || '',
+        school_address: formData.school_address || '',
+        principal_name: formData.principal_name || '',
+        principal_mobile_no: formData.principal_mobile ? parseInt(formData.principal_mobile) : 0,
+        udise_code: formData.udise_number || '',
+        center: formData.center || '',
+        taluka: formData.taluka || '',
+        district: formData.district || '',
+        management_type: formData.management_type || '',
         class_data: JSON.stringify(['1','2','3','4','5','6','7','8'].map(cls => ({ class: cls, boys: 0, girls: 0, total: formData.class_enrollment[cls]?.enrollment || 0 }))),
         subject_performance: JSON.stringify([]),
         material_usage: JSON.stringify([]),
       };
 
-      await createAdarshaShalaForm(payload);
-      Alert.alert('यश', 'मसुदा जतन केला');
+      // create inspection row for draft and link
+      const inspectionPayload: any = {
+        category_id: categoryId,
+        inspector_id: user?.id,
+        filled_by_name: user?.email || null,
+        location_name: formData.location_name || formData.school_name || 'Adarsha Shala',
+        location_latitude: formData.latitude ?? null,
+        location_longitude: formData.longitude ?? null,
+        location_address: formData.location_name || formData.school_address || null,
+        planned_date: formData.planned_date || null,
+        status: 'draft'
+      };
+
+      if (!user || !user.id) {
+        Alert.alert('Authentication required', 'कृपया लॉग इन करा');
+        setLoading(false);
+        return;
+      }
+
+      if (isEditMode && existingInspectionId) {
+        try {
+          await updateInspection(existingInspectionId, {
+            status: 'draft',
+            location_latitude: formData.latitude ?? undefined,
+            location_longitude: formData.longitude ?? undefined,
+            location_address: formData.location_name || formData.school_address || undefined,
+            filled_by_name: user?.email || undefined,
+          } as any);
+        } catch (e) {
+          console.warn('Could not update inspection for draft:', e);
+        }
+
+        payload.inspection_id = existingInspectionId;
+        await updateAdarshaShalaFormByInspectionId(existingInspectionId, payload);
+
+        // Upload any new photos for draft
+        try {
+          const inspectionIdToUse = existingInspectionId;
+          await Promise.all(
+            uploadedPhotos.map(async (item, idx) => {
+              const uri = (item as any).uri || item;
+              if (!uri || /^https?:\/\//i.test(uri)) return;
+              const photoName = (uri.split('/').pop() || `photo_${Date.now()}`).split('?')[0];
+              const meta: any = {
+                latitude: formData.latitude ?? undefined,
+                longitude: formData.longitude ?? undefined,
+                accuracy: formData.location_accuracy ?? undefined,
+                locationName: (item as any).locationName || formData.location_name || null,
+              };
+              try {
+                await uploadPhoto(inspectionIdToUse, uri, photoName, idx + 1, meta);
+              } catch (e) {
+                console.warn('Photo upload failed for', uri, e);
+              }
+            })
+          );
+        } catch (e) {
+          console.warn('Error uploading photos for draft update:', e);
+        }
+
+        Alert.alert('यश', 'मसुदा जतन केला');
+      } else {
+        const inspectionResult = await createInspection(inspectionPayload);
+        payload.inspection_id = inspectionResult.id;
+
+        await createAdarshaShalaForm(payload);
+
+        try {
+          const inspectionIdToUse = payload.inspection_id;
+          await Promise.all(
+            uploadedPhotos.map(async (item, idx) => {
+              const uri = (item as any).uri || item;
+              if (!uri || /^https?:\/\//i.test(uri)) return;
+              const photoName = (uri.split('/').pop() || `photo_${Date.now()}`).split('?')[0];
+              const meta: any = {
+                latitude: formData.latitude ?? undefined,
+                longitude: formData.longitude ?? undefined,
+                accuracy: formData.location_accuracy ?? undefined,
+                locationName: (item as any).locationName || formData.location_name || null,
+              };
+              try {
+                await uploadPhoto(inspectionIdToUse, uri, photoName, idx + 1, meta);
+              } catch (e) {
+                console.warn('Photo upload failed for', uri, e);
+              }
+            })
+          );
+        } catch (e) {
+          console.warn('Error uploading photos for draft create:', e);
+        }
+
+        Alert.alert('यश', 'मसुदा जतन केला');
+      }
     } catch (error) {
       console.error('Error saving draft:', error);
       Alert.alert('त्रुटी', 'मसुदा जतन करताना त्रुटी आली');
@@ -1061,13 +1455,6 @@ export default function RajyaShaishanikPrashikshanScreen() {
 
       <View style={styles.photoButtonContainer}>
         <TouchableOpacity
-          style={[styles.photoButton, styles.photoButtonPrimary]}
-          onPress={handlePhotoUpload}
-        >
-          <Text style={styles.photoButtonText}>📷 फोटो निवडा (Choose Photos)</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
           style={[styles.photoButton, styles.photoButtonSecondary]}
           onPress={handleCameraCapture}
         >
@@ -1080,9 +1467,14 @@ export default function RajyaShaishanikPrashikshanScreen() {
           <Text style={styles.photoGridTitle}>
             निवडलेले फोटो ({uploadedPhotos.length}/5)
           </Text>
-          {uploadedPhotos.map((uri, index) => (
+          {uploadedPhotos.map((item, index) => (
             <View key={index} style={styles.photoItem}>
-              <Image source={{ uri }} style={styles.photoImage} />
+              <Image source={{ uri: item.uri }} style={styles.photoImage} />
+              {item.locationName ? (
+                <View style={styles.photoLocationOverlay}>
+                  <Text style={styles.photoLocationText}>{item.locationName}</Text>
+                </View>
+              ) : null}
               <TouchableOpacity
                 style={styles.photoRemoveButton}
                 onPress={() => removePhoto(index)}
@@ -1208,10 +1600,11 @@ export default function RajyaShaishanikPrashikshanScreen() {
 
       {showDatePicker && (
         <DateTimePicker
-          value={new Date()}
+          value={getPickerValue()}
           mode="date"
           display="calendar"
           onChange={handleDateChange}
+          minimumDate={(currentDateField === 'visit_date' || currentDateField === 'visit_date_inspector') ? new Date(new Date().setHours(0,0,0,0)) : undefined}
         />
       )}
 
@@ -1494,14 +1887,15 @@ const styles = StyleSheet.create({
   },
   photoButtonContainer: {
     flexDirection: 'row',
+    justifyContent: 'center',
     gap: 12,
     marginBottom: 24,
   },
   photoButton: {
-    flex: 1,
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
+    minWidth: 220,
   },
   photoButtonPrimary: {
     backgroundColor: '#10b981',
@@ -1549,6 +1943,20 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  photoLocationOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.48)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+  },
+  photoLocationText: {
+    color: '#ffffff',
+    fontSize: 12,
   },
   materialCard: {
     backgroundColor: '#ffffff',

@@ -488,6 +488,30 @@ export const updateAdarshaShalaFormById = async (id: string, updates: any) => {
   }
 };
 
+/**
+ * Fetch Adarsha Shala record by inspection_id
+ */
+export const getAdarshaShalaByInspectionId = async (inspectionId: string) => {
+  if (!isSupabaseConfigured) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('adarsha_shala')
+      .select('*')
+      .eq('inspection_id', inspectionId)
+      .limit(1)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching adarsha_shala by inspection_id:', error);
+    return null;
+  }
+};
+
 export const uploadPhoto = async (inspectionId: string, photoUri: string, photoName: string, order: number, meta?: { latitude?: number; longitude?: number; accuracy?: number }): Promise<void> => {
   if (!isSupabaseConfigured) {
     throw new Error('Supabase client not initialized');
