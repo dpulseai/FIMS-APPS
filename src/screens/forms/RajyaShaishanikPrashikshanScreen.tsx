@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -26,7 +26,7 @@ import {
   updateInspection,
 } from '../../services/fimsService';
 import { useAuth } from '../../hooks/useAuth';
-import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { useRoute, RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { FormsStackParamList } from '../../types';
 
@@ -200,7 +200,7 @@ export default function RajyaShaishanikPrashikshanScreen() {
     return materialsData;
   };
 
-  const [formData, setFormData] = useState<FormData>({
+  const getInitialFormData = useCallback((): FormData => ({
     visit_date: '',
     school_name: '',
     school_address: '',
@@ -242,7 +242,9 @@ export default function RajyaShaishanikPrashikshanScreen() {
     latitude: null,
     longitude: null,
     location_accuracy: null,
-  });
+  }), []);
+
+  const [formData, setFormData] = useState<FormData>(getInitialFormData);
 
   const updateFormData = (field: string, value: any) => {
     setFormData({ ...formData, [field]: value });
@@ -281,142 +283,160 @@ export default function RajyaShaishanikPrashikshanScreen() {
     }
   };
 
-  // Load existing form data when editing
-  useEffect(() => {
-    const loadExisting = async () => {
-      if (!inspectionId) return;
-      setLoading(true);
-      try {
-        const inspection = await getInspectionById(inspectionId);
-        const adarsha = await getAdarshaShalaByInspectionId(inspectionId as string);
+  // Extracted loader so we can call it from focus listener and effect
+  const loadExisting = useCallback(async () => {
+    if (!inspectionId) return;
+    // If we've already loaded this inspection, skip
+    if (existingInspectionId && existingInspectionId === inspectionId && isEditMode) return;
+    setLoading(true);
+    try {
+      const inspection = await getInspectionById(inspectionId);
+      const adarsha = await getAdarshaShalaByInspectionId(inspectionId as string);
 
-        if (inspection) {
-          setExistingInspectionId(inspectionId as string);
-          // prefill some inspection fields
-          if (inspection.location_name) updateFormData('location_name', inspection.location_name);
-          if (inspection.location_latitude) updateFormData('latitude', inspection.location_latitude);
-          if (inspection.location_longitude) updateFormData('longitude', inspection.location_longitude);
-          if (inspection.location_address) updateFormData('location_name', inspection.location_address || inspection.location_name || '');
-          if ((inspection as any).planned_date) updateFormData('planned_date', (inspection as any).planned_date || '');
-        }
-
-        if (adarsha) {
-          setIsEditMode(true);
-          setExistingFormId(adarsha.id);
-
-          // Map values back into formData
-          const newData: any = {};
-          newData.visit_date = adarsha.visit_date || '';
-          newData.school_name = adarsha.school_name || '';
-          newData.school_address = adarsha.school_address || '';
-          newData.principal_name = adarsha.principal_name || '';
-          newData.principal_mobile = adarsha.principal_mobile_no ? String(adarsha.principal_mobile_no) : '';
-          newData.udise_number = adarsha.udise_code || '';
-          newData.center = adarsha.center || '';
-          newData.taluka = adarsha.taluka || '';
-          newData.district = adarsha.district || '';
-          newData.management_type = adarsha.management_type || '';
-          newData.school_achievement_self = adarsha.self_assessment_grade || '';
-          newData.school_achievement_external = adarsha.external_assessment_grade || '';
-          newData.sanctioned_posts = adarsha.sanctioned_posts || 0;
-          newData.working_posts = adarsha.working_posts || 0;
-          newData.present_teachers = adarsha.present_teachers || 0;
-          newData.math_teachers_count = adarsha.math_teachers_count || 0;
-          newData.khan_registered_teachers = adarsha.registered_teachers || 0;
-          newData.khan_registered_students = adarsha.registered_students || 0;
-          newData.khan_active_students = adarsha.active_students || 0;
-          newData.khan_usage_method = adarsha.question1 || '';
-          newData.sqdp_prepared = adarsha.question2 || '';
-          newData.sqdp_objectives_achieved = adarsha.question3 || '';
-          newData.nipun_bharat_verification = adarsha.question4 || '';
-          newData.learning_outcomes_assessment = adarsha.question5 || '';
-          newData.officer_feedback = adarsha.question6 || '';
-          newData.innovative_initiatives = adarsha.question7 || '';
-          newData.suggested_changes = adarsha.question8 || '';
-          newData.srujanrang_articles = adarsha.question9 || '';
-          newData.future_articles = adarsha.question10 || '';
-          newData.ngo_involvement = adarsha.question11 || '';
-          newData.inspector_name = adarsha.inspector_name || '';
-          newData.inspector_designation = adarsha.inspector_designation || '';
-          newData.visit_date_inspector = adarsha.visit_date_inspector || '';
-
-          // class_data
-          try {
-            const classDataArr = adarsha.class_data ? JSON.parse(adarsha.class_data) : [];
-            const classMap: any = { ...formData.class_enrollment };
-            classDataArr.forEach((c: any) => {
-              const cls = String(c.class);
-              if (!classMap[cls]) classMap[cls] = { enrollment: 0, attendance: 0 };
-              classMap[cls].enrollment = c.total || 0;
-            });
-            newData.class_enrollment = classMap;
-          } catch (e) {
-            // ignore
-          }
-
-          // subject_performance
-          try {
-            const subjArr = adarsha.subject_performance ? JSON.parse(adarsha.subject_performance) : [];
-            const subjMap: any = {};
-            ['1','2','3','4','5','6','7','8'].forEach(s => subjMap[s] = {});
-            subjArr.forEach((s: any) => {
-              const subjKeyMap: any = {
-                'Marathi': 'मराठी',
-                'English': 'इंग्रजी',
-                'Math': 'गणित',
-                'Science': 'प.अ./विज्ञान',
-                'Social Studies': 'इतिहास',
-              } as any;
-              const mar = subjKeyMap[s.subject] || s.subject;
-              for (let i = 1; i <= 8; i++) {
-                const val = s[`class_${i}`];
-                subjMap[String(i)][mar] = val || 0;
-              }
-            });
-            newData.subject_learning_outcomes = subjMap;
-          } catch (e) {
-            // ignore
-          }
-
-          // material_usage
-          try {
-            const matArr = adarsha.material_usage ? JSON.parse(adarsha.material_usage) : [];
-            const matMap: any = { ...formData.materials_usage };
-            matArr.forEach((m: any) => {
-              if (matMap[m.material]) {
-                matMap[m.material] = {
-                  available: m.available || false,
-                  usage_status: m.usage || '',
-                  suggestions: m.suggestions || '',
-                };
-              } else {
-                // add unknown material keys
-                matMap[m.material] = {
-                  available: m.available || false,
-                  usage_status: m.usage || '',
-                  suggestions: m.suggestions || '',
-                };
-              }
-            });
-            newData.materials_usage = matMap;
-          } catch (e) {
-            // ignore
-          }
-
-          // apply newData
-          Object.keys(newData).forEach(k => updateFormData(k, (newData as any)[k]));
-        }
-      } catch (error) {
-        console.error('Error loading existing form data:', error);
-        Alert.alert('त्रुटी', 'प्रपत्राचे विद्यमान डेटा लोड करताना त्रुटी आली');
-      } finally {
-        setLoading(false);
+      if (inspection) {
+        setExistingInspectionId(inspectionId as string);
+        // prefill some inspection fields
+        if (inspection.location_name) updateFormData('location_name', inspection.location_name);
+        if (inspection.location_latitude) updateFormData('latitude', inspection.location_latitude);
+        if (inspection.location_longitude) updateFormData('longitude', inspection.location_longitude);
+        if (inspection.location_address) updateFormData('location_name', inspection.location_address || inspection.location_name || '');
+        if ((inspection as any).planned_date) updateFormData('planned_date', (inspection as any).planned_date || '');
       }
-    };
 
+      if (adarsha) {
+        setIsEditMode(true);
+        setExistingFormId(adarsha.id);
+
+        // Map values back into formData
+        const newData: any = {};
+        newData.visit_date = adarsha.visit_date || '';
+        newData.school_name = adarsha.school_name || '';
+        newData.school_address = adarsha.school_address || '';
+        newData.principal_name = adarsha.principal_name || '';
+        newData.principal_mobile = adarsha.principal_mobile_no ? String(adarsha.principal_mobile_no) : '';
+        newData.udise_number = adarsha.udise_code || '';
+        newData.center = adarsha.center || '';
+        newData.taluka = adarsha.taluka || '';
+        newData.district = adarsha.district || '';
+        newData.management_type = adarsha.management_type || '';
+        newData.school_achievement_self = adarsha.self_assessment_grade || '';
+        newData.school_achievement_external = adarsha.external_assessment_grade || '';
+        newData.sanctioned_posts = adarsha.sanctioned_posts || 0;
+        newData.working_posts = adarsha.working_posts || 0;
+        newData.present_teachers = adarsha.present_teachers || 0;
+        newData.math_teachers_count = adarsha.math_teachers_count || 0;
+        newData.khan_registered_teachers = adarsha.registered_teachers || 0;
+        newData.khan_registered_students = adarsha.registered_students || 0;
+        newData.khan_active_students = adarsha.active_students || 0;
+        newData.khan_usage_method = adarsha.question1 || '';
+        newData.sqdp_prepared = adarsha.question2 || '';
+        newData.sqdp_objectives_achieved = adarsha.question3 || '';
+        newData.nipun_bharat_verification = adarsha.question4 || '';
+        newData.learning_outcomes_assessment = adarsha.question5 || '';
+        newData.officer_feedback = adarsha.question6 || '';
+        newData.innovative_initiatives = adarsha.question7 || '';
+        newData.suggested_changes = adarsha.question8 || '';
+        newData.srujanrang_articles = adarsha.question9 || '';
+        newData.future_articles = adarsha.question10 || '';
+        newData.ngo_involvement = adarsha.question11 || '';
+        newData.inspector_name = adarsha.inspector_name || '';
+        newData.inspector_designation = adarsha.inspector_designation || '';
+        newData.visit_date_inspector = adarsha.visit_date_inspector || '';
+
+        // class_data
+        try {
+          const classDataArr = adarsha.class_data ? JSON.parse(adarsha.class_data) : [];
+          const initial = getInitialFormData();
+          const classMap: any = { ...initial.class_enrollment };
+          classDataArr.forEach((c: any) => {
+            const cls = String(c.class);
+            if (!classMap[cls]) classMap[cls] = { enrollment: 0, attendance: 0 };
+            classMap[cls].enrollment = c.total || 0;
+          });
+          newData.class_enrollment = classMap;
+        } catch (e) {
+          // ignore
+        }
+
+        // subject_performance
+        try {
+          const subjArr = adarsha.subject_performance ? JSON.parse(adarsha.subject_performance) : [];
+          const subjMap: any = {};
+          ['1','2','3','4','5','6','7','8'].forEach(s => subjMap[s] = {});
+          subjArr.forEach((s: any) => {
+            const subjKeyMap: any = {
+              'Marathi': 'मराठी',
+              'English': 'इंग्रजी',
+              'Math': 'गणित',
+              'Science': 'प.अ./विज्ञान',
+              'Social Studies': 'इतिहास',
+            } as any;
+            const mar = subjKeyMap[s.subject] || s.subject;
+            for (let i = 1; i <= 8; i++) {
+              const val = s[`class_${i}`];
+              subjMap[String(i)][mar] = val || 0;
+            }
+          });
+          newData.subject_learning_outcomes = subjMap;
+        } catch (e) {
+          // ignore
+        }
+
+        // material_usage
+        try {
+          const matArr = adarsha.material_usage ? JSON.parse(adarsha.material_usage) : [];
+          const initial = getInitialFormData();
+          const matMap: any = { ...initial.materials_usage };
+          matArr.forEach((m: any) => {
+            if (matMap[m.material]) {
+              matMap[m.material] = {
+                available: m.available || false,
+                usage_status: m.usage || '',
+                suggestions: m.suggestions || '',
+              };
+            } else {
+              // add unknown material keys
+              matMap[m.material] = {
+                available: m.available || false,
+                usage_status: m.usage || '',
+                suggestions: m.suggestions || '',
+              };
+            }
+          });
+          newData.materials_usage = matMap;
+        } catch (e) {
+          // ignore
+        }
+
+        // apply newData in a single set to avoid losing fields due to multiple state updates
+        setFormData((prev) => ({ ...getInitialFormData(), ...prev, ...newData } as FormData));
+      }
+    } catch (error) {
+      console.error('Error loading existing form data:', error);
+      Alert.alert('त्रुटी', 'प्रपत्राचे विद्यमान डेटा लोड करताना त्रुटी आली');
+    } finally {
+      setLoading(false);
+    }
+  }, [inspectionId, existingInspectionId, isEditMode, getInitialFormData]);
+
+  // Run loader when inspectionId or user changes
+  useEffect(() => {
     loadExisting();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inspectionId]);
+  }, [inspectionId, user]);
+
+  // Also reload when screen is focused. This ensures that if the app was
+  // refreshed or the screen was mounted earlier without auth, we still
+  // fetch the latest data when the user navigates to edit.
+  useFocusEffect(
+    useCallback(() => {
+      if (!inspectionId) return;
+      // Reset form state so we don't show stale values while loading
+      setFormData(getInitialFormData());
+      // allow loader to fetch and populate
+      loadExisting();
+    }, [inspectionId, getInitialFormData, loadExisting])
+  );
 
   const getCurrentLocation = async () => {
     try {
