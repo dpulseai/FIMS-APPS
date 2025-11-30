@@ -189,6 +189,22 @@ export default function InspectionsListScreen() {
       return;
     }
 
+    // If it's a Sub Centre Monitoring form, open the SubCenterMonitoring screen inside NewInspection
+    if (
+      inspection.form_type === 'sub_centre_monitoring' ||
+      inspection.form_type === 'Sub Centre Monitoring Checklist' ||
+      cat.includes('sub centre') ||
+      cat.includes('sub center') ||
+      cat.includes('subcentre') ||
+      cat.includes('subcenter')
+    ) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'SubCenterMonitoring',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
     // Fallback: show the inspection detail view
     navigation.navigate('InspectionDetail', { inspectionId: inspection.id });
   };

@@ -104,18 +104,18 @@ export type InspectionsStackParamList = {
 export type FormsStackParamList = {
   CategorySelection: undefined;
   FIMSOfficeInspection: { categoryId: string; inspectionId?: string; edit?: boolean };
-  AnganwadiTapasani: { categoryId: string; inspectionId?: string };
-  HealthInspection: { categoryId: string; inspectionId?: string };
-  SubCenterMonitoring: { categoryId: string; inspectionId?: string };
-  BandhkamVibhag1: { categoryId: string; inspectionId?: string };
-  BandhkamVibhag2: { categoryId: string; inspectionId?: string };
-  RajyaShaishanikPrashikshan: { categoryId: string; inspectionId?: string };
-  RajyaGunwattaNirikshak: { categoryId: string; inspectionId?: string };
-  MumbaiNyayalay: { categoryId: string; inspectionId?: string };
-  PahuvaidhakiyaTapasani: { categoryId: string; inspectionId?: string };
-  MahatmaGandhiRojgarHami: { categoryId: string; inspectionId?: string };
-  GrampanchayatInspection: { categoryId: string; inspectionId?: string };
-  ZPDarMahinyala: { categoryId: string; inspectionId?: string };
+  AnganwadiTapasani: { categoryId: string; inspectionId?: string; edit?: boolean };
+  HealthInspection: { categoryId: string; inspectionId?: string; edit?: boolean };
+  SubCenterMonitoring: { categoryId: string; inspectionId?: string; edit?: boolean };
+  BandhkamVibhag1: { categoryId: string; inspectionId?: string; edit?: boolean };
+  BandhkamVibhag2: { categoryId: string; inspectionId?: string; edit?: boolean };
+  RajyaShaishanikPrashikshan: { categoryId: string; inspectionId?: string; edit?: boolean };
+  RajyaGunwattaNirikshak: { categoryId: string; inspectionId?: string; edit?: boolean };
+  MumbaiNyayalay: { categoryId: string; inspectionId?: string; edit?: boolean };
+  PahuvaidhakiyaTapasani: { categoryId: string; inspectionId?: string; edit?: boolean };
+  MahatmaGandhiRojgarHami: { categoryId: string; inspectionId?: string; edit?: boolean };
+  GrampanchayatInspection: { categoryId: string; inspectionId?: string; edit?: boolean };
+  ZPDarMahinyala: { categoryId: string; inspectionId?: string; edit?: boolean };
 };
 
 export { User };
