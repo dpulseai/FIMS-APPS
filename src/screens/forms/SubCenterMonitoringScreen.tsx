@@ -123,6 +123,7 @@ export default function SubCenterMonitoringScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [photoMetas, setPhotoMetas] = useState<Array<{ latitude?: number; longitude?: number; accuracy?: number }>>([]);
   const [location, setLocation] = useState<LocationData | null>(null);
   const [isEditMode] = useState<boolean>(() => Boolean(edit) || !inspectionId);
 
@@ -330,9 +331,28 @@ export default function SubCenterMonitoringScreen() {
           timestamp: Date.now(),
         });
 
-        // Load photos
+        // Load photos and metadata
         if (inspection.photos && inspection.photos.length > 0) {
-          setPhotos(inspection.photos.map((p: any) => p.photo_url));
+          const urls = inspection.photos.map((p: any) => p.photo_url);
+          setPhotos(urls);
+          // Parse photo metadata (description) when available so addresses/icons show
+          const metas = inspection.photos.map((p: any) => {
+            try {
+              const desc = p.description;
+              if (!desc) return {} as any;
+              const parsed = typeof desc === 'string' ? JSON.parse(desc) : desc;
+              if (parsed && parsed.photo_location) {
+                const pl = parsed.photo_location;
+                return { latitude: pl.latitude, longitude: pl.longitude, accuracy: pl.accuracy ?? undefined, address: pl.address ?? pl.name ?? undefined };
+              }
+              if (typeof parsed === 'string') return { address: parsed } as any;
+              if (parsed && parsed.address) return { address: parsed.address } as any;
+            } catch (e) {
+              // ignore parse errors
+            }
+            return {} as any;
+          });
+          setPhotoMetas(metas as any[]);
         }
 
         // Load form data from sub_centre_monitoring_checklist table
@@ -505,7 +525,11 @@ export default function SubCenterMonitoringScreen() {
       // Upload photos if any
       if (photos.length > 0) {
         for (let i = 0; i < photos.length; i++) {
-          await uploadPhoto(inspectionIdToUse, photos[i], `photo_${i + 1}.jpg`, i + 1);
+          const uri = photos[i] || '';
+          // Skip already-uploaded remote images (they are stored in DB)
+          if (uri.toLowerCase().startsWith('http')) continue;
+          const meta = photoMetas[i];
+          await uploadPhoto(inspectionIdToUse, photos[i], `photo_${i + 1}.jpg`, i + 1, meta);
         }
       }
 
@@ -592,7 +616,11 @@ export default function SubCenterMonitoringScreen() {
       // Upload photos
       if (photos.length > 0) {
         for (let i = 0; i < photos.length; i++) {
-          await uploadPhoto(inspectionResult.id, photos[i], `photo_${i + 1}.jpg`, i + 1);
+          const uri = photos[i] || '';
+          // Skip already-uploaded remote images (they are stored in DB)
+          if (uri.toLowerCase().startsWith('http')) continue;
+          const meta = photoMetas[i];
+          await uploadPhoto(inspectionResult.id, photos[i], `photo_${i + 1}.jpg`, i + 1, meta);
         }
       }
 
@@ -1295,7 +1323,14 @@ export default function SubCenterMonitoringScreen() {
             <Text style={styles.sectionTitle}>{t('fims.photosSubmit')}</Text>
             <PhotoUpload
               photos={photos}
-              onPhotosChange={setPhotos}
+              onPhotosChange={(p) => {
+                if (!isEditMode) return;
+                setPhotos(p);
+                if (photoMetas.length > p.length) setPhotoMetas(photoMetas.slice(0, p.length));
+              }}
+              photoMetas={photoMetas}
+              onPhotoMetaChange={(m) => { if (!isEditMode) return; setPhotoMetas(m); }}
+              disabled={!isEditMode}
             />
           </View>
         );
