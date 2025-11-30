@@ -15,7 +15,8 @@ import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { FormsStackParamList, LocationData } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import { createInspection, updateInspection, uploadPhoto, getInspectionById } from '../../services/fimsService';
+import { usePermissions } from '../../hooks/usePermissions';
+import { createInspection, updateInspection, uploadPhoto, getInspectionById, deleteInspection } from '../../services/fimsService';
 import { supabase } from '../../services/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Stepper from '../../components/common/Stepper';
@@ -80,6 +81,7 @@ export default function FIMSOfficeInspectionScreen() {
   const route = useRoute<RouteParams>();
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuth();
+  const { hasAccess, userRole } = usePermissions(user);
   const { categoryId, inspectionId, edit } = route.params as { categoryId: string; inspectionId?: string; edit?: boolean };
 
   const [isEditMode, setIsEditMode] = useState<boolean>(() => Boolean(edit) || !inspectionId);
@@ -89,6 +91,7 @@ export default function FIMSOfficeInspectionScreen() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoMetas, setPhotoMetas] = useState<LocalPhotoMeta[]>([]);
   const [location, setLocation] = useState<LocationData | null>(null);
+  const [inspectionOwnerId, setInspectionOwnerId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<OfficeFormData>({
     visit_date: new Date().toISOString().slice(0, 10),
@@ -204,6 +207,7 @@ export default function FIMSOfficeInspectionScreen() {
       try {
         const inspection = await getInspectionById(inspectionId);
         if (inspection) {
+          setInspectionOwnerId(inspection.inspector_id || null);
           setLocation({
             latitude: inspection.location_latitude || 0,
             longitude: inspection.location_longitude || 0,
@@ -261,6 +265,47 @@ export default function FIMSOfficeInspectionScreen() {
     };
     load();
   }, [inspectionId]);
+
+  const handleToggleEditTop = () => {
+    setIsEditMode(prev => {
+      const next = !prev;
+      Alert.alert('Edit Mode', next ? 'Editing enabled' : 'Editing disabled');
+      return next;
+    });
+  };
+
+  const handleDeleteInspection = () => {
+    if (!inspectionId) return;
+
+    const isOwner = Boolean((user?.id && inspectionOwnerId && user.id === inspectionOwnerId));
+    const isAdminRole = hasAccess('fims', 'admin') || ['admin', 'super_admin', 'developer'].includes(userRole ?? '');
+    if (!hasAccess('fims', 'delete') && !isOwner && !isAdminRole) {
+      Alert.alert(t('common.error'), 'You do not have permission to delete this inspection');
+      return;
+    }
+
+    Alert.alert(
+      t('common.delete'),
+      t('common.deleteConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteInspection(inspectionId);
+              Alert.alert(t('common.success'), 'Inspection deleted successfully');
+              navigation.goBack();
+            } catch (error) {
+              console.error('Delete error:', error);
+              Alert.alert(t('common.error'), 'Failed to delete inspection');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const handleNext = () => {
     if (currentStep === 0) {
@@ -958,6 +1003,29 @@ export default function FIMSOfficeInspectionScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      {inspectionId && (
+        (() => {
+          const isOwner = Boolean((user?.id && inspectionOwnerId && user.id === inspectionOwnerId));
+          const isAdminRole = hasAccess('fims', 'admin') || ['admin', 'super_admin', 'developer'].includes(userRole ?? '');
+          const canEdit = hasAccess('fims', 'write') || isOwner || isAdminRole;
+          const canDelete = hasAccess('fims', 'delete') || isOwner || isAdminRole;
+          if (!canEdit && !canDelete) return null;
+          return (
+            <View style={{ paddingHorizontal: 16, paddingTop: 12, alignItems: 'flex-end', flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+              {canEdit && (
+                <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#fff', borderWidth: 1, borderColor: '#d1d5db', marginRight: 8 }]} onPress={handleToggleEditTop}>
+                  <Text style={{ color: '#111', fontWeight: '600' }}>{isEditMode ? (t('common.view') || 'View') : (t('common.edit') || 'Edit')}</Text>
+                </TouchableOpacity>
+              )}
+              {canDelete && (
+                <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ef4444' }]} onPress={handleDeleteInspection}>
+                  <Text style={{ color: '#ef4444', fontWeight: '600' }}>{t('common.delete')}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          );
+        })()
+      )}
       <Stepper steps={STEPS} currentStep={currentStep} />
 
       {/* edit banner removed for cleaner UI */}
