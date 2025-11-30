@@ -440,6 +440,85 @@ export default function SubCenterMonitoringScreen() {
     }
   };
 
+  const handleSaveAsDraft = async () => {
+    try {
+      setLoading(true);
+
+      // Determine inspection ID to use
+      let inspectionIdToUse = inspectionId;
+
+      if (inspectionIdToUse) {
+        // Update existing inspection
+        await updateInspection(inspectionIdToUse, {
+          filled_by_name: monitorName || user?.email || '',
+          location_latitude: location?.latitude,
+          location_longitude: location?.longitude,
+          location_address: location?.address || null,
+        });
+      } else {
+        // Create new inspection
+        const inspection = await createInspection({
+          category_id: categoryId,
+          inspector_id: user?.id,
+          filled_by_name: monitorName || user?.email || '',
+          status: 'draft',
+          location_latitude: location?.latitude,
+          location_longitude: location?.longitude,
+          location_address: location?.address || null,
+        });
+        inspectionIdToUse = inspection.id;
+      }
+
+      // Save form data
+      const formPayload = {
+        category_id: categoryId,
+        user_id: user?.id,
+        district,
+        block_name: blockName,
+        sc_name: scName,
+        facility_name: facilityName,
+        catchment_population: catchmentPopulation,
+        total_villages: totalVillages,
+        distance_from_phc: distanceFromPHC,
+        last_visit: lastVisit || null,
+        date: date || new Date().toISOString().split('T')[0],
+        monitor_name: monitorName,
+        staff_available: staffAvailable,
+        staff_not_available: staffNotAvailable,
+        infrastructure,
+        human_resources: humanResources,
+        equipment,
+        essential_drugs: essentialDrugs,
+        essential_supplies: essentialSupplies,
+        service_delivery: serviceDelivery,
+        essential_skills: essentialSkills,
+        record_maintenance: recordMaintenance,
+        referral_linkages: referralLinkages,
+        iec_display: iecDisplay,
+        monitoring_supervisors: monitoringSupervisors,
+        key_findings: keyFindings,
+        general_comments: generalComments,
+      };
+
+      await saveSubCenterMonitoringForm(inspectionIdToUse, formPayload);
+
+      // Upload photos if any
+      if (photos.length > 0) {
+        for (let i = 0; i < photos.length; i++) {
+          await uploadPhoto(inspectionIdToUse, photos[i], `photo_${i + 1}.jpg`, i + 1);
+        }
+      }
+
+      Alert.alert(t('common.success'), 'Draft saved successfully');
+      navigation.goBack();
+    } catch (error) {
+      console.error('Save draft error:', error);
+      Alert.alert(t('common.error'), 'Failed to save draft');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!scName) {
       Alert.alert(t('common.error'), 'Please enter Sub Centre Name');
@@ -479,6 +558,8 @@ export default function SubCenterMonitoringScreen() {
 
       // Save form data
       const formPayload = {
+        category_id: categoryId,
+        user_id: user?.id,
         district,
         block_name: blockName,
         sc_name: scName,
@@ -1231,32 +1312,47 @@ export default function SubCenterMonitoringScreen() {
         <Card>{renderStep()}</Card>
       </ScrollView>
       <View style={styles.footer}>
-        <View style={styles.buttonRow}>
-          {currentStep > 0 && (
-            <Button
-              title={t('common.previous')}
-              onPress={handlePrevious}
-              variant="outline"
-              style={styles.button}
-              disabled={loading}
-            />
-          )}
-          {currentStep < STEPS.length - 1 ? (
+        {currentStep < STEPS.length - 1 ? (
+          <View style={styles.buttonRow}>
+            {currentStep > 0 && (
+              <Button
+                title={t('common.previous')}
+                onPress={handlePrevious}
+                variant="outline"
+                style={styles.button}
+                disabled={loading}
+              />
+            )}
             <Button
               title={t('common.next')}
               onPress={handleNext}
               style={styles.button}
               disabled={loading}
             />
-          ) : (
+          </View>
+        ) : (
+          <View style={styles.submitButtons}>
             <Button
               title={t('fims.submitInspection')}
               onPress={handleSubmit}
-              style={styles.button}
               loading={loading}
             />
-          )}
-        </View>
+            <Button
+              title={t('fims.saveAsDraft')}
+              onPress={handleSaveAsDraft}
+              variant="outline"
+              loading={loading}
+            />
+            {currentStep > 0 && (
+              <Button
+                title={t('common.previous')}
+                onPress={handlePrevious}
+                variant="outline"
+                disabled={loading}
+              />
+            )}
+          </View>
+        )}
       </View>
     </KeyboardAvoidingView>
   );
@@ -1287,4 +1383,5 @@ const styles = StyleSheet.create({
   footer: { backgroundColor: '#ffffff', padding: 16, borderTopWidth: 1, borderTopColor: '#e5e7eb' },
   buttonRow: { flexDirection: 'row', justifyContent: 'space-between' },
   button: { flex: 1, marginHorizontal: 4 },
+  submitButtons: { flexDirection: 'column', gap: 8 },
 });
