@@ -32,7 +32,22 @@ export default function CategorySelectionScreen() {
   const loadCategories = async () => {
     try {
       const data = await fetchCategories();
-      setCategories(data);
+      // Temporarily hide these categories from the New Inspection list — uncomment later if needed
+      // Hidden: Health inspections, Veterinary (PashuVaidyak), Mumbai Nyayalay
+      const filtered = (data || []).filter((c: InspectionCategory) => {
+        const ft = (c.form_type || '').toLowerCase();
+        const name = (c.name || '').toLowerCase();
+        // hide health
+        if (ft.includes('health')) return false;
+        // hide veterinary variants
+        if (ft.includes('veterinary') || ft.includes('veterin')) return false;
+        // hide pashu / पशु variations (pashutapasani, pashuvaidyakiya etc.)
+        if (ft.includes('pashu') || name.includes('pashu') || name.includes('पशु') || ft.includes('पशु')) return false;
+        // hide nyayalay / high court
+        if (ft.includes('nyayalay') || name.includes('nyayalay') || name.includes('न्यायालय') || ft.includes('high court')) return false;
+        return true;
+      });
+      setCategories(filtered);
     } catch (error) {
       console.error('Error loading categories:', error);
       Alert.alert(t('common.error'), 'Failed to load inspection categories');

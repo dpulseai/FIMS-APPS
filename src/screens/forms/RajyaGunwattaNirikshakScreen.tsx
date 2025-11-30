@@ -31,7 +31,7 @@ import Stepper from '../../components/common/Stepper';
 type RouteParams = RouteProp<FormsStackParamList, 'RajyaGunwattaNirikshak'>;
 type NavigationProp = StackNavigationProp<FormsStackParamList, 'RajyaGunwattaNirikshak'>;
 
-const STEPS = ['निरीक्षक माहिती', 'स्थान माहिती', 'तपासणी अहवाल', 'फोटो'];
+const STEPS = ['निरीक्षक माहिती', 'स्थान माहिती', 'फोटो'];
 
 interface RajyaGunwattaFormData {
   state_quality_inspector_name: string;
@@ -680,37 +680,7 @@ export default function RajyaGunwattaNirikshakScreen() {
     </View>
   );
 
-  const renderInspectionReport = () => (
-    <View style={styles.stepContainer}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.icon}>📝</Text>
-        <Text style={styles.sectionTitle}>राज्य गुणवत्ता निरीक्षक यांचा तपासणी अहवाल (State Quality Inspector Inspection Report)</Text>
-      </View>
-      <Text style={styles.sectionSubtitle}>Inspection Report</Text>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>निरीक्षकाचे नाव</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.inspector_name}
-          onChangeText={text => updateFormData('inspector_name', text)}
-          placeholder="निरीक्षकाचे नाव प्रविष्ट करा"
-          placeholderTextColor="#9ca3af"
-        />
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>पदनाम</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.inspector_designation}
-          onChangeText={text => updateFormData('inspector_designation', text)}
-          placeholder="पदनाम प्रविष्ट करा"
-          placeholderTextColor="#9ca3af"
-        />
-      </View>
-    </View>
-  );
+  // Inspection Report step removed per request; fields retained in state but not displayed
 
   const renderPhotoUpload = () => (
     <View style={styles.stepContainer}>
@@ -782,8 +752,7 @@ export default function RajyaGunwattaNirikshakScreen() {
     switch (currentStep) {
       case 0: return renderBasicInfo();
       case 1: return renderLocationInfo();
-      case 2: return renderInspectionReport();
-      case 3: return renderPhotoUpload();
+      case 2: return renderPhotoUpload();
       default: return null;
     }
   };

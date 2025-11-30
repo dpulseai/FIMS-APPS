@@ -47,7 +47,6 @@ interface AnganwadiFormData {
   anganwadi_number: string;
   supervisor_name: string;
   helper_name: string;
-  village_name: string;
 
   // Building and Facilities
   building_type: string;
@@ -177,7 +176,6 @@ export default function AnganwadiTapasaniScreen() {
     anganwadi_number: '',
     supervisor_name: '',
     helper_name: '',
-    village_name: '',
     building_type: 'own',
     room_availability: false,
     toilet_facility: false,
@@ -442,7 +440,6 @@ export default function AnganwadiTapasaniScreen() {
         anganwadi_number: formData.anganwadi_number,
         supervisor_name: formData.supervisor_name,
         helper_name: formData.helper_name,
-        village_name: formData.village_name,
         building_type: formData.building_type,
         room_availability: formData.room_availability,
         toilet_facility: formData.toilet_facility,
@@ -561,7 +558,6 @@ export default function AnganwadiTapasaniScreen() {
         anganwadi_number: formData.anganwadi_number,
         supervisor_name: formData.supervisor_name,
         helper_name: formData.helper_name,
-        village_name: formData.village_name,
         building_type: formData.building_type,
         room_availability: formData.room_availability,
         toilet_facility: formData.toilet_facility,
@@ -682,7 +678,6 @@ export default function AnganwadiTapasaniScreen() {
         anganwadi_number: formData.anganwadi_number,
         supervisor_name: formData.supervisor_name,
         helper_name: formData.helper_name,
-        village_name: formData.village_name,
         building_type: formData.building_type,
         room_availability: formData.room_availability,
         toilet_facility: formData.toilet_facility,
@@ -901,14 +896,6 @@ export default function AnganwadiTapasaniScreen() {
               </View>
 
             </View>
-
-            <Input
-              editable={isEditMode}
-              label="गावाचे नाव"
-              value={formData.village_name}
-              onChangeText={(text) => updateFormData('village_name', text)}
-              placeholder="Enter village name"
-            />
           </View>
         );
 

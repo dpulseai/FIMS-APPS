@@ -103,11 +103,24 @@ export default function InspectionsListScreen() {
       return;
     }
 
-    // If it's a Bandhakam / Zilla Parishad construction form, open BandhkamVibhag1
+    // If it's Bandhakam Vibhag 2 (explicit form_type or category name contains 'inspection format'), open BandhkamVibhag2
     const cat = inspection.category_name?.toLowerCase() ?? '';
     if (
+      inspection.form_type === 'bandhakam_vibhag2' ||
+      cat.includes('inspection format') ||
+      cat.includes('zpd construction inspection')
+    ) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'BandhkamVibhag2',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
+    // If it's a Bandhakam / Zilla Parishad construction form (generic), open BandhkamVibhag1
+    if (
       inspection.form_type === 'bandhakam_vibhag1' ||
-      cat.includes('bandhkam') ||
+      cat.includes('bandhakam') ||
       cat.includes('zilla parishad') ||
       cat.includes('construction')
     ) {
@@ -146,6 +159,23 @@ export default function InspectionsListScreen() {
       });
       return;
     }
+
+     // If it's a Sub Centre Monitoring form, open the SubCenterMonitoring screen inside NewInspection
+    if (
+      inspection.form_type === 'sub_centre_monitoring' ||
+      inspection.form_type === 'Sub Centre Monitoring Checklist' ||
+      cat.includes('sub centre') ||
+      cat.includes('sub center') ||
+      cat.includes('subcentre') ||
+      cat.includes('subcenter')
+    ) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'SubCenterMonitoring',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
 
     // State Level Quality Inspection (Rajya Gunwatta) form
     if (

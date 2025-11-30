@@ -397,6 +397,8 @@ export const updateInspection = async (id: string, updates: Partial<Inspection>)
     if (updates.location_latitude !== undefined) updateData.latitude = updates.location_latitude;
     if (updates.location_longitude !== undefined) updateData.longitude = updates.location_longitude;
     if (updates.location_address) updateData.address = updates.location_address;
+    if ((updates as any).location_name) updateData.location_name = (updates as any).location_name;
+    if ((updates as any).location_accuracy !== undefined) updateData.location_accuracy = (updates as any).location_accuracy;
     if (updates.filled_by_name) updateData.filled_by_name = updates.filled_by_name;
     // allow updating form_data JSON from mobile so web can load the form values
     if ((updates as any).form_data !== undefined) updateData.form_data = (updates as any).form_data;

@@ -1567,7 +1567,7 @@ export default function RajyaShaishanikPrashikshanScreen() {
         'inspector_designation',
         'पदनाम'
       )}
-      {renderDateInput('भेटीचा दिनांक ', formData.visit_date_inspector, 'visit_date_inspector')}
+      {/* Removed inspector date input per design - date field not required on last page */}
     </ScrollView>
   );
 
@@ -1653,7 +1653,7 @@ export default function RajyaShaishanikPrashikshanScreen() {
               onPress={handlePrevious}
               disabled={loading}
             >
-              <Text style={styles.buttonOutlineText}>मागे</Text>
+              <Text style={styles.buttonOutlineText} numberOfLines={1} ellipsizeMode="tail">मागे</Text>
             </TouchableOpacity>
           )}
           {currentStep < STEPS.length - 1 ? (
@@ -1662,27 +1662,23 @@ export default function RajyaShaishanikPrashikshanScreen() {
               onPress={handleNext}
               disabled={loading}
             >
-              <Text style={styles.buttonPrimaryText}>पुढे</Text>
+              <Text style={styles.buttonPrimaryText} numberOfLines={1} ellipsizeMode="tail">पुढे</Text>
             </TouchableOpacity>
           ) : (
             <View style={styles.submitButtons}>
               <TouchableOpacity
-                style={[
-                  styles.button,
-                  styles.buttonOutline,
-                  styles.halfButton,
-                ]}
+                style={[styles.button, styles.buttonOutline, styles.submitButtonItem]}
                 onPress={handleSaveAsDraft}
                 disabled={loading}
               >
-                <Text style={styles.buttonOutlineText}>मसुदा जतन करा</Text>
+                <Text style={styles.buttonOutlineText} numberOfLines={1} ellipsizeMode="tail">मसुदा</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, styles.buttonPrimary, styles.halfButton]}
+                style={[styles.button, styles.buttonPrimary, styles.submitButtonItem]}
                 onPress={handleSubmit}
                 disabled={loading}
               >
-                <Text style={styles.buttonPrimaryText}>सबमिट</Text>
+                <Text style={styles.buttonPrimaryText} numberOfLines={1} ellipsizeMode="tail">सबमिट</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -2081,17 +2077,20 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    padding: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    minHeight: 44,
     borderRadius: 8,
     alignItems: 'center',
-    marginHorizontal: 4,
+    justifyContent: 'center',
+    marginHorizontal: 0,
   },
   buttonPrimary: {
     backgroundColor: '#10b981',
   },
   buttonPrimaryText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   buttonOutline: {
@@ -2101,12 +2100,18 @@ const styles = StyleSheet.create({
   },
   buttonOutlineText: {
     color: '#374151',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   submitButtons: {
     flexDirection: 'row',
     flex: 1,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  submitButtonItem: {
+    flex: 1,
+    marginHorizontal: 4,
   },
   halfButton: {
     flex: 1,

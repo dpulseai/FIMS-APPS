@@ -353,10 +353,12 @@ export default function FIMSOfficeInspectionScreen() {
         inspector_id: user?.id,
         filled_by_name: formData.employee_name,
         status: 'draft',
+        location_name: location?.address || null,
         location_latitude: location?.latitude,
         location_longitude: location?.longitude,
+        location_accuracy: location?.accuracy ?? null,
         location_address: location?.address || null,
-      });
+      } as any);
 
       // If createInspection returned an offline id, save locally and return
       if (inspection.id && String(inspection.id).startsWith('offline_')) {
@@ -415,6 +417,8 @@ export default function FIMSOfficeInspectionScreen() {
         // ensure filled_by_name
         sanitized.filled_by_name = formData.employee_name || '';
 
+        // do not include per-form location_address (stored on main inspection row)
+
         return sanitized;
       };
 
@@ -463,10 +467,11 @@ export default function FIMSOfficeInspectionScreen() {
         inspector_id: user?.id,
         filled_by_name: formData.employee_name,
         status: 'submitted',
+        location_name: location?.address || null,
         location_latitude: location?.latitude,
         location_longitude: location?.longitude,
-        location_address: location?.address || null,
-      });
+        location_accuracy: location?.accuracy ?? null,
+      } as any);
 
       // If offline inspection id returned, save locally and notify user
       if (inspection.id && String(inspection.id).startsWith('offline_')) {
@@ -601,10 +606,12 @@ export default function FIMSOfficeInspectionScreen() {
       // Update inspection basic fields
       const updatedInspection = await updateInspection(inspectionId, {
         filled_by_name: formData.employee_name,
+        location_name: location?.address || null,
         location_latitude: location?.latitude,
         location_longitude: location?.longitude,
+        location_accuracy: location?.accuracy ?? null,
         location_address: location?.address || null,
-      });
+      } as any);
       console.log('Inspection updated:', updatedInspection);
 
       // Prepare office data to update
@@ -642,6 +649,7 @@ export default function FIMSOfficeInspectionScreen() {
 
       const officeData: any = {
         filled_by_name: formData.employee_name || '',
+        location_address: location?.address || null,
         visit_date: formData.visit_date || new Date().toISOString().slice(0, 10),
         department_name: formData.department_name,
         employee_name: formData.employee_name,
@@ -818,6 +826,20 @@ export default function FIMSOfficeInspectionScreen() {
             <Text style={styles.sectionTitle}>स्थान माहिती</Text>
             <Text style={styles.sectionSubtitle}>Location Information</Text>
             <LocationPicker location={location} onLocationChange={setLocation} disabled={!isEditMode} />
+
+            <Input
+              label="Location / ठिकाण"
+              value={location?.address || ''}
+              onChangeText={(text) => setLocation((prev) => ({
+                latitude: prev?.latitude ?? 0,
+                longitude: prev?.longitude ?? 0,
+                accuracy: prev?.accuracy ?? null,
+                address: text,
+                timestamp: prev?.timestamp ?? Date.now(),
+              }))}
+              editable={isEditMode}
+              placeholder="Capture location or enter address"
+            />
           </View>
         );
 
@@ -956,24 +978,6 @@ export default function FIMSOfficeInspectionScreen() {
                 onChangeText={(text) => setFormData({ ...formData, inspector_designation: text })}
                 editable={isEditMode}
                 placeholder="पदनाम प्रविष्ट करा"
-              />
-
-              <Input
-                label="कार्यालय प्रमुखाचे अभिप्राय"
-                value={formData.supervisor_remarks}
-                onChangeText={(text) => setFormData({ ...formData, supervisor_remarks: text })}
-                editable={isEditMode}
-                placeholder="कार्यालय प्रमुखाचे अभिप्राय प्रविष्ट करा"
-                multiline
-                numberOfLines={4}
-              />
-
-              <Input
-                label="कार्यालय प्रमुखाची स्वाक्षरी"
-                value={formData.supervisor_signature}
-                onChangeText={(text) => setFormData({ ...formData, supervisor_signature: text })}
-                editable={isEditMode}
-                placeholder="स्वाक्षरी प्रविष्ट करा"
               />
             </View>
           </ScrollView>
