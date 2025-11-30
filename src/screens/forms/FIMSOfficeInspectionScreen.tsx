@@ -701,7 +701,7 @@ export default function FIMSOfficeInspectionScreen() {
       case 0:
         return (
           <ScrollView>
-            <Text style={styles.sectionTitle}>कर्मчाऱ्याची माहिती</Text>
+            <Text style={styles.sectionTitle}>कर्मचाऱ्यांची माहिती</Text>
             <Text style={styles.sectionSubtitle}>Employee Information</Text>
 
             <Input
@@ -960,11 +960,7 @@ export default function FIMSOfficeInspectionScreen() {
     >
       <Stepper steps={STEPS} currentStep={currentStep} />
 
-      {isEditMode && (
-        <View style={styles.editBanner}>
-          <Text style={styles.editBannerText}>Editing</Text>
-        </View>
-      )}
+      {/* edit banner removed for cleaner UI */}
 
       <View style={styles.content}>
         <Card>{renderStep()}</Card>
@@ -1132,16 +1128,5 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     minHeight: 52,
   },
-  editBanner: {
-    backgroundColor: '#FDE68A',
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F59E0B',
-  },
-  editBannerText: {
-    color: '#92400E',
-    fontWeight: '700',
-    fontSize: 14,
-  },
+  // edit banner styles removed
 });

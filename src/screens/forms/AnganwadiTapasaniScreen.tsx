@@ -12,6 +12,7 @@ import {
   Switch,
   Dimensions,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 
 //import { Dimensions } from 'react-native';
 
@@ -134,6 +135,10 @@ interface AnganwadiFormData {
   visit_date: string;
   inspector_designation: string;
   inspector_name: string;
+  // Location dropdowns (from chandrapur_district)
+  ward_village_name?: string;
+  gp_name?: string;
+  block_name?: string;
 }
 
 export default function AnganwadiTapasaniScreen() {
@@ -157,6 +162,13 @@ export default function AnganwadiTapasaniScreen() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoMetas, setPhotoMetas] = useState<Array<{ latitude?: number; longitude?: number; accuracy?: number }>>([]);
   const [location, setLocation] = useState<LocationData | null>(null);
+
+  // Dropdown data (chandrapur_district)
+  const [dropdownData, setDropdownData] = useState<any[]>([]);
+  const [grampanchayatData, setGrampanchayatData] = useState<string[]>([]);
+  const [villageData, setVillageData] = useState<string[]>([]);
+  const [tehsilData, setTehsilsData] = useState<string[]>([]);
+  const [loadingDropdown, setLoadingDropdown] = useState(false);
 
   const [formData, setFormData] = useState<AnganwadiFormData>({
     anganwadi_name: '',
@@ -232,6 +244,9 @@ export default function AnganwadiTapasaniScreen() {
     visit_date: todayIso,
     inspector_designation: '',
     inspector_name: '',
+    ward_village_name: '',
+    gp_name: '',
+    block_name: '',
   });
 
   const updateFormData = (field: keyof AnganwadiFormData, value: any) => {
@@ -297,6 +312,37 @@ export default function AnganwadiTapasaniScreen() {
     load();
   }, [inspectionId]);
 
+  // Fetch dropdown data for Ward/GP/Block
+  useEffect(() => {
+    fetchDropdownData();
+  }, []);
+
+  const fetchDropdownData = async () => {
+    try {
+      setLoadingDropdown(true);
+      const { data, error } = await supabase
+        .from('chandrapur_district')
+        .select('Ward_Village_Name, GP_Name, Block_Name');
+
+      if (error) throw error;
+
+      setDropdownData(data || []);
+
+      const gps = [...new Set((data || []).map((item: any) => item.GP_Name).filter(Boolean))];
+      const villages = [...new Set((data || []).map((item: any) => item.Ward_Village_Name).filter(Boolean))];
+      const tehsils = [...new Set((data || []).map((item: any) => item.Block_Name).filter(Boolean))];
+
+      setGrampanchayatData(gps);
+      setVillageData(villages);
+      setTehsilsData(tehsils);
+    } catch (error) {
+      console.error('Dropdown fetch error:', error);
+      Alert.alert('Error', 'Failed to load location dropdowns');
+    } finally {
+      setLoadingDropdown(false);
+    }
+  };
+
   const handleToggleEdit = () => {
     // Toggle edit mode and show a confirmation alert so we can detect presses
     setIsEditMode((prev) => {
@@ -349,6 +395,9 @@ export default function AnganwadiTapasaniScreen() {
       const anganwadiData = {
         inspection_id: inspection.id,
         filled_by_name: formData.supervisor_name || '',
+        gp_name: formData.gp_name,
+        ward_village_name: formData.ward_village_name,
+        block_name: formData.block_name,
         anganwadi_name: formData.anganwadi_name,
         anganwadi_number: formData.anganwadi_number,
         supervisor_name: formData.supervisor_name,
@@ -465,6 +514,9 @@ export default function AnganwadiTapasaniScreen() {
       const anganwadiData = {
         inspection_id: inspection.id,
         filled_by_name: formData.supervisor_name || '',
+        gp_name: formData.gp_name,
+        ward_village_name: formData.ward_village_name,
+        block_name: formData.block_name,
         anganwadi_name: formData.anganwadi_name,
         anganwadi_number: formData.anganwadi_number,
         supervisor_name: formData.supervisor_name,
@@ -583,6 +635,9 @@ export default function AnganwadiTapasaniScreen() {
 
       const anganwadiData: any = {
         filled_by_name: formData.supervisor_name || '',
+        gp_name: formData.gp_name,
+        ward_village_name: formData.ward_village_name,
+        block_name: formData.block_name,
         anganwadi_name: formData.anganwadi_name,
         anganwadi_number: formData.anganwadi_number,
         supervisor_name: formData.supervisor_name,
@@ -751,6 +806,54 @@ export default function AnganwadiTapasaniScreen() {
               onChangeText={(text) => updateFormData('helper_name', text)}
               placeholder="Enter helper name"
             />
+
+            <View>
+              <Text style={[styles.inputLabel, { marginTop: 6 }]}>GP Name / ग्रामपंचायत</Text>
+              <View style={styles.dropdownContainer}>
+                <Picker
+                  selectedValue={formData.gp_name}
+                  onValueChange={(value) => updateFormData('gp_name' as any, value)}
+                  style={styles.input}
+                  enabled={!loadingDropdown}
+                >
+                  <Picker.Item label="Select Gram Panchayat" value="" />
+                  {grampanchayatData.map((gp, idx) => (
+                    <Picker.Item key={idx} label={gp} value={gp} />
+                  ))}
+                </Picker>
+              </View>
+
+              <Text style={[styles.inputLabel, { marginTop: 12 }]}>Village Name / गावाचे नाव</Text>
+              <View style={styles.dropdownContainer}>
+                <Picker
+                  selectedValue={formData.ward_village_name}
+                  onValueChange={(value) => updateFormData('ward_village_name' as any, value)}
+                  style={styles.input}
+                  enabled={!loadingDropdown}
+                >
+                  <Picker.Item label="Select Village" value="" />
+                  {villageData.map((v, idx) => (
+                    <Picker.Item key={idx} label={v} value={v} />
+                  ))}
+                </Picker>
+              </View>
+
+              <Text style={[styles.inputLabel, { marginTop: 12 }]}>District / जिल्हा</Text>
+              <View style={styles.dropdownContainer}>
+                <Picker
+                  selectedValue={formData.block_name}
+                  onValueChange={(value) => updateFormData('block_name' as any, value)}
+                  style={styles.input}
+                  enabled={!loadingDropdown}
+                >
+                  <Picker.Item label="Select District" value="" />
+                  {tehsilData.map((t, idx) => (
+                    <Picker.Item key={idx} label={t} value={t} />
+                  ))}
+                </Picker>
+              </View>
+
+            </View>
 
             <Input
               editable={isEditMode}
@@ -1335,6 +1438,18 @@ const styles = StyleSheet.create({
   },
   inputGroup: {
     marginBottom: 20,
+  },
+  dropdownContainer: {
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#fff',
+    fontSize: 14,
   },
   inputLabel: {
     fontSize: 15,
