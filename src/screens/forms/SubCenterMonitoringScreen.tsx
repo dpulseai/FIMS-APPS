@@ -5,7 +5,7 @@ import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { FormsStackParamList, LocationData } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import { createInspection, updateInspection, uploadPhoto, saveSubCenterMonitoringForm, getInspectionById } from '../../services/fimsService';
+import { createInspection, updateInspection, uploadPhoto, getInspectionById } from '../../services/fimsService';
 import { supabase } from '../../services/supabase';
 import Stepper from '../../components/common/Stepper';
 import Input from '../../components/common/Input';
@@ -402,6 +402,41 @@ export default function SubCenterMonitoringScreen() {
   const handlePrevious = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const saveSubCenterMonitoringForm = async (inspectionId: string, formData: any): Promise<void> => {
+    try {
+      // Check if a form already exists for this inspection
+      const { data: existingForms, error: fetchError } = await supabase
+        .from('sub_centre_monitoring_checklist')
+        .select('id')
+        .eq('inspection_id', inspectionId);
+
+      if (fetchError) throw fetchError;
+
+      if (existingForms && existingForms.length > 0) {
+        // Update existing form (updates all matching rows to handle duplicates)
+        const { error } = await supabase
+          .from('sub_centre_monitoring_checklist')
+          .update(formData)
+          .eq('inspection_id', inspectionId);
+
+        if (error) throw error;
+      } else {
+        // Insert new form
+        const { error } = await supabase
+          .from('sub_centre_monitoring_checklist')
+          .insert({
+            inspection_id: inspectionId,
+            ...formData,
+          });
+
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error('Error saving sub center monitoring form:', error);
+      throw error;
     }
   };
 

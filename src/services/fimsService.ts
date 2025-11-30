@@ -382,49 +382,6 @@ export const saveRajyaTapasaniForm = async (inspectionId: string, formData: any)
   }
 };
 
-/**
- * Save or update sub_centre_monitoring_checklist form row linked to an inspection
- */
-export const saveSubCenterMonitoringForm = async (inspectionId: string, formData: any): Promise<void> => {
-  if (!isSupabaseConfigured) {
-    throw new Error('Supabase client not initialized');
-  }
-
-  try {
-    // Check if a form already exists for this inspection
-    const { data: existingForms, error: fetchError } = await supabase
-      .from('sub_centre_monitoring_checklist')
-      .select('id')
-      .eq('inspection_id', inspectionId);
-
-    if (fetchError) throw fetchError;
-
-    if (existingForms && existingForms.length > 0) {
-      // Update existing form (updates all matching rows to handle duplicates)
-      const { error } = await supabase
-        .from('sub_centre_monitoring_checklist')
-        .update(formData)
-        .eq('inspection_id', inspectionId);
-
-      if (error) throw error;
-    } else {
-      // Insert new form
-      const { error } = await supabase
-        .from('sub_centre_monitoring_checklist')
-        .insert({
-          inspection_id: inspectionId,
-          ...formData,
-        });
-
-      if (error) throw error;
-    }
-  } catch (error) {
-    console.error('Error saving sub center monitoring form:', error);
-    throw error;
-  }
-};
-
-
 export const updateInspection = async (id: string, updates: Partial<Inspection>): Promise<Inspection> => {
   if (!isSupabaseConfigured) {
     throw new Error('Supabase client not initialized');
