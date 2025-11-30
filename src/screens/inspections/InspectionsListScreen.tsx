@@ -131,6 +131,64 @@ export default function InspectionsListScreen() {
       return;
     }
 
+    // Rajya Shaishanik (Education Training) form
+    if (
+      inspection.form_type === 'rajya_shaishanik' ||
+      cat.includes('rajya') ||
+      cat.includes('shaishanik') ||
+      cat.includes('शै') ||
+      cat.includes('शिक्ष') ||
+      (inspection.category_name && inspection.category_name.toLowerCase().includes('education'))
+    ) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'RajyaShaishanikPrashikshan',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
+    // State Level Quality Inspection (Rajya Gunwatta) form
+    if (
+      inspection.category_name === 'State Level Quality Inspection Form' ||
+      (inspection.category_name && inspection.category_name.toLowerCase().includes('state level quality')) ||
+      inspection.form_type === 'state_quality_inspection' ||
+      inspection.form_type === 'rajya_gunwatta'
+    ) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'RajyaGunwattaNirikshak',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
+      // If it's an MahatmaGandhiRojgarHami form, open the MahatmaGandhiRojgarHami screen inside NewInspection
+    if (inspection.form_type === 'Mahatma Gandhi National Rural Employment Guarantee Scheme Inspection' || inspection.category_name?.toLowerCase().includes('mahatmagandhirojgarhami')) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'MahatmaGandhiRojgarHami',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
+    // If it's an ZPDarMahinyala form, open the ZPDarMahinyala screen inside NewInspection
+    if (inspection.form_type === 'Monthly Report Submission Form' || inspection.category_name?.toLowerCase().includes('zpdarmahinyala')) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'ZPDarMahinyala',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
+
+       // If it's an ZPDarMahinyala form, open the ZPDarMahinyala screen inside NewInspection
+    if (inspection.form_type === 'High Court Order Inspection Form' || inspection.category_name?.toLowerCase().includes('mumbainyayalay')) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'MumbaiNyayalay',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
     // Fallback: show the inspection detail view
     navigation.navigate('InspectionDetail', { inspectionId: inspection.id });
   };
@@ -210,14 +268,26 @@ export default function InspectionsListScreen() {
       <FlatList
         data={filteredInspections}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <InspectionCard
-            inspection={item}
-            onPress={() => handleViewInspection(item)}
-            onEdit={hasAccess('fims', 'write') ? () => handleEditInspection(item) : undefined}
-            onDelete={hasAccess('fims', 'delete') ? () => handleDeleteInspection(item) : undefined}
-          />
-        )}
+        renderItem={({ item }) => {
+          // Consider user as owner if they are the inspector, filled_by, or assigned_by
+          const isOwner = Boolean(
+            (user?.id && item.inspector_id && user.id === item.inspector_id) ||
+            (user?.email && item.filled_by_name && user.email === item.filled_by_name) ||
+            (user?.id && item.assigned_by && user.id === item.assigned_by)
+          );
+          // Admin role if permission grants admin or role name is one of the admin roles
+          const isAdminRole = hasAccess('fims', 'admin') || ['admin', 'super_admin', 'developer'].includes(userRole ?? '');
+          const canEdit = hasAccess('fims', 'write') || isOwner || isAdminRole;
+          const canDelete = hasAccess('fims', 'delete') || isOwner || isAdminRole;
+          return (
+            <InspectionCard
+              inspection={item}
+              onPress={() => handleViewInspection(item)}
+              onEdit={canEdit ? () => handleEditInspection(item) : undefined}
+              onDelete={canDelete ? () => handleDeleteInspection(item) : undefined}
+            />
+          );
+        }}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={renderEmptyState}
         refreshControl={

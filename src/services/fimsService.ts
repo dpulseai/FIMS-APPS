@@ -1,6 +1,8 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { Inspection, InspectionCategory } from '../types';
 import offlineService, { OfflineInspection, OfflinePhoto } from './offlineService';
+import { MahatmaGandhiFormData } from '../screens/forms/MahatmaGandhiRojgarHamiScreen';
+
 
 export const getInspections = async (userId?: string, userRole?: string): Promise<Inspection[]> => {
   if (!isSupabaseConfigured) {
@@ -245,20 +247,27 @@ export const createInspection = async (inspectionData: Partial<Inspection>): Pro
   try {
     const inspectionNumber = `INS-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
+    const insertPayload: any = {
+      inspection_number: inspectionNumber,
+      category_id: inspectionData.category_id,
+      inspector_id: inspectionData.inspector_id,
+      filled_by_name: inspectionData.filled_by_name,
+      status: inspectionData.status || 'draft',
+      location_name: inspectionData.location_name,
+      latitude: inspectionData.location_latitude,
+      longitude: inspectionData.location_longitude,
+      address: inspectionData.location_address,
+      location_accuracy: null,
+    };
+
+    // Optionally include form_data JSON so web can display form values
+    if ((inspectionData as any).form_data !== undefined) {
+      insertPayload.form_data = (inspectionData as any).form_data;
+    }
+
     const { data, error } = await supabase
       .from('fims_inspections')
-      .insert({
-        inspection_number: inspectionNumber,
-        category_id: inspectionData.category_id,
-        inspector_id: inspectionData.inspector_id,
-        filled_by_name: inspectionData.filled_by_name,
-        status: inspectionData.status || 'draft',
-        location_name: inspectionData.location_name,
-        latitude: inspectionData.location_latitude,
-        longitude: inspectionData.location_longitude,
-        address: inspectionData.location_address,
-        location_accuracy: null,
-      })
+      .insert(insertPayload)
       .select()
       .single();
 
@@ -331,6 +340,49 @@ export const saveGrampanchayatInspectionForm = async (inspectionId: string, form
   }
 };
 
+/**
+ * Save or update rajya_tapasani form row linked to an inspection
+ */
+export const saveRajyaTapasaniForm = async (inspectionId: string, formData: any): Promise<void> => {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase client not initialized');
+  }
+
+  try {
+    // Check if a form already exists for this inspection
+    const { data: existingForms, error: fetchError } = await supabase
+      .from('rajya_tapasani')
+      .select('id')
+      .eq('inspection_id', inspectionId);
+
+    if (fetchError) throw fetchError;
+
+    if (existingForms && existingForms.length > 0) {
+      // Update existing form (updates all matching rows to handle duplicates)
+      const { error } = await supabase
+        .from('rajya_tapasani')
+        .update(formData)
+        .eq('inspection_id', inspectionId);
+
+      if (error) throw error;
+    } else {
+      // Insert new form
+      const { error } = await supabase
+        .from('rajya_tapasani')
+        .insert({
+          inspection_id: inspectionId,
+          ...formData,
+        });
+
+      if (error) throw error;
+    }
+  } catch (error) {
+    console.error('Error saving rajya_tapasani form:', error);
+    throw error;
+  }
+};
+
+
 export const updateInspection = async (id: string, updates: Partial<Inspection>): Promise<Inspection> => {
   if (!isSupabaseConfigured) {
     throw new Error('Supabase client not initialized');
@@ -346,6 +398,8 @@ export const updateInspection = async (id: string, updates: Partial<Inspection>)
     if (updates.location_longitude !== undefined) updateData.longitude = updates.location_longitude;
     if (updates.location_address) updateData.address = updates.location_address;
     if (updates.filled_by_name) updateData.filled_by_name = updates.filled_by_name;
+    // allow updating form_data JSON from mobile so web can load the form values
+    if ((updates as any).form_data !== undefined) updateData.form_data = (updates as any).form_data;
 
     const { data, error } = await supabase
       .from('fims_inspections')
@@ -414,6 +468,119 @@ export const fetchCategories = async (): Promise<InspectionCategory[]> => {
   } catch (error) {
     console.error('Error fetching categories:', error);
     return [];
+  }
+};
+
+/**
+ * Create a new Adarsha Shala record
+ */
+export const createAdarshaShalaForm = async (formData: any) => {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase client not initialized');
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('adarsha_shala')
+      .insert(formData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating adarsha_shala form:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update Adarsha Shala record by inspection_id
+ */
+export const updateAdarshaShalaFormByInspectionId = async (inspectionId: string, updates: any) => {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase client not initialized');
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('adarsha_shala')
+      .update(updates)
+      .eq('inspection_id', inspectionId)
+      .select();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating adarsha_shala by inspection_id:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update Adarsha Shala record by primary id
+ */
+export const updateAdarshaShalaFormById = async (id: string, updates: any) => {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase client not initialized');
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('adarsha_shala')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error updating adarsha_shala by id:', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch Adarsha Shala record by inspection_id
+ */
+export const getAdarshaShalaByInspectionId = async (inspectionId: string) => {
+  if (!isSupabaseConfigured) {
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('adarsha_shala')
+      .select('*')
+      .eq('inspection_id', inspectionId)
+      .limit(1)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching adarsha_shala by inspection_id:', error);
+    return null;
+  }
+};
+
+export const getRajyaTapasaniByInspectionId = async (inspectionId: string) => {
+  if (!isSupabaseConfigured) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from('rajya_tapasani')
+      .select('*')
+      .eq('inspection_id', inspectionId)
+      .limit(1)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching rajya_tapasani by inspection_id:', error);
+    return null;
   }
 };
 
@@ -487,22 +654,183 @@ export const uploadPhoto = async (inspectionId: string, photoUri: string, photoN
   }
 };
 
-// export const saveGrampanchayatInspectionForm = async (inspectionId: string, formData: any): Promise<void> => {
-//   if (!isSupabaseConfigured) {
-//     throw new Error('Supabase client not initialized');
-//   }
+// In your fimsService.ts - these MUST exist for the mobile file to work
+export const createMahatmaGandhiFormRecord = async (
+  inspectionId: string,
+  formData: MahatmaGandhiFormData
+): Promise<any> => {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase client not initialized');
+  }
 
-//   try {
-//     const { error } = await supabase
-//       .from('grampanchayat_inspection_form')
-//       .insert({
-//         inspection_id: inspectionId,
-//         ...formData,
-//       });
+  try {
+    const { data, error } = await supabase
+      .from('mahatma_gandhi_rastriya_gramin_tapasani_praptra')
+      .insert({ 
+        inspection_id: inspectionId, // Use passed inspectionId
+        inspection_date: formData.inspection_date || new Date().toISOString().split('T')[0],
+        officer_name: formData.inspector_name,
+        work_name: formData.work_name,
+        gram_panchayat: formData.gram_panchayat,
+        village: formData.village,
+        tehsil: formData.tehsil,
+        district: formData.district,
+        work_type: formData.work_type,
+        annual_plan: formData.annual_action_plan_included,
+        plan_year: formData.annual_action_plan_year,
+        implementing_agency: formData.implementation_agency,
+        work_code: formData.work_code,
+        unskilled_amount: parseFloat(formData.estimated_amount_unskilled) || 0,
+        skilled_amount: parseFloat(formData.estimated_amount_skilled) || 0,
+        total_amount: parseFloat(formData.estimated_amount_total) || 0,
+        dsr_department: formData.dsr_department,
+        dsr_year: formData.dsr_year,
+        nrega_records: formData.nrega_soft_records_correct,
+        nrega_form_a: formData.nrega_soft_form_a,
+        nrega_form_b: formData.nrega_soft_form_b,
+        convergence: formData.work_under_convergence,
+        department_name: formData.convergence_department,
+        fund_details: formData.convergence_fund_details,
+        mgnrega_unskilled: parseFloat(formData.mgnrega_unskilled) || 0,
+        mgnrega_skilled: parseFloat(formData.mgnrega_skilled) || 0,
+        mgnrega_total: parseFloat(formData.mgnrega_total) || 0,
+        other_dept_unskilled: parseFloat(formData.other_dept_unskilled) || 0,
+        other_dept_skilled: parseFloat(formData.other_dept_skilled) || 0,
+        other_dept_total: parseFloat(formData.other_dept_total) || 0,
+        recorded_workers: parseInt(formData.attendance_register_workers) || 0,
+        present_workers: parseInt(formData.actual_workers_present) || 0,
+        shelter: formData.shelter_for_workers,
+        first_aid: formData.first_aid_kit,
+        drinking_water: formData.drinking_water,
+        child_care: formData.childcare_for_workers_children,
+        current_status: formData.current_work_status,
+        expense_unskilled: parseFloat(formData.expenses_unskilled) || 0,
+        expense_skilled: parseFloat(formData.expenses_skilled) || 0,
+        expense_total: parseFloat(formData.expenses_total) || 0,
+        attendance_close_date: formData.previous_attendance_closure_date || new Date().toISOString().split('T')[0],
+        wage_deposited: formData.wages_deposited_timely,
+        delay_compensation: formData.delay_compensation_provided,
+        aadhaar_wage: formData.aadhaar_based_payment,
+        wage_not_deposited_reasons: formData.payment_failure_reasons,
+        job_card_available: formData.workers_have_job_cards,
+        job_card_updated: formData.job_card_records_updated,
+        work_file_updated: formData.work_file_updated,
+        cib_available: formData.citizen_information_board,
+        measurement_taken: formData.work_measurement_done,
+        measurement_book_no: formData.measurement_book_number,
+        all_measurements_recorded: formData.all_measurements_recorded,
+        senior_officer_check: formData.senior_technical_officer_check,
+        measurement_discrepancy: formData.measurement_discrepancy,
+        discrepancy_details: formData.discrepancy_details,
+        geo_tagging: formData.work_geotagged,
+        other_important_matters: formData.other_important_matters,
+        overall_quality: formData.overall_work_quality,
+        utility_feedback: formData.work_utility_feedback,
+        final_date: formData.inspection_date_final || new Date().toISOString().split('T')[0],
+        final_place: formData.inspection_location,
+        final_officer_name: formData.inspector_name_final,
+        final_designation: formData.inspector_designation_final,
+        final_office: formData.inspector_office
+      })
+      .select()
+      .single();
 
-//     if (error) throw error;
-//   } catch (error) {
-//     console.error('Error saving grampanchayat inspection form:', error);
-//     throw error;
-//   }
-// };
+    if (error) throw error;
+    console.log('[fimsService] created mahatma gandhi form record:', data);
+    return data;
+  } catch (error) {
+    console.error('Error creating Mahatma Gandhi form record:', error);
+    throw error;
+  }
+};
+
+export const upsertMahatmaGandhiFormRecord = async (
+  inspectionId: string,
+  formData: MahatmaGandhiFormData
+): Promise<any> => {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase client not initialized');
+  }
+
+  const payload = {
+    inspection_id: inspectionId,
+    inspection_date: formData.inspection_date || new Date().toISOString().split('T')[0],
+    officer_name: formData.inspector_name,
+    work_name: formData.work_name,
+    gram_panchayat: formData.gram_panchayat,
+    village: formData.village,
+    tehsil: formData.tehsil,
+    district: formData.district,
+    work_type: formData.work_type,
+    annual_plan: formData.annual_action_plan_included,
+    plan_year: formData.annual_action_plan_year,
+    implementing_agency: formData.implementation_agency,
+    work_code: formData.work_code,
+    unskilled_amount: parseFloat(formData.estimated_amount_unskilled) || 0,
+    skilled_amount: parseFloat(formData.estimated_amount_skilled) || 0,
+    total_amount: parseFloat(formData.estimated_amount_total) || 0,
+    dsr_department: formData.dsr_department,
+    dsr_year: formData.dsr_year,
+    nrega_records: formData.nrega_soft_records_correct,
+    nrega_form_a: formData.nrega_soft_form_a,
+    nrega_form_b: formData.nrega_soft_form_b,
+    convergence: formData.work_under_convergence,
+    department_name: formData.convergence_department,
+    fund_details: formData.convergence_fund_details,
+    mgnrega_unskilled: parseFloat(formData.mgnrega_unskilled) || 0,
+    mgnrega_skilled: parseFloat(formData.mgnrega_skilled) || 0,
+    mgnrega_total: parseFloat(formData.mgnrega_total) || 0,
+    other_dept_unskilled: parseFloat(formData.other_dept_unskilled) || 0,
+    other_dept_skilled: parseFloat(formData.other_dept_skilled) || 0,
+    other_dept_total: parseFloat(formData.other_dept_total) || 0,
+    recorded_workers: parseInt(formData.attendance_register_workers) || 0,
+    present_workers: parseInt(formData.actual_workers_present) || 0,
+    shelter: formData.shelter_for_workers,
+    first_aid: formData.first_aid_kit,
+    drinking_water: formData.drinking_water,
+    child_care: formData.childcare_for_workers_children,
+    current_status: formData.current_work_status,
+    expense_unskilled: parseFloat(formData.expenses_unskilled) || 0,
+    expense_skilled: parseFloat(formData.expenses_skilled) || 0,
+    expense_total: parseFloat(formData.expenses_total) || 0,
+    attendance_close_date: formData.previous_attendance_closure_date || new Date().toISOString().split('T')[0],
+    wage_deposited: formData.wages_deposited_timely,
+    delay_compensation: formData.delay_compensation_provided,
+    aadhaar_wage: formData.aadhaar_based_payment,
+    wage_not_deposited_reasons: formData.payment_failure_reasons,
+    job_card_available: formData.workers_have_job_cards,
+    job_card_updated: formData.job_card_records_updated,
+    work_file_updated: formData.work_file_updated,
+    cib_available: formData.citizen_information_board,
+    measurement_taken: formData.work_measurement_done,
+    measurement_book_no: formData.measurement_book_number,
+    all_measurements_recorded: formData.all_measurements_recorded,
+    senior_officer_check: formData.senior_technical_officer_check,
+    measurement_discrepancy: formData.measurement_discrepancy,
+    discrepancy_details: formData.discrepancy_details,
+    geo_tagging: formData.work_geotagged,
+    other_important_matters: formData.other_important_matters,
+    overall_quality: formData.overall_work_quality,
+    utility_feedback: formData.work_utility_feedback,
+    final_date: formData.inspection_date_final || new Date().toISOString().split('T')[0],
+    final_place: formData.inspection_location,
+    final_officer_name: formData.inspector_name_final,
+    final_designation: formData.inspector_designation_final,
+    final_office: formData.inspector_office
+  };
+
+  try {
+    const { data, error } = await supabase
+      .from('mahatma_gandhi_rastriya_gramin_tapasani_praptra')
+      .upsert([payload], { onConflict: 'inspection_id' })
+      .select()
+      .single();
+
+    if (error) throw error;
+    console.log('[fimsService] upserted mahatma gandhi form record:', data);
+    return data;
+  } catch (error) {
+    console.error('Error upserting Mahatma Gandhi form record:', error);
+    throw error;
+  }
+};

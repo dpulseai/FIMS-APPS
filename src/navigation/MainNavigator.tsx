@@ -48,6 +48,14 @@ export default function MainNavigator() {
             <Icon name="plus-circle-outline" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: () => {
+            // When user taps the New Inspection tab, always go to the
+            // CategorySelection screen (initial screen) so any pending
+            // edit form in the nested stack isn't shown.
+            navigation.navigate('NewInspection', { screen: 'CategorySelection' });
+          },
+        })}
       />
       <Tab.Screen
         name="Profile"

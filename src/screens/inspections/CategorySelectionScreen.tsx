@@ -69,6 +69,7 @@ export default function CategorySelectionScreen() {
       'Veterinary Institution Inspection': 'PahuvaidhakiyaTapasani',
       'education': 'RajyaShaishanikPrashikshan',
       'Rajya Shaishanik Prashikshan Inspection': 'RajyaShaishanikPrashikshan',
+      'Rajya Shaishanik Prashikshan Inspection Form': 'RajyaShaishanikPrashikshan',
       'quality': 'RajyaGunwattaNirikshak',
       'State Level Quality Inspection Form': 'RajyaGunwattaNirikshak',
       'monthly': 'ZPDarMahinyala',
