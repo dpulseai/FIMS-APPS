@@ -31,6 +31,9 @@ allprojects {
             force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.24"
             force "org.jetbrains.kotlin:kotlin-reflect:1.9.24"
         }
+        
+        // Exclude Compose Compiler to avoid version conflicts
+        exclude group: 'androidx.compose.compiler', module: 'compiler'
     }
     
     repositories {
@@ -52,3 +55,25 @@ allprojects {
 def expoCameraMavenPath = new File(["node", "--print", "require.resolve('expo-camera/package.json')"].execute(null, rootDir).text.trim(), "../android/maven")
 allprojects { repositories { maven { url(expoCameraMavenPath) } } }
 // @generated end expo-camera-import
+
+// Force Kotlin version compatibility suppression for all subprojects
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            project.android {
+                compileOptions {
+                    kotlinOptions {
+                        freeCompilerArgs += ["-P", "plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=1.9.25"]
+                    }
+                }
+            }
+        }
+        
+        // Add Kotlin compiler arguments for all tasks
+        tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+            kotlinOptions {
+                freeCompilerArgs += ["-P", "plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=1.9.25"]
+            }
+        }
+    }
+}
