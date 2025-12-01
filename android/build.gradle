@@ -30,8 +30,6 @@ allprojects {
             force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.24"
             force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.24"
             force "org.jetbrains.kotlin:kotlin-reflect:1.9.24"
-            // Force compatible Compose Compiler version for Kotlin 1.9.24
-            force "androidx.compose.compiler:compiler:1.5.8"
         }
     }
     
