@@ -4,6 +4,8 @@ module.exports = {
       automaticPodsInstallation: true,
     },
     android: {
+      sourceDir: './android',
+      appName: 'app',
       packageName: 'com.zpchandrapur.fims',
     },
   },
