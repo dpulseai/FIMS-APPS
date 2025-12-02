@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -30,44 +31,73 @@ export default function LoginScreen() {
     }
 
     setLoading(true);
-    const { data, error } = await signIn(email, password);
+    console.log('[Login] Starting sign-in...');
+    const startTime = Date.now();
+    
+    try {
+      const { data, error } = await signIn(email, password);
+      console.log(`[Login] Sign-in API took ${Date.now() - startTime}ms`);
 
-    if (error) {
+      if (error) {
+        console.error('[Login] Sign-in error:', error);
+        setLoading(false);
+        Alert.alert(t('common.error'), error.message || t('auth.signInError'));
+        return;
+      }
+
+      if (data?.user) {
+        console.log('[Login] Verifying permissions...');
+        const permStartTime = Date.now();
+        
+        // Single optimized query - fetch role and check FIMS permission in one call
+        const { data: roleData, error: roleError } = await supabase
+          .from('user_roles')
+          .select('role_id, roles!inner(name)')
+          .eq('user_id', data.user.id)
+          .single();
+        
+        console.log(`[Login] Role query took ${Date.now() - permStartTime}ms`);
+
+        if (roleError || !roleData) {
+          console.error('[Login] Role error:', roleError);
+          setLoading(false);
+          await supabase.auth.signOut();
+          Alert.alert(t('common.error'), 'User role not found. Please contact administrator.');
+          return;
+        }
+
+        // Check application permission
+        const permCheckStart = Date.now();
+        const { data: permData, error: permError } = await supabase
+          .from('application_permissions')
+          .select('can_read')
+          .eq('role_id', roleData.role_id)
+          .eq('application_name', 'fims')
+          .single();
+        
+        console.log(`[Login] Permission query took ${Date.now() - permCheckStart}ms`);
+
+        if (permError || !permData?.can_read) {
+          console.warn('[Login] No FIMS access');
+          setLoading(false);
+          await supabase.auth.signOut();
+          Alert.alert(
+            t('common.error'),
+            'You do not have access to FIMS application. Please contact administrator.'
+          );
+          return;
+        }
+        
+        console.log(`[Login] Total login time: ${Date.now() - startTime}ms - SUCCESS!`);
+      }
+    } catch (error) {
+      console.error('[Login] Unexpected error:', error);
       setLoading(false);
-      Alert.alert(t('common.error'), t('auth.signInError'));
+      Alert.alert(
+        t('common.error'),
+        error instanceof Error ? error.message : 'Login failed. Please try again.'
+      );
       return;
-    }
-
-    if (data?.user) {
-      const { data: userRolesData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role_id, roles!inner(name, application)')
-        .eq('user_id', data.user.id)
-        .single();
-
-      if (roleError || !userRolesData) {
-        setLoading(false);
-        await supabase.auth.signOut();
-        Alert.alert(t('common.error'), 'User role not found. Please contact administrator.');
-        return;
-      }
-
-      const { data: permData } = await supabase
-        .from('application_permissions')
-        .select('application_name, can_read')
-        .eq('role_id', userRolesData.role_id)
-        .eq('application_name', 'fims')
-        .single();
-
-      if (!permData || !permData.can_read) {
-        setLoading(false);
-        await supabase.auth.signOut();
-        Alert.alert(
-          t('common.error'),
-          'You do not have access to FIMS application. Please contact administrator.'
-        );
-        return;
-      }
     }
 
     setLoading(false);
@@ -135,7 +165,10 @@ export default function LoginScreen() {
             disabled={loading}
           >
             {loading ? (
-              <Text style={styles.loginButtonText}>{t('auth.signingIn')}</Text>
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator color="#ffffff" size="small" />
+                <Text style={[styles.loginButtonText, { marginLeft: 10 }]}>{t('auth.signingIn')}...</Text>
+              </View>
             ) : (
               <Text style={styles.loginButtonText}>{t('auth.signIn')}</Text>
             )}
@@ -234,6 +267,11 @@ const styles = StyleSheet.create({
   },
   loginButtonDisabled: {
     backgroundColor: '#93c5fd',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loginButtonText: {
     color: '#ffffff',
