@@ -2,7 +2,7 @@
   "expo": {
     "name": "FIMS Mobile",
     "slug": "fims-mobile",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -18,8 +18,7 @@
         "NSCameraUsageDescription": "FIMS needs access to your camera to take inspection photos.",
         "NSPhotoLibraryUsageDescription": "FIMS needs access to your photo library to select inspection photos.",
         "NSLocationWhenInUseUsageDescription": "FIMS needs access to your location to record inspection locations.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "FIMS needs access to your location to record inspection locations.",
-        "ITSAppUsesNonExemptEncryption": false
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "FIMS needs access to your location to record inspection locations."
       }
     },
     "android": {
@@ -28,6 +27,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.zpchandrapur.fims",
+      "versionCode": 2,
       "permissions": [
         "CAMERA",
         "ACCESS_FINE_LOCATION",
@@ -35,11 +35,7 @@
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "INTERNET",
-        "ACCESS_NETWORK_STATE",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "ACCESS_NETWORK_STATE"
       ],
       "config": {
         "googleMaps": {
