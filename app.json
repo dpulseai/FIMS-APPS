@@ -2,7 +2,8 @@
   "expo": {
     "name": "FIMS Mobile",
     "slug": "fims-mobile",
-    "version": "1.0.1",
+    "version": "1.0.3",
+    "jsEngine": "hermes",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -27,7 +28,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.zpchandrapur.fims",
-      "versionCode": 2,
+      "versionCode": 4,
       "permissions": [
         "CAMERA",
         "ACCESS_FINE_LOCATION",
@@ -47,6 +48,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "./plugins/withHermesEnabled",
       [
         "expo-camera",
         {
