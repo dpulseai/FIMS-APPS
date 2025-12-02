@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { FormsStackParamList, LocationData } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import { createInspection, uploadPhoto } from '../../services/fimsService';
+import { createInspection, updateInspection, uploadPhoto, getInspectionById } from '../../services/fimsService';
 import { supabase } from '../../services/supabase';
 import Stepper from '../../components/common/Stepper';
 import Input from '../../components/common/Input';
@@ -50,13 +50,14 @@ export default function HealthInspectionScreen() {
   const route = useRoute<RouteParams>();
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuth();
-  const { categoryId } = route.params;
+  const { categoryId, inspectionId, edit } = route.params as { categoryId: string; inspectionId?: string; edit?: boolean };
 
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoMetas, setPhotoMetas] = useState<Array<{ latitude?: number; longitude?: number; accuracy?: number }>>([]);
   const [location, setLocation] = useState<LocationData | null>(null);
+  const [isEditMode, setIsEditMode] = useState<boolean>(() => Boolean(edit) || !inspectionId);
 
   // Basic Information
   const [locationName, setLocationName] = useState('');
@@ -207,6 +208,90 @@ export default function HealthInspectionScreen() {
     { num: 27, text: 'प्रा.आ.केंद्रात गप्पीमासे पैदास केंद्रे कार्यरत आहे काय ?' }
   ];
 
+  // Load existing inspection data when inspectionId is provided
+  useEffect(() => {
+    if (!inspectionId) return;
+
+    const loadExistingInspection = async () => {
+      setLoading(true);
+      try {
+        const inspection = await getInspectionById(inspectionId);
+        if (!inspection) return;
+
+        // Load basic info
+        setLocationName(inspection.location_name || '');
+
+        // Load location data
+        setLocation({
+          latitude: inspection.location_latitude || 0,
+          longitude: inspection.location_longitude || 0,
+          accuracy: null,
+          address: inspection.location_address || null,
+          timestamp: Date.now(),
+        });
+
+        // Load photos
+        if (inspection.photos && inspection.photos.length > 0) {
+          setPhotos(inspection.photos.map((p: any) => p.photo_url));
+          try {
+            const metas = inspection.photos.map((p: any) => {
+              if (!p.description) return {};
+              try {
+                const parsed = JSON.parse(p.description);
+                return parsed?.photo_location || {};
+              } catch (e) {
+                return {};
+              }
+            });
+            setPhotoMetas(metas);
+          } catch (e) {
+            console.warn('Could not parse photo metas from inspection photos', e);
+          }
+        }
+
+        // Load form data from health_inspection_form table
+        const { data: formRows, error: formErr } = await supabase
+          .from('health_inspection_form')
+          .select('*')
+          .eq('inspection_id', inspectionId)
+          .order('updated_at', { ascending: false })
+          .limit(1);
+
+        if (formErr) {
+          console.error('Error loading health form data:', formErr);
+          return;
+        }
+
+        const formData = Array.isArray(formRows) && formRows.length > 0 ? formRows[0] : null;
+
+        if (formData) {
+          setPlannedDate(formData.planned_date || '');
+
+          // Load 27 questions
+          const loadedAnswers: { [key: number]: string } = {};
+          for (let i = 1; i <= 27; i++) {
+            if (formData[`q${i}`]) {
+              loadedAnswers[i] = formData[`q${i}`];
+            }
+          }
+          setAnswers(loadedAnswers);
+
+          // Load programs data
+          if (formData.programs_data && Array.isArray(formData.programs_data)) {
+            setProgramsData(formData.programs_data);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading existing inspection:', error);
+        Alert.alert(t('common.error'), 'Failed to load inspection data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExistingInspection();
+  }, [inspectionId]);
+
   const handleRadioChange = (questionNum: number, value: string) => {
     setAnswers((prev) => ({ ...prev, [questionNum]: value }));
   };
@@ -238,20 +323,37 @@ export default function HealthInspectionScreen() {
   const handleSaveAsDraft = async () => {
     try {
       setLoading(true);
-      const inspection = await createInspection({
-        category_id: categoryId,
-        inspector_id: user?.id,
-        filled_by_name: user?.email || '',
-        status: 'draft',
-        location_name: locationName,
-        location_latitude: location?.latitude,
-        location_longitude: location?.longitude,
-        location_address: location?.address || null,
-      });
+
+      // Determine inspection ID to use
+      let inspectionIdToUse = inspectionId;
+
+      if (inspectionIdToUse) {
+        // Update existing inspection
+        await updateInspection(inspectionIdToUse, {
+          filled_by_name: user?.email || '',
+          location_name: locationName,
+          location_latitude: location?.latitude,
+          location_longitude: location?.longitude,
+          location_address: location?.address || null,
+        });
+      } else {
+        // Create new inspection
+        const inspection = await createInspection({
+          category_id: categoryId,
+          inspector_id: user?.id,
+          filled_by_name: user?.email || '',
+          status: 'draft',
+          location_name: locationName,
+          location_latitude: location?.latitude,
+          location_longitude: location?.longitude,
+          location_address: location?.address || null,
+        });
+        inspectionIdToUse = inspection.id;
+      }
 
       // Save form data to health_inspection_form table
       const formData: any = {
-        inspection_id: inspection.id,
+        inspection_id: inspectionIdToUse,
         planned_date: plannedDate || null,
         programs_data: programsData,
       };
@@ -261,11 +363,22 @@ export default function HealthInspectionScreen() {
         formData[`q${i}`] = answers[i] || '';
       }
 
-      const { error: formError } = await supabase
-        .from('health_inspection_form')
-        .insert(formData);
+      if (inspectionId) {
+        // Update existing form data
+        const { error: formError } = await supabase
+          .from('health_inspection_form')
+          .update(formData)
+          .eq('inspection_id', inspectionIdToUse);
 
-      if (formError) throw formError;
+        if (formError) throw formError;
+      } else {
+        // Insert new form data
+        const { error: formError } = await supabase
+          .from('health_inspection_form')
+          .insert(formData);
+
+        if (formError) throw formError;
+      }
 
       Alert.alert(t('common.success'), t('fims.inspectionSaved'));
       navigation.goBack();
@@ -284,20 +397,38 @@ export default function HealthInspectionScreen() {
     }
     try {
       setLoading(true);
-      const inspection = await createInspection({
-        category_id: categoryId,
-        inspector_id: user?.id,
-        filled_by_name: user?.email || '',
-        status: 'submitted',
-        location_name: locationName,
-        location_latitude: location?.latitude,
-        location_longitude: location?.longitude,
-        location_address: location?.address || null,
-      });
+
+      // Determine inspection ID to use
+      let inspectionIdToUse = inspectionId;
+
+      if (inspectionIdToUse) {
+        // Update existing inspection
+        await updateInspection(inspectionIdToUse, {
+          filled_by_name: user?.email || '',
+          status: 'submitted',
+          location_name: locationName,
+          location_latitude: location?.latitude,
+          location_longitude: location?.longitude,
+          location_address: location?.address || null,
+        });
+      } else {
+        // Create new inspection
+        const inspection = await createInspection({
+          category_id: categoryId,
+          inspector_id: user?.id,
+          filled_by_name: user?.email || '',
+          status: 'submitted',
+          location_name: locationName,
+          location_latitude: location?.latitude,
+          location_longitude: location?.longitude,
+          location_address: location?.address || null,
+        });
+        inspectionIdToUse = inspection.id;
+      }
 
       // Save form data to health_inspection_form table
       const formData: any = {
-        inspection_id: inspection.id,
+        inspection_id: inspectionIdToUse,
         planned_date: plannedDate || null,
         programs_data: programsData,
       };
@@ -307,15 +438,31 @@ export default function HealthInspectionScreen() {
         formData[`q${i}`] = answers[i] || '';
       }
 
-      const { error: formError } = await supabase
-        .from('health_inspection_form')
-        .insert(formData);
+      if (inspectionId) {
+        // Update existing form data
+        const { error: formError } = await supabase
+          .from('health_inspection_form')
+          .update(formData)
+          .eq('inspection_id', inspectionIdToUse);
 
-      if (formError) throw formError;
+        if (formError) throw formError;
+      } else {
+        // Insert new form data
+        const { error: formError } = await supabase
+          .from('health_inspection_form')
+          .insert(formData);
 
-      // Upload photos with metadata
+        if (formError) throw formError;
+      }
+
+      // Upload only new photos (not existing remote URLs)
       for (let i = 0; i < photos.length; i++) {
-        await uploadPhoto(inspection.id, photos[i], `photo_${i + 1}.jpg`, i + 1);
+        const photo = photos[i];
+        // Only upload if it's a local file (starts with file:// or content://)
+        // Skip remote URLs (already uploaded photos)
+        if (photo && (photo.startsWith('file://') || photo.startsWith('content://') || !photo.startsWith('http'))) {
+          await uploadPhoto(inspectionIdToUse, photo, `photo_${i + 1}.jpg`, i + 1);
+        }
       }
 
       Alert.alert(t('common.success'), t('fims.inspectionSubmitted'));
@@ -474,6 +621,15 @@ export default function HealthInspectionScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Stepper steps={STEPS} currentStep={currentStep} />
+      {inspectionId ? (
+        <View style={{ paddingHorizontal: 16, paddingTop: 8, alignItems: 'flex-end', backgroundColor: '#fff' }}>
+          {!isEditMode ? (
+            <Button title={t('common.edit') || 'Edit'} onPress={() => setIsEditMode(true)} variant="outline" />
+          ) : (
+            <Text style={{ color: '#059669', fontWeight: '600' }}>{t('fims.editing') || 'Editing'}</Text>
+          )}
+        </View>
+      ) : null}
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
         <Card>{renderStep()}</Card>
       </ScrollView>

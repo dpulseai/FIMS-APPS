@@ -235,6 +235,20 @@ export default function InspectionsListScreen() {
       return;
     }
 
+    // If it's a Health Inspection form, open the HealthInspection screen inside NewInspection
+    if (
+      inspection.form_type === 'health_inspection' ||
+      inspection.form_type === 'health' ||
+      cat.includes('health') ||
+      cat.includes('आरोग्य')
+    ) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'HealthInspection',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
     // Fallback: show the inspection detail view
     navigation.navigate('InspectionDetail', { inspectionId: inspection.id });
   };
