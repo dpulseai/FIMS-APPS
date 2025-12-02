@@ -49,4 +49,27 @@
 # AsyncStorage
 -keep class com.reactnativecommunity.asyncstorage.** { *; }
 
+# JSC (JavaScript Core)
+-keep class org.webkit.** { *; }
+
+# Hermes
+-keep class com.facebook.hermes.** { *; }
+-keep class com.facebook.jni.** { *; }
+
+# SQLite
+-keep class net.sqlcipher.** { *; }
+-keep class net.sqlcipher.database.** { *; }
+
+# Networking
+-keepattributes InnerClasses
+-keep class com.facebook.react.modules.network.** { *; }
+
+# i18next / AsyncStorage integration
+-keep class * implements java.io.Serializable { *; }
+
+# Keep all native methods
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
 # Add any project specific keep options here:

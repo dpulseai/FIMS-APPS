@@ -5,23 +5,47 @@ import android.content.pm.ActivityInfo
 import android.graphics.Paint
 import android.os.Parcelable
 import android.util.SparseArray
-import android.util.TypedValue
+import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.webkit.WebView
+import android.widget.ImageView
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.children
 import androidx.fragment.app.Fragment
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.facebook.react.bridge.GuardedRunnable
 import com.facebook.react.bridge.ReactContext
 import com.facebook.react.uimanager.PixelUtil
+import com.facebook.react.uimanager.ReactClippingViewGroup
 import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.UIManagerModule
+import com.facebook.react.uimanager.events.EventDispatcher
+import com.facebook.react.views.scroll.ReactHorizontalScrollView
+import com.facebook.react.views.scroll.ReactScrollView
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.shape.CornerFamily
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.shape.ShapeAppearanceModel
 import com.swmansion.rnscreens.events.HeaderHeightChangeEvent
+import com.swmansion.rnscreens.events.SheetDetentChangedEvent
+import java.lang.ref.WeakReference
 
-@SuppressLint("ViewConstructor")
-class Screen(context: ReactContext?) : FabricEnabledViewGroup(context) {
+@SuppressLint("ViewConstructor") // Only we construct this view, it is never inflated.
+class Screen(
+    val reactContext: ReactContext,
+) : FabricEnabledViewGroup(reactContext),
+    ScreenContentWrapper.OnLayoutCallback {
     val fragment: Fragment?
         get() = fragmentWrapper?.fragment
+
+    var contentWrapper = WeakReference<ScreenContentWrapper>(null)
+
+    val sheetBehavior: BottomSheetBehavior<Screen>?
+        get() = (layoutParams as? CoordinatorLayout.LayoutParams)?.behavior as? BottomSheetBehavior<Screen>
+
+    val reactEventDispatcher: EventDispatcher?
+        get() = UIManagerHelper.getEventDispatcherForReactTag(reactContext, id)
 
     var fragmentWrapper: ScreenFragmentWrapper? = null
     var container: ScreenContainer? = null
@@ -35,6 +59,40 @@ class Screen(context: ReactContext?) : FabricEnabledViewGroup(context) {
     var screenOrientation: Int? = null
         private set
     var isStatusBarAnimated: Boolean? = null
+    var isBeingRemoved = false
+
+    // Props for controlling modal presentation
+    var isSheetGrabberVisible: Boolean = false
+
+    // corner radius must be updated after all props prop updates from a single transaction
+    // have been applied, because it depends on the presentation type.
+    private var shouldUpdateSheetCornerRadius = false
+    var sheetCornerRadius: Float = 0F
+        set(value) {
+            if (field != value) {
+                field = value
+                shouldUpdateSheetCornerRadius = true
+            }
+        }
+    var sheetExpandsWhenScrolledToEdge: Boolean = true
+
+    // We want to make sure here that at least one value is present in this array all the time.
+    // TODO: Model this with custom data structure to guarantee that this invariant is not violated.
+    var sheetDetents = mutableListOf(1.0)
+    var sheetLargestUndimmedDetentIndex: Int = -1
+    var sheetInitialDetentIndex: Int = 0
+    var sheetClosesOnTouchOutside = true
+    var sheetElevation: Float = 24F
+
+    var footer: ScreenFooter? = null
+        set(value) {
+            if (value == null && field != null) {
+                sheetBehavior?.let { field!!.unregisterWithSheetBehavior(it) }
+            } else if (value != null) {
+                sheetBehavior?.let { value.registerWithSheetBehavior(it) }
+            }
+            field = value
+        }
 
     init {
         // we set layout params as WindowManager.LayoutParams to workaround the issue with TextInputs
@@ -50,6 +108,34 @@ class Screen(context: ReactContext?) : FabricEnabledViewGroup(context) {
         layoutParams = WindowManager.LayoutParams(WindowManager.LayoutParams.TYPE_APPLICATION)
     }
 
+    /**
+     * ScreenContentWrapper notifies us here on it's layout. It is essential for implementing
+     * `fitToContents` for formSheets, as this is first entry point where we can acquire
+     * height of our content.
+     */
+    override fun onLayoutCallback(
+        changed: Boolean,
+        left: Int,
+        top: Int,
+        right: Int,
+        bottom: Int,
+    ) {
+        val height = bottom - top
+
+        if (sheetDetents.count() == 1 && sheetDetents.first() == SHEET_FIT_TO_CONTENTS) {
+            sheetBehavior?.let {
+                if (it.maxHeight != height) {
+                    it.maxHeight = height
+                }
+            }
+        }
+    }
+
+    fun registerLayoutCallbackForWrapper(wrapper: ScreenContentWrapper) {
+        wrapper.delegate = this
+        this.contentWrapper = WeakReference(wrapper)
+    }
+
     override fun dispatchSaveInstanceState(container: SparseArray<Parcelable>) {
         // do nothing, react native will keep the view hierarchy so no need to serialize/deserialize
         // view's states. The side effect of restoring is that TextInput components would trigger
@@ -60,33 +146,41 @@ class Screen(context: ReactContext?) : FabricEnabledViewGroup(context) {
         // ignore restoring instance state too as we are not saving anything anyways.
     }
 
-    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+    override fun onLayout(
+        changed: Boolean,
+        l: Int,
+        t: Int,
+        r: Int,
+        b: Int,
+    ) {
         if (container is ScreenStack && changed) {
             val width = r - l
             val height = b - t
 
-            val headerHeight = calculateHeaderHeight()
-            val totalHeight = headerHeight.first + headerHeight.second // action bar height + status bar height
             if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
-                updateScreenSizeFabric(width, height, totalHeight)
+                updateScreenSizeFabric(width, height, t)
             } else {
                 updateScreenSizePaper(width, height)
             }
 
-            notifyHeaderHeightChange(totalHeight)
+            footer?.onParentLayout(changed, l, t, r, b, container!!.height)
+            notifyHeaderHeightChange(t)
         }
     }
 
-    private fun updateScreenSizePaper(width: Int, height: Int) {
-        val reactContext = context as ReactContext
+    private fun updateScreenSizePaper(
+        width: Int,
+        height: Int,
+    ) {
         reactContext.runOnNativeModulesQueueThread(
-            object : GuardedRunnable(reactContext) {
+            object : GuardedRunnable(reactContext.exceptionHandler) {
                 override fun runGuarded() {
                     reactContext
                         .getNativeModule(UIManagerModule::class.java)
                         ?.updateNodeSize(id, width, height)
                 }
-            })
+            },
+        )
     }
 
     val headerConfig: ScreenStackHeaderConfig?
@@ -108,9 +202,18 @@ class Screen(context: ReactContext?) : FabricEnabledViewGroup(context) {
         }
         super.setLayerType(
             if (transitioning && !isWebViewInScreen) LAYER_TYPE_HARDWARE else LAYER_TYPE_NONE,
-            null
+            null,
         )
     }
+
+    fun isTransparent(): Boolean =
+        when (stackPresentation) {
+            StackPresentation.TRANSPARENT_MODAL,
+            StackPresentation.FORM_SHEET,
+            -> true
+
+            else -> false
+        }
 
     private fun hasWebView(viewGroup: ViewGroup): Boolean {
         for (i in 0 until viewGroup.childCount) {
@@ -126,13 +229,19 @@ class Screen(context: ReactContext?) : FabricEnabledViewGroup(context) {
         return false
     }
 
-    override fun setLayerType(layerType: Int, paint: Paint?) {
+    override fun setLayerType(
+        layerType: Int,
+        paint: Paint?,
+    ) {
         // ignore - layer type is controlled by `transitioning` prop
     }
 
     fun setActivityState(activityState: ActivityState) {
         if (activityState == this.activityState) {
             return
+        }
+        if (container is ScreenStack && this.activityState != null && activityState < this.activityState!!) {
+            throw IllegalStateException("[RNScreens] activityState can only progress in NativeStack")
         }
         this.activityState = activityState
         container?.notifyChildUpdate()
@@ -144,16 +253,17 @@ class Screen(context: ReactContext?) : FabricEnabledViewGroup(context) {
             return
         }
         ScreenWindowTraits.applyDidSetOrientation()
-        this.screenOrientation = when (screenOrientation) {
-            "all" -> ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
-            "portrait" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-            "portrait_up" -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            "portrait_down" -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
-            "landscape" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-            "landscape_left" -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
-            "landscape_right" -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        }
+        this.screenOrientation =
+            when (screenOrientation) {
+                "all" -> ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
+                "portrait" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+                "portrait_up" -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                "portrait_down" -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+                "landscape" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                "landscape_left" -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                "landscape_right" -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            }
 
         fragmentWrapper?.let { ScreenWindowTraits.setOrientation(this, it.tryGetActivity()) }
     }
@@ -171,7 +281,13 @@ class Screen(context: ReactContext?) : FabricEnabledViewGroup(context) {
                 ScreenWindowTraits.applyDidSetStatusBarAppearance()
             }
             field = statusBarStyle
-            fragmentWrapper?.let { ScreenWindowTraits.setStyle(this, it.tryGetActivity(), it.tryGetContext()) }
+            fragmentWrapper?.let {
+                ScreenWindowTraits.setStyle(
+                    this,
+                    it.tryGetActivity(),
+                    it.tryGetContext(),
+                )
+            }
         }
 
     var isStatusBarHidden: Boolean? = null
@@ -193,7 +309,7 @@ class Screen(context: ReactContext?) : FabricEnabledViewGroup(context) {
                 ScreenWindowTraits.setTranslucent(
                     this,
                     it.tryGetActivity(),
-                    it.tryGetContext()
+                    it.tryGetContext(),
                 )
             }
         }
@@ -204,7 +320,13 @@ class Screen(context: ReactContext?) : FabricEnabledViewGroup(context) {
                 ScreenWindowTraits.applyDidSetStatusBarAppearance()
             }
             field = statusBarColor
-            fragmentWrapper?.let { ScreenWindowTraits.setColor(this, it.tryGetActivity(), it.tryGetContext()) }
+            fragmentWrapper?.let {
+                ScreenWindowTraits.setColor(
+                    this,
+                    it.tryGetActivity(),
+                    it.tryGetContext(),
+                )
+            }
         }
 
     var navigationBarColor: Int? = null
@@ -213,7 +335,26 @@ class Screen(context: ReactContext?) : FabricEnabledViewGroup(context) {
                 ScreenWindowTraits.applyDidSetNavigationBarAppearance()
             }
             field = navigationBarColor
-            fragmentWrapper?.let { ScreenWindowTraits.setNavigationBarColor(this, it.tryGetActivity()) }
+            fragmentWrapper?.let {
+                ScreenWindowTraits.setNavigationBarColor(
+                    this,
+                    it.tryGetActivity(),
+                )
+            }
+        }
+
+    var isNavigationBarTranslucent: Boolean? = null
+        set(navigationBarTranslucent) {
+            if (navigationBarTranslucent != null) {
+                ScreenWindowTraits.applyDidSetNavigationBarAppearance()
+            }
+            field = navigationBarTranslucent
+            fragmentWrapper?.let {
+                ScreenWindowTraits.setNavigationBarTranslucent(
+                    this,
+                    it.tryGetActivity(),
+                )
+            }
         }
 
     var isNavigationBarHidden: Boolean? = null
@@ -232,50 +373,160 @@ class Screen(context: ReactContext?) : FabricEnabledViewGroup(context) {
 
     var nativeBackButtonDismissalEnabled: Boolean = true
 
-    private fun calculateHeaderHeight(): Pair<Double, Double> {
-        val actionBarTv = TypedValue()
-        val resolvedActionBarSize = context.theme.resolveAttribute(android.R.attr.actionBarSize, actionBarTv, true)
-
-        // Check if it's possible to get an attribute from theme context and assign a value from it.
-        // Otherwise, the default value will be returned.
-        val actionBarHeight = TypedValue.complexToDimensionPixelSize(actionBarTv.data, resources.displayMetrics)
-            .takeIf { resolvedActionBarSize && headerConfig?.isHeaderHidden != true && headerConfig?.isHeaderTranslucent != true }
-            ?.let { PixelUtil.toDIPFromPixel(it.toFloat()).toDouble() } ?: 0.0
-
-        val statusBarHeight = context.resources.getIdentifier("status_bar_height", "dimen", "android")
-            // Count only status bar when action bar is visible and status bar is not hidden
-            .takeIf { it > 0 && isStatusBarHidden != true && actionBarHeight > 0 }
-            ?.let { (context.resources::getDimensionPixelSize)(it) }
-            ?.let { PixelUtil.toDIPFromPixel(it.toFloat()).toDouble() }
-            ?: 0.0
-
-        return actionBarHeight to statusBarHeight
+    fun startRemovalTransition() {
+        if (!isBeingRemoved) {
+            isBeingRemoved = true
+            startTransitionRecursive(this)
+        }
     }
 
-    private fun notifyHeaderHeightChange(headerHeight: Double) {
+    private fun startTransitionRecursive(parent: ViewGroup?) {
+        parent?.let {
+            for (i in 0 until it.childCount) {
+                val child = it.getChildAt(i)
+
+                if (parent is SwipeRefreshLayout && child is ImageView) {
+                    // SwipeRefreshLayout class which has CircleImageView as a child,
+                    // does not handle `startViewTransition` properly.
+                    // It has a custom `getChildDrawingOrder` method which returns
+                    // wrong index if we called `startViewTransition` on the views on new arch.
+                    // We add a simple View to bump the number of children to make it work.
+                    // TODO: find a better way to handle this scenario
+                    it.addView(View(context), i)
+                } else {
+                    child?.let { view -> it.startViewTransition(view) }
+                }
+
+                if (child is ScreenStackHeaderConfig) {
+                    // we want to start transition on children of the toolbar too,
+                    // which is not a child of ScreenStackHeaderConfig
+                    startTransitionRecursive(child.toolbar)
+                }
+
+                if (child is ViewGroup) {
+                    // The children are miscounted when there's removeClippedSubviews prop
+                    // set to true (which is the default for FlatLists).
+                    // Unless the child is a ScrollView it's safe to assume that it's true
+                    // and add a simple view for each possibly clipped item to make it work as expected.
+                    // See https://github.com/software-mansion/react-native-screens/pull/2495
+
+                    if (child is ReactClippingViewGroup &&
+                        child.removeClippedSubviews &&
+                        child !is ReactScrollView &&
+                        child !is ReactHorizontalScrollView
+                    ) {
+                        // We need to workaround the issue until our changes land in core.
+                        // Some views do not accept any children or have set amount and they throw
+                        // when we want to brute-forcefully manipulate that.
+                        // Is this ugly? Very. Do we have better option before changes land in core?
+                        // I'm not aware of any.
+                        try {
+                            for (j in 0 until child.childCount) {
+                                child.addView(View(context))
+                            }
+                        } catch (_: Exception) {
+                        }
+                    }
+                    startTransitionRecursive(child)
+                }
+            }
+        }
+    }
+
+    private fun notifyHeaderHeightChange(headerHeight: Int) {
         val screenContext = context as ReactContext
         val surfaceId = UIManagerHelper.getSurfaceId(screenContext)
-        UIManagerHelper.getEventDispatcherForReactTag(screenContext, id)
+        UIManagerHelper
+            .getEventDispatcherForReactTag(screenContext, id)
             ?.dispatchEvent(HeaderHeightChangeEvent(surfaceId, id, headerHeight))
     }
 
+    internal fun notifySheetDetentChange(
+        detentIndex: Int,
+        isStable: Boolean,
+    ) {
+        val surfaceId = UIManagerHelper.getSurfaceId(reactContext)
+        reactEventDispatcher?.dispatchEvent(
+            SheetDetentChangedEvent(
+                surfaceId,
+                id,
+                detentIndex,
+                isStable,
+            ),
+        )
+    }
+
+    internal fun onFinalizePropsUpdate() {
+        if (shouldUpdateSheetCornerRadius) {
+            shouldUpdateSheetCornerRadius = false
+            onSheetCornerRadiusChange()
+        }
+    }
+
+    internal fun onSheetCornerRadiusChange() {
+        if (stackPresentation !== StackPresentation.FORM_SHEET || background == null) {
+            return
+        }
+        (background as? MaterialShapeDrawable?)?.let {
+            val resolvedCornerRadius = PixelUtil.toDIPFromPixel(sheetCornerRadius)
+            it.shapeAppearanceModel =
+                ShapeAppearanceModel
+                    .Builder()
+                    .apply {
+                        setTopLeftCorner(CornerFamily.ROUNDED, resolvedCornerRadius)
+                        setTopRightCorner(CornerFamily.ROUNDED, resolvedCornerRadius)
+                    }.build()
+        }
+    }
+
     enum class StackPresentation {
-        PUSH, MODAL, TRANSPARENT_MODAL
+        PUSH,
+        MODAL,
+        TRANSPARENT_MODAL,
+        FORM_SHEET,
     }
 
     enum class StackAnimation {
-        DEFAULT, NONE, FADE, SLIDE_FROM_BOTTOM, SLIDE_FROM_RIGHT, SLIDE_FROM_LEFT, FADE_FROM_BOTTOM, IOS
+        DEFAULT,
+        NONE,
+        FADE,
+        SLIDE_FROM_BOTTOM,
+        SLIDE_FROM_RIGHT,
+        SLIDE_FROM_LEFT,
+        FADE_FROM_BOTTOM,
+        IOS_FROM_RIGHT,
+        IOS_FROM_LEFT,
     }
 
     enum class ReplaceAnimation {
-        PUSH, POP
+        PUSH,
+        POP,
     }
 
     enum class ActivityState {
-        INACTIVE, TRANSITIONING_OR_BELOW_TOP, ON_TOP
+        INACTIVE,
+        TRANSITIONING_OR_BELOW_TOP,
+        ON_TOP,
     }
 
     enum class WindowTraits {
-        ORIENTATION, COLOR, STYLE, TRANSLUCENT, HIDDEN, ANIMATED, NAVIGATION_BAR_COLOR, NAVIGATION_BAR_HIDDEN
+        ORIENTATION,
+        COLOR,
+        STYLE,
+        TRANSLUCENT,
+        HIDDEN,
+        ANIMATED,
+        NAVIGATION_BAR_COLOR,
+        NAVIGATION_BAR_TRANSLUCENT,
+        NAVIGATION_BAR_HIDDEN,
+    }
+
+    companion object {
+        const val TAG = "Screen"
+
+        /**
+         * This value describes value in sheet detents array that will be treated as `fitToContents` option.
+         */
+        const val SHEET_FIT_TO_CONTENTS = -1.0
     }
 }

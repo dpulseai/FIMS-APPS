@@ -14,7 +14,6 @@ import {
   makeMutable,
   runOnUI,
 } from 'react-native-reanimated';
-import type { GestureProviderProps } from 'src/native-stack/types';
 import { getShadowNodeWrapperAndTagFromRef, isFabric } from './fabricUtils';
 import { RNScreensTurboModule } from './RNScreensTurboModule';
 import { DefaultEvent, DefaultScreenDimensions } from './defaults';
@@ -23,6 +22,7 @@ import {
   checkIfTransitionCancelled,
   getAnimationForTransition,
 } from './constraints';
+import { GestureProviderProps } from '../types';
 
 const EmptyGestureHandler = Gesture.Fling();
 
@@ -33,14 +33,14 @@ const ScreenGestureDetector = ({
   screenEdgeGesture,
   transitionAnimation: customTransitionAnimation,
   screensRefs,
-  currentRouteKey,
+  currentScreenId,
 }: GestureProviderProps) => {
   const sharedEvent = useSharedValue(DefaultEvent);
   const startingGesturePosition = useSharedValue(DefaultEvent);
   const canPerformUpdates = makeMutable(false);
   const transitionAnimation = getAnimationForTransition(
     goBackGesture,
-    customTransitionAnimation
+    customTransitionAnimation,
   );
   const screenTransitionConfig = makeMutable({
     stackTag: -1,
@@ -73,7 +73,7 @@ const ScreenGestureDetector = ({
   };
 
   useEffect(() => {
-    if (!IS_FABRIC || !goBackGesture) {
+    if (!IS_FABRIC || !goBackGesture || screensRefs === undefined) {
       return;
     }
     const screenTagToNodeWrapper: Record<string, Record<string, unknown>> = {};
@@ -87,10 +87,10 @@ const ScreenGestureDetector = ({
       }
     }
     screenTagToNodeWrapperUI.value = screenTagToNodeWrapper;
-  }, [currentRouteKey]);
+  }, [currentScreenId, goBackGesture]);
 
   function computeProgress(
-    event: GestureUpdateEvent<PanGestureHandlerEventPayload>
+    event: GestureUpdateEvent<PanGestureHandlerEventPayload>,
   ) {
     'worklet';
     let progress = 0;
@@ -114,10 +114,10 @@ const ScreenGestureDetector = ({
       progress = Math.abs(event.translationY / screenDimensions.height / 2);
     } else if (goBackGesture === 'twoDimensionalSwipe') {
       const progressX = Math.abs(
-        event.translationX / screenDimensions.width / 2
+        event.translationX / screenDimensions.width / 2,
       );
       const progressY = Math.abs(
-        event.translationY / screenDimensions.height / 2
+        event.translationY / screenDimensions.height / 2,
       );
       progress = Math.max(progressX, progressY);
     }
@@ -194,7 +194,7 @@ const ScreenGestureDetector = ({
       distanceX,
       requiredXDistance,
       distanceY,
-      requiredYDistance
+      requiredYDistance,
     );
     const stackTag = screenTransitionConfig.value.stackTag;
     screenTransitionConfig.value.onFinishAnimation = () => {

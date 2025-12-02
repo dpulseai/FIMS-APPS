@@ -337,9 +337,9 @@ export default function AnganwadiTapasaniScreen() {
       const villages = [...new Set((data || []).map((item: any) => item.Ward_Village_Name).filter(Boolean))];
       const tehsils = [...new Set((data || []).map((item: any) => item.Block_Name).filter(Boolean))];
 
-      setGrampanchayatData(gps);
-      setVillageData(villages);
-      setTehsilsData(tehsils);
+      setGrampanchayatData(gps as string[]);
+      setVillageData(villages as string[]);
+      setTehsilsData(tehsils as string[]);
     } catch (error) {
       console.error('Dropdown fetch error:', error);
       Alert.alert('Error', 'Failed to load location dropdowns');

@@ -167,11 +167,14 @@ export type AndroidNativeProps = Readonly<
        * @deprecated use negativeButton instead
        * */
       negativeButtonLabel?: string;
-
+      /**
+       * Sets the first day of the week shown in the calendar
+       */
+      firstDayOfWeek?: DAY_OF_WEEK;
       /**
        * callback when an error occurs inside the date picker native code (such as null activity)
        */
-      onError?: (arg: Error) => void;
+      onError?: (_arg: Error) => void;
     }
 >;
 

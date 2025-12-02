@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useAuth } from '../hooks/useAuth';
 import { RootStackParamList } from '../types';
@@ -10,6 +10,10 @@ const Stack = createStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
   const { user, loading } = useAuth();
+
+  useEffect(() => {
+    console.log('[RootNavigator] Auth state - loading:', loading, 'user:', user ? 'logged in' : 'not logged in');
+  }, [loading, user]);
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>

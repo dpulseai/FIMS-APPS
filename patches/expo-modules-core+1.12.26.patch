@@ -1,0 +1,63 @@
+*** Begin Patch
+*** Update File: node_modules/expo-modules-core/android/src/main/java/expo/modules/adapters/react/permissions/PermissionsService.kt
+@@
+-    // cleanup
+-    val askAsyncListener = mAskAsyncListener!!
+-    val askAsyncRequestedPermissions = mAskAsyncRequestedPermissions!!
+-
+-    mAskAsyncListener = null
+-    mAskAsyncRequestedPermissions = null
+-
+-    if (askAsyncRequestedPermissions.isNotEmpty()) {
+-      // invoke actual asking for permissions
+-      askForManifestPermissions(askAsyncRequestedPermissions, askAsyncListener)
+-    } else {
+-      // user asked only for Manifest.permission.WRITE_SETTINGS
+-      askAsyncListener.onResult(mutableMapOf())
+-    }
++    // cleanup
++    val askAsyncListener = mAskAsyncListener
++    val askAsyncRequestedPermissions = mAskAsyncRequestedPermissions
++
++    mAskAsyncListener = null
++    mAskAsyncRequestedPermissions = null
++
++    if (askAsyncRequestedPermissions != null && askAsyncRequestedPermissions.isNotEmpty()) {
++      // invoke actual asking for permissions
++      if (askAsyncListener != null) {
++        askForManifestPermissions(askAsyncRequestedPermissions, askAsyncListener)
++      }
++    } else {
++      // user asked only for Manifest.permission.WRITE_SETTINGS (or listener missing)
++      askAsyncListener?.onResult(mutableMapOf())
+diff --git a/node_modules/expo-modules-core/android/src/main/java/expo/modules/adapters/react/permissions/PermissionsService.kt b/node_modules/expo-modules-core/android/src/main/java/expo/modules/adapters/react/permissions/PermissionsService.kt
+--- a/node_modules/expo-modules-core/android/src/main/java/expo/modules/adapters/react/permissions/PermissionsService.kt
++++ b/node_modules/expo-modules-core/android/src/main/java/expo/modules/adapters/react/permissions/PermissionsService.kt
+@@
+	 private fun hasWriteSettingsPermission(): Boolean {
+		 return Settings.System.canWrite(context.applicationContext)
+	 }
+ 
+	 override fun onHostResume() {
+		 if (!mWriteSettingsPermissionBeingAsked) {
+			 return
+		 }
+		 mWriteSettingsPermissionBeingAsked = false
+ 
+		 // cleanup
+		 val askAsyncListener = mAskAsyncListener
+		 val askAsyncRequestedPermissions = mAskAsyncRequestedPermissions
+ 
+		 mAskAsyncListener = null
+		 mAskAsyncRequestedPermissions = null
+ 
+		 if (askAsyncRequestedPermissions != null && askAsyncRequestedPermissions.isNotEmpty()) {
+			 // invoke actual asking for permissions
+			 if (askAsyncListener != null) {
+				 askForManifestPermissions(askAsyncRequestedPermissions, askAsyncListener)
+			 }
+		 } else {
+			 // user asked only for Manifest.permission.WRITE_SETTINGS (or listener missing)
+			 askAsyncListener?.onResult(mutableMapOf())
+		 }
+	 }

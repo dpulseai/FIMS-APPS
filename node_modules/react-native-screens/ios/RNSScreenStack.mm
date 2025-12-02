@@ -1,12 +1,15 @@
 #ifdef RCT_NEW_ARCH_ENABLED
 #import <React/RCTFabricComponentsPlugins.h>
+#import <React/RCTFabricSurface.h>
 #import <React/RCTMountingTransactionObserving.h>
 #import <React/RCTSurfaceTouchHandler.h>
+#import <React/RCTSurfaceView.h>
 #import <React/UIView+React.h>
 #import <react/renderer/components/rnscreens/ComponentDescriptors.h>
 #import <react/renderer/components/rnscreens/EventEmitters.h>
 #import <react/renderer/components/rnscreens/Props.h>
 #import <react/renderer/components/rnscreens/RCTComponentViewHelpers.h>
+#import "RCTSurfaceTouchHandler+RNSUtility.h"
 #else
 #import <React/RCTBridge.h>
 #import <React/RCTRootContentView.h>
@@ -14,13 +17,19 @@
 #import <React/RCTTouchHandler.h>
 #import <React/RCTUIManager.h>
 #import <React/RCTUIManagerUtils.h>
+#import "RCTTouchHandler+RNSUtility.h"
 #endif // RCT_NEW_ARCH_ENABLED
 
+#import "RNSDefines.h"
+#import "RNSPercentDrivenInteractiveTransition.h"
 #import "RNSScreen.h"
 #import "RNSScreenStack.h"
 #import "RNSScreenStackAnimator.h"
 #import "RNSScreenStackHeaderConfig.h"
 #import "RNSScreenWindowTraits.h"
+#import "utils/UINavigationBar+RNSUtility.h"
+
+#import "UIView+RNSUtility.h"
 
 #ifdef RCT_NEW_ARCH_ENABLED
 namespace react = facebook::react;
@@ -76,6 +85,8 @@ namespace react = facebook::react;
     if (![screenController hasNestedStack] && isNotDismissingModal) {
       [screenController calculateAndNotifyHeaderHeightChangeIsModal:NO];
     }
+
+    [self maybeUpdateHeaderInsetsInShadowTreeForScreen:screenController];
   }
 }
 
@@ -87,6 +98,35 @@ namespace react = facebook::react;
 - (UIViewController *)childViewControllerForHomeIndicatorAutoHidden
 {
   return [self topViewController];
+}
+
+- (void)maybeUpdateHeaderInsetsInShadowTreeForScreen:(RNSScreen *)screenController
+{
+  // This might happen e.g. if there is only native title present in navigation bar.
+  if (self.navigationBar.subviews.count < 2) {
+    return;
+  }
+
+  auto headerConfig = screenController.screenView.findHeaderConfig;
+  if (headerConfig == nil || !headerConfig.shouldHeaderBeVisible) {
+    return;
+  }
+
+  NSDirectionalEdgeInsets navBarMargins = [self.navigationBar directionalLayoutMargins];
+  NSDirectionalEdgeInsets navBarContentMargins =
+      [self.navigationBar.rnscreens_findContentView directionalLayoutMargins];
+
+  BOOL isDisplayingBackButton = [headerConfig shouldBackButtonBeVisibleInNavigationBar:self.navigationBar];
+
+  // 44.0 is just "closed eyes default". It is so on device I've tested with, nothing more.
+  UIView *barButtonView = isDisplayingBackButton ? self.navigationBar.rnscreens_findBackButtonWrapperView : nil;
+  CGFloat platformBackButtonWidth = barButtonView != nil ? barButtonView.frame.size.width : 44.0f;
+
+  [headerConfig updateHeaderInsetsInShadowTreeTo:NSDirectionalEdgeInsets{
+                                                     .leading = navBarMargins.leading + navBarContentMargins.leading +
+                                                         (isDisplayingBackButton ? platformBackButtonWidth : 0),
+                                                     .trailing = navBarMargins.trailing + navBarContentMargins.trailing,
+                                                 }];
 }
 #endif
 
@@ -111,16 +151,26 @@ namespace react = facebook::react;
   NSMutableArray<RNSScreenView *> *_reactSubviews;
   BOOL _invalidated;
   BOOL _isFullWidthSwiping;
-  UIPercentDrivenInteractiveTransition *_interactionController;
-  BOOL _hasLayout;
+  RNSPercentDrivenInteractiveTransition *_interactionController;
   __weak RNSScreenStackManager *_manager;
   BOOL _updateScheduled;
 #ifdef RCT_NEW_ARCH_ENABLED
-  UIView *_snapshot;
-#endif
+  /// Screens that are subject of `ShadowViewMutation::Type::Delete` mutation
+  /// in current transaction. This vector should be populated when we receive notification via
+  /// `RCTMountingObserving` protocol, that a transaction will be performed, and should
+  /// be cleaned up when we're notified that the transaction has been completed.
+  std::vector<__strong RNSScreenView *> _toBeDeletedScreens;
+#endif // RCT_NEW_ARCH_ENABLED
 }
 
 #ifdef RCT_NEW_ARCH_ENABLED
+
+// Needed because of this: https://github.com/facebook/react-native/pull/37274
++ (void)load
+{
+  [super load];
+}
+
 - (instancetype)initWithFrame:(CGRect)frame
 {
   if (self = [super initWithFrame:frame]) {
@@ -136,7 +186,6 @@ namespace react = facebook::react;
 - (instancetype)initWithManager:(RNSScreenStackManager *)manager
 {
   if (self = [super init]) {
-    _hasLayout = NO;
     _invalidated = NO;
     _manager = manager;
     [self initCommonProps];
@@ -195,21 +244,16 @@ namespace react = facebook::react;
       willShowViewController:(UIViewController *)viewController
                     animated:(BOOL)animated
 {
-  UIView *view = viewController.view;
 #ifdef RCT_NEW_ARCH_ENABLED
-  if (![view isKindOfClass:[RNSScreenView class]]) {
+  if (![viewController.view isKindOfClass:[RNSScreenView class]]) {
     // if the current view is a snapshot, config was already removed so we don't trigger the method
     return;
   }
 #endif
-  RNSScreenStackHeaderConfig *config = nil;
-  for (UIView *subview in view.reactSubviews) {
-    if ([subview isKindOfClass:[RNSScreenStackHeaderConfig class]]) {
-      config = (RNSScreenStackHeaderConfig *)subview;
-      break;
-    }
-  }
-  [RNSScreenStackHeaderConfig willShowViewController:viewController animated:animated withConfig:config];
+  auto *screenView = static_cast<RNSScreenView *>(viewController.view);
+  [RNSScreenStackHeaderConfig willShowViewController:viewController
+                                            animated:animated
+                                          withConfig:screenView.findHeaderConfig];
 }
 
 - (void)presentationControllerDidDismiss:(UIPresentationController *)presentationController
@@ -242,10 +286,12 @@ namespace react = facebook::react;
   }
 }
 
+RNS_IGNORE_SUPER_CALL_BEGIN
 - (NSArray<UIView *> *)reactSubviews
 {
   return _reactSubviews;
 }
+RNS_IGNORE_SUPER_CALL_END
 
 - (void)didMoveToWindow
 {
@@ -266,18 +312,9 @@ namespace react = facebook::react;
 - (void)maybeAddToParentAndUpdateContainer
 {
   BOOL wasScreenMounted = _controller.parentViewController != nil;
-#ifdef RCT_NEW_ARCH_ENABLED
-  BOOL isScreenReadyForShowing = self.window;
-#else
-  BOOL isScreenReadyForShowing = self.window && _hasLayout;
-#endif
-  if (!isScreenReadyForShowing && !wasScreenMounted) {
-    // We wait with adding to parent controller until the stack is mounted and has its initial
-    // layout done.
-    // If we add it before layout, some of the items (specifically items from the navigation bar),
-    // won't be able to position properly. Also the position and size of such items, even if it
-    // happens to change, won't be properly updated (this is perhaps some internal issue of UIKit).
-    // If we add it when window is not attached, some of the view transitions will be bloced (i.e.
+  if (!self.window && !wasScreenMounted) {
+    // We wait with adding to parent controller until the stack is mounted.
+    // If we add it when window is not attached, some of the view transitions will be blocked (i.e.
     // modal transitions) and the internal view controler's state will get out of sync with what's
     // on screen without us knowing.
     return;
@@ -382,9 +419,12 @@ namespace react = facebook::react;
   [newControllers removeObjectsInArray:_presentedModals];
 
   // We need to find bottom-most view controller that should stay on the stack
-  // for the duration of transition. There are couple of scenarios:
-  // (1) No modals are presented or all modals were presented by this RNSNavigationController,
-  // (2) There are modals presented by other RNSNavigationControllers (nested/outer)
+  // for the duration of transition.
+
+  // There are couple of scenarios:
+  // (1) no modals are presented or all modals were presented by this RNSNavigationController,
+  // (2) there are modals presented by other RNSNavigationControllers (nested/outer),
+  // (3) there are modals presented by other controllers (e.g. React Native's Modal view).
 
   // Last controller that is common for both _presentedModals & controllers
   __block UIViewController *changeRootController = _controller;
@@ -479,24 +519,36 @@ namespace react = facebook::react;
     }
   };
 
+  // changeRootController is the last controller that *is owned by this stack*, and should stay unchanged after this
+  // batch of transitions. Therefore changeRootController.presentedViewController is the first constroller to be
+  // dismissed (implying also all controllers above). Notice here, that firstModalToBeDismissed could have been
+  // RNSScreen modal presented from *this* stack, another stack, or any other view controller with modal presentation
+  // provided by third-party libraries (e.g. React Native's Modal view). In case of presence of other (not managed by
+  // us) modal controllers, weird interactions might arise. The code below, besides handling our presentation /
+  // dismissal logic also attempts to handle possible wide gamut of cases of interactions with third-party modal
+  // controllers, however it's not perfect.
+  // TODO: Find general way to manage owned and foreign modal view controllers and refactor this code. Consider building
+  // model first (data structue, attempting to be aware of all modals in presentation and some text-like algorithm for
+  // computing required operations).
+
   UIViewController *firstModalToBeDismissed = changeRootController.presentedViewController;
+
   if (firstModalToBeDismissed != nil) {
     BOOL shouldAnimate = changeRootIndex == controllers.count &&
         [firstModalToBeDismissed isKindOfClass:[RNSScreen class]] &&
         ((RNSScreen *)firstModalToBeDismissed).screenView.stackAnimation != RNSScreenStackAnimationNone;
 
-    if ([_presentedModals containsObject:firstModalToBeDismissed]) {
+    if ([_presentedModals containsObject:firstModalToBeDismissed] ||
+        ![firstModalToBeDismissed isKindOfClass:RNSScreen.class]) {
       // We dismiss every VC that was presented by changeRootController VC or its descendant.
       // After the series of dismissals is completed we run completion block in which
       // we present modals on top of changeRootController (which may be the this stack VC)
+      //
+      // There also might the second case, where the firstModalToBeDismissed is foreign.
+      // See: https://github.com/software-mansion/react-native-screens/issues/2048
+      // For now, to mitigate the issue, we also decide to trigger its dismissal before
+      // starting the presentation chain down below in finish() callback.
       [changeRootController dismissViewControllerAnimated:shouldAnimate completion:finish];
-      return;
-    }
-
-    UIViewController *lastModalVc = [self lastFromPresentedViewControllerChainStartingFrom:firstModalToBeDismissed];
-
-    if (lastModalVc != firstModalToBeDismissed) {
-      [lastModalVc dismissViewControllerAnimated:shouldAnimate completion:finish];
       return;
     }
   }
@@ -627,7 +679,7 @@ namespace react = facebook::react;
   NSMutableArray<UIViewController *> *pushControllers = [NSMutableArray new];
   NSMutableArray<UIViewController *> *modalControllers = [NSMutableArray new];
   for (RNSScreenView *screen in _reactSubviews) {
-    if (!screen.dismissed && screen.controller != nil) {
+    if (!screen.dismissed && screen.controller != nil && screen.activityState != RNSActivityStateInactive) {
       if (pushControllers.count == 0) {
         // first screen on the list needs to be places as "push controller"
         [pushControllers addObject:screen.controller];
@@ -709,19 +761,8 @@ namespace react = facebook::react;
   // item is close to an edge and we start pulling from edge we want the Touchable to be cancelled.
   // Without the below code the Touchable will remain active (highlighted) for the duration of back
   // gesture and onPress may fire when we release the finger.
-  UIView *parent = _controller.view;
-  while (parent != nil && ![parent respondsToSelector:@selector(touchHandler)])
-    parent = parent.superview;
-  if (parent != nil) {
-#ifdef RCT_NEW_ARCH_ENABLED
-    RCTSurfaceTouchHandler *touchHandler = [parent performSelector:@selector(touchHandler)];
-#else
-    RCTTouchHandler *touchHandler = [parent performSelector:@selector(touchHandler)];
-#endif
-    [touchHandler setEnabled:NO];
-    [touchHandler setEnabled:YES];
-    [touchHandler reset];
-  }
+
+  [[self rnscreens_findTouchHandlerInAncestorChain] rnscreens_cancelTouches];
 }
 
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
@@ -827,7 +868,7 @@ namespace react = facebook::react;
 
   switch (gestureRecognizer.state) {
     case UIGestureRecognizerStateBegan: {
-      _interactionController = [UIPercentDrivenInteractiveTransition new];
+      _interactionController = [RNSPercentDrivenInteractiveTransition new];
       [_controller popViewControllerAnimated:YES];
       break;
     }
@@ -855,6 +896,7 @@ namespace react = facebook::react;
         [_interactionController cancelInteractiveTransition];
       }
       _interactionController = nil;
+      _isFullWidthSwiping = NO;
     }
     default: {
       break;
@@ -873,7 +915,7 @@ namespace react = facebook::react;
   if (_interactionController == nil && fromView.reactSuperview) {
     BOOL shouldCancelDismiss = [self shouldCancelDismissFromView:fromView toView:toView];
     if (shouldCancelDismiss) {
-      _interactionController = [UIPercentDrivenInteractiveTransition new];
+      _interactionController = [RNSPercentDrivenInteractiveTransition new];
       dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [self->_interactionController cancelInteractiveTransition];
         self->_interactionController = nil;
@@ -885,6 +927,10 @@ namespace react = facebook::react;
         [fromView notifyDismissCancelledWithDismissCount:dismissCount];
       });
     }
+  }
+
+  if (_interactionController != nil) {
+    [_interactionController setAnimationController:animationController];
   }
   return _interactionController;
 }
@@ -901,12 +947,17 @@ namespace react = facebook::react;
 {
   [self emitOnFinishTransitioningEvent];
   [RNSScreenWindowTraits updateWindowTraits];
+  // Because of the bug that caused view to have incorrect dimensions while changing the orientation,
+  // we need to signalize that it needs to be layouted.
+  // see https://github.com/software-mansion/react-native-screens/pull/1970
+  [_controller.view setNeedsLayout];
 }
 #endif
 
 - (void)markChildUpdated
 {
-  // do nothing
+  // In native stack this should be called only for `preload` purposes.
+  [self updateContainer];
 }
 
 - (void)didUpdateChildren
@@ -1033,6 +1084,9 @@ namespace react = facebook::react;
 
 #endif // !TARGET_OS_TV
 
+RNS_IGNORE_SUPER_CALL_BEGIN
+// We hijack the udpates as we don't want to update UIKit model yet.
+// This is done after all mutations are processed.
 - (void)insertReactSubview:(RNSScreenView *)subview atIndex:(NSInteger)atIndex
 {
   if (![subview isKindOfClass:[RNSScreenView class]]) {
@@ -1048,6 +1102,7 @@ namespace react = facebook::react;
   subview.reactSuperview = nil;
   [_reactSubviews removeObject:subview];
 }
+RNS_IGNORE_SUPER_CALL_END
 
 - (void)didUpdateReactSubviews
 {
@@ -1055,7 +1110,6 @@ namespace react = facebook::react;
   // set yet, however the layout call is already enqueued on ui thread. Enqueuing update call on the
   // ui queue will guarantee that the update will run after layout.
   dispatch_async(dispatch_get_main_queue(), ^{
-    self->_hasLayout = YES;
     [self maybeAddToParentAndUpdateContainer];
   });
 }
@@ -1064,7 +1118,7 @@ namespace react = facebook::react;
 {
   if (_interactionController == nil) {
     _customAnimation = YES;
-    _interactionController = [UIPercentDrivenInteractiveTransition new];
+    _interactionController = [RNSPercentDrivenInteractiveTransition new];
     [_controller popViewControllerAnimated:YES];
   }
 }
@@ -1107,23 +1161,24 @@ namespace react = facebook::react;
 
   [_reactSubviews insertObject:(RNSScreenView *)childComponentView atIndex:index];
   ((RNSScreenView *)childComponentView).reactSuperview = self;
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [self maybeAddToParentAndUpdateContainer];
-  });
+  // Container update is done after all mount operations are executed in
+  // `- [RNSScreenStackView mountingTransactionDidMount: withSurfaceTelemetry:]`
+}
+
+- (nullable RNSScreenView *)childScreenForTag:(react::Tag)tag
+{
+  for (RNSScreenView *child in _reactSubviews) {
+    if (child.tag == tag) {
+      return child;
+    }
+  }
+  return nil;
 }
 
 - (void)unmountChildComponentView:(UIView<RCTComponentViewProtocol> *)childComponentView index:(NSInteger)index
 {
   RNSScreenView *screenChildComponent = (RNSScreenView *)childComponentView;
-  // We should only do a snapshot of a screen that is on the top.
-  // We also check `_presentedModals` since if you push 2 modals, second one is not a "child" of _controller.
-  // Also, when dissmised with a gesture, the screen already is not under the window, so we don't need to apply
-  // snapshot.
-  if (screenChildComponent.window != nil &&
-      ((screenChildComponent == _controller.visibleViewController.view && _presentedModals.count < 2) ||
-       screenChildComponent == [_presentedModals.lastObject view])) {
-    [screenChildComponent.controller setViewToSnapshot:_snapshot];
-  }
+  [screenChildComponent.controller setViewToSnapshot];
 
   RCTAssert(
       screenChildComponent.reactSuperview == self,
@@ -1142,25 +1197,52 @@ namespace react = facebook::react;
   screenChildComponent.reactSuperview = nil;
   [_reactSubviews removeObject:screenChildComponent];
   [screenChildComponent removeFromSuperview];
-  dispatch_async(dispatch_get_main_queue(), ^{
-    [self maybeAddToParentAndUpdateContainer];
-  });
 }
 
-- (void)takeSnapshot
+- (void)mountingTransactionWillMount:(const facebook::react::MountingTransaction &)transaction
+                withSurfaceTelemetry:(const facebook::react::SurfaceTelemetry &)surfaceTelemetry
 {
-  _snapshot = [_controller.visibleViewController.view snapshotViewAfterScreenUpdates:NO];
-}
-
-- (void)mountingTransactionWillMount:(react::MountingTransaction const &)transaction
-                withSurfaceTelemetry:(react::SurfaceTelemetry const &)surfaceTelemetry
-{
-  for (auto &mutation : transaction.getMutations()) {
-    if (mutation.type == react::ShadowViewMutation::Type::Remove && mutation.parentShadowView.componentName != nil &&
-        strcmp(mutation.parentShadowView.componentName, "RNSScreenStack") == 0) {
-      [self takeSnapshot];
-      return;
+  for (const auto &mutation : transaction.getMutations()) {
+    if (mutation.type == react::ShadowViewMutation::Delete) {
+      RNSScreenView *_Nullable toBeRemovedChild = [self childScreenForTag:mutation.oldChildShadowView.tag];
+      if (toBeRemovedChild != nil) {
+        [toBeRemovedChild willBeUnmountedInUpcomingTransaction];
+        _toBeDeletedScreens.push_back(toBeRemovedChild);
+      }
     }
+  }
+}
+
+- (void)mountingTransactionDidMount:(const facebook::react::MountingTransaction &)transaction
+               withSurfaceTelemetry:(const facebook::react::SurfaceTelemetry &)surfaceTelemetry
+{
+  for (const auto &mutation : transaction.getMutations()) {
+    if (mutation.parentShadowView.tag == self.tag &&
+        (mutation.type == react::ShadowViewMutation::Type::Insert ||
+         mutation.type == react::ShadowViewMutation::Type::Remove)) {
+      // we need to wait until children have their layout set. At this point they don't have the layout
+      // set yet, however the layout call is already enqueued on ui thread. Enqueuing update call on the
+      // ui queue will guarantee that the update will run after layout.
+      dispatch_async(dispatch_get_main_queue(), ^{
+        [self maybeAddToParentAndUpdateContainer];
+      });
+      break;
+    }
+  }
+
+  if (!self->_toBeDeletedScreens.empty()) {
+    __weak RNSScreenStackView *weakSelf = self;
+    // We want to run after container updates are performed (transitions etc.)
+    dispatch_async(dispatch_get_main_queue(), ^{
+      RNSScreenStackView *_Nullable strongSelf = weakSelf;
+      if (strongSelf == nil) {
+        return;
+      }
+      for (RNSScreenView *screenRef : strongSelf->_toBeDeletedScreens) {
+        [screenRef invalidate];
+      }
+      strongSelf->_toBeDeletedScreens.clear();
+    });
   }
 }
 
@@ -1189,12 +1271,25 @@ namespace react = facebook::react;
 - (void)invalidate
 {
   _invalidated = YES;
-  for (UIViewController *controller in _presentedModals) {
+  [self dismissAllRelatedModals];
+  [_controller willMoveToParentViewController:nil];
+  [_controller removeFromParentViewController];
+}
+
+// This method aims to dismiss all modals for which presentation process
+// has been initiated in this navigation controller, i. e. either a Screen
+// with modal presentation or foreign modal presented from inside a Screen.
+- (void)dismissAllRelatedModals
+{
+  [_controller.presentedViewController dismissViewControllerAnimated:YES completion:nil];
+
+  // This loop seems to be excessive. Above message send to `_controller` should
+  // be enough, because system dismisses the controllers recursively,
+  // however better safe than sorry & introduce a regression, thus it is left here.
+  for (UIViewController *controller in [_presentedModals reverseObjectEnumerator]) {
     [controller dismissViewControllerAnimated:NO completion:nil];
   }
   [_presentedModals removeAllObjects];
-  [_controller willMoveToParentViewController:nil];
-  [_controller removeFromParentViewController];
 }
 
 #endif // RCT_NEW_ARCH_ENABLED

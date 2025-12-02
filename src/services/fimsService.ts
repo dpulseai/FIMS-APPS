@@ -178,24 +178,26 @@ export const getInspectionById = async (id: string): Promise<Inspection | null> 
 
     if (!data) return null;
 
+    const inspection: any = data;
+
     return {
-      id: data.id,
-      category_id: data.category_id,
-      category_name: data.fims_categories?.name,
-      category_name_marathi: data.fims_categories?.name_marathi,
-      form_type: data.fims_categories?.form_type,
-      status: data.status,
-      location_name: data.location_name,
-      location_latitude: data.latitude,
-      location_longitude: data.longitude,
-      location_address: data.address,
-      inspector_id: data.inspector_id,
-      filled_by_name: data.filled_by_name,
-      assigned_by: data.assigned_by,
-      notes: data.review_comments,
-      created_at: data.created_at,
-      updated_at: data.updated_at,
-      photos: data.fims_inspection_photos || [],
+      id: inspection.id,
+      category_id: inspection.category_id,
+      category_name: inspection.fims_categories?.name,
+      category_name_marathi: inspection.fims_categories?.name_marathi,
+      form_type: inspection.fims_categories?.form_type,
+      status: inspection.status,
+      location_name: inspection.location_name,
+      location_latitude: inspection.latitude,
+      location_longitude: inspection.longitude,
+      location_address: inspection.address,
+      inspector_id: inspection.inspector_id,
+      filled_by_name: inspection.filled_by_name,
+      assigned_by: inspection.assigned_by,
+      notes: inspection.review_comments,
+      created_at: inspection.created_at,
+      updated_at: inspection.updated_at,
+      photos: inspection.fims_inspection_photos || [],
     };
   } catch (error) {
     console.error('Error fetching inspection:', error);
@@ -273,20 +275,22 @@ export const createInspection = async (inspectionData: Partial<Inspection>): Pro
 
     if (error) throw error;
 
+    const inspection: any = data;
+
     return {
-      id: data.id,
-      category_id: data.category_id,
-      status: data.status,
-      location_name: data.location_name,
-      location_latitude: data.latitude,
-      location_longitude: data.longitude,
-      location_address: data.address,
-      inspector_id: data.inspector_id,
-      filled_by_name: data.filled_by_name,
-      assigned_by: data.assigned_by,
+      id: inspection.id,
+      category_id: inspection.category_id,
+      status: inspection.status,
+      location_name: inspection.location_name,
+      location_latitude: inspection.latitude,
+      location_longitude: inspection.longitude,
+      location_address: inspection.address,
+      inspector_id: inspection.inspector_id,
+      filled_by_name: inspection.filled_by_name,
+      assigned_by: inspection.assigned_by,
       notes: null,
-      created_at: data.created_at,
-      updated_at: data.updated_at,
+      created_at: inspection.created_at,
+      updated_at: inspection.updated_at,
       photos: [],
     };
   } catch (error) {
@@ -319,7 +323,7 @@ export const saveGrampanchayatInspectionForm = async (inspectionId: string, form
       // Update existing form (updates all matching rows to handle duplicates)
       const { error } = await supabase
         .from('grampanchayat_inspection_form')
-        .update(formData)
+        .update(formData as any)
         .eq('inspection_id', inspectionId);
 
       if (error) throw error;
@@ -361,7 +365,7 @@ export const saveRajyaTapasaniForm = async (inspectionId: string, formData: any)
       // Update existing form (updates all matching rows to handle duplicates)
       const { error } = await supabase
         .from('rajya_tapasani')
-        .update(formData)
+        .update(formData as any)
         .eq('inspection_id', inspectionId);
 
       if (error) throw error;
@@ -405,27 +409,29 @@ export const updateInspection = async (id: string, updates: Partial<Inspection>)
 
     const { data, error } = await supabase
       .from('fims_inspections')
-      .update(updateData)
+      .update(updateData as any)
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
 
+    const inspection: any = data;
+
     return {
-      id: data.id,
-      category_id: data.category_id,
-      status: data.status,
-      location_name: data.location_name,
-      location_latitude: data.latitude,
-      location_longitude: data.longitude,
-      location_address: data.address,
-      inspector_id: data.inspector_id,
-      filled_by_name: data.filled_by_name,
-      assigned_by: data.assigned_by,
-      notes: data.review_comments,
-      created_at: data.created_at,
-      updated_at: data.updated_at,
+      id: inspection.id,
+      category_id: inspection.category_id,
+      status: inspection.status,
+      location_name: inspection.location_name,
+      location_latitude: inspection.latitude,
+      location_longitude: inspection.longitude,
+      location_address: inspection.address,
+      inspector_id: inspection.inspector_id,
+      filled_by_name: inspection.filled_by_name,
+      assigned_by: inspection.assigned_by,
+      notes: inspection.review_comments,
+      created_at: inspection.created_at,
+      updated_at: inspection.updated_at,
     };
   } catch (error) {
     console.error('Error updating inspection:', error);
