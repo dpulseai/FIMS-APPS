@@ -38,7 +38,7 @@ export default function CategorySelectionScreen() {
         const ft = (c.form_type || '').toLowerCase();
         const name = (c.name || '').toLowerCase();
         // hide health
-        if (ft.includes('health')) return false;
+        // if (ft.includes('health')) return false;
         // hide veterinary variants
         if (ft.includes('veterinary') || ft.includes('veterin')) return false;
         // hide pashu / पशु variations (pashutapasani, pashuvaidyakiya etc.)
