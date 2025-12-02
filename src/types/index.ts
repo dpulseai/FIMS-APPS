@@ -27,6 +27,7 @@ export interface Inspection {
   location_name?: string | null;
   location_latitude: number | null;
   location_longitude: number | null;
+  location_accuracy?: number | null;
   location_address: string | null;
   inspector_id: string;
   filled_by_name: string | null;

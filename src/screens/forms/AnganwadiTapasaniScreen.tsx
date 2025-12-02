@@ -22,7 +22,8 @@ import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { FormsStackParamList, LocationData } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import { createInspection, uploadPhoto, fetchCategories, getInspectionById, updateInspection } from '../../services/fimsService';
+import { usePermissions } from '../../hooks/usePermissions';
+import { createInspection, uploadPhoto, fetchCategories, getInspectionById, updateInspection, deleteInspection } from '../../services/fimsService';
 import { supabase } from '../../services/supabase';
 import Stepper from '../../components/common/Stepper';
 import Input from '../../components/common/Input';
@@ -46,7 +47,6 @@ interface AnganwadiFormData {
   anganwadi_number: string;
   supervisor_name: string;
   helper_name: string;
-  village_name: string;
 
   // Building and Facilities
   building_type: string;
@@ -146,6 +146,7 @@ export default function AnganwadiTapasaniScreen() {
   const route = useRoute<RouteParams>();
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuth();
+  const { hasAccess, userRole } = usePermissions(user);
   const { categoryId, inspectionId } = route.params;
 
   // default visit date: today's date in YYYY-MM-DD
@@ -175,7 +176,6 @@ export default function AnganwadiTapasaniScreen() {
     anganwadi_number: '',
     supervisor_name: '',
     helper_name: '',
-    village_name: '',
     building_type: 'own',
     room_availability: false,
     toilet_facility: false,
@@ -249,6 +249,9 @@ export default function AnganwadiTapasaniScreen() {
     block_name: '',
   });
 
+  // store owner inspector id (for permission checks in edit/delete)
+  const [inspectionOwnerId, setInspectionOwnerId] = useState<string | null>(null);
+
   const updateFormData = (field: keyof AnganwadiFormData, value: any) => {
     setFormData({ ...formData, [field]: value });
   };
@@ -261,6 +264,8 @@ export default function AnganwadiTapasaniScreen() {
       try {
         const inspection = await getInspectionById(inspectionId);
         if (inspection) {
+          // remember owner id for permission checks
+          setInspectionOwnerId(inspection.inspector_id || null);
           setLocation({
             latitude: inspection.location_latitude || 0,
             longitude: inspection.location_longitude || 0,
@@ -332,9 +337,9 @@ export default function AnganwadiTapasaniScreen() {
       const villages = [...new Set((data || []).map((item: any) => item.Ward_Village_Name).filter(Boolean))];
       const tehsils = [...new Set((data || []).map((item: any) => item.Block_Name).filter(Boolean))];
 
-      setGrampanchayatData(gps);
-      setVillageData(villages);
-      setTehsilsData(tehsils);
+      setGrampanchayatData(gps as string[]);
+      setVillageData(villages as string[]);
+      setTehsilsData(tehsils as string[]);
     } catch (error) {
       console.error('Dropdown fetch error:', error);
       Alert.alert('Error', 'Failed to load location dropdowns');
@@ -350,6 +355,39 @@ export default function AnganwadiTapasaniScreen() {
       Alert.alert('Edit Mode', next ? 'Editing enabled' : 'Editing disabled');
       return next;
     });
+  };
+
+  const handleDeleteInspection = () => {
+    if (!inspectionId) return;
+
+    const isOwner = Boolean((user?.id && inspectionOwnerId && user.id === inspectionOwnerId));
+    const isAdminRole = hasAccess('fims', 'admin') || ['admin', 'super_admin', 'developer'].includes(userRole ?? '');
+    if (!hasAccess('fims', 'delete') && !isOwner && !isAdminRole) {
+      Alert.alert(t('common.error'), 'You do not have permission to delete this inspection');
+      return;
+    }
+
+    Alert.alert(
+      t('common.delete'),
+      t('common.deleteConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteInspection(inspectionId);
+              Alert.alert(t('common.success'), 'Inspection deleted successfully');
+              navigation.goBack();
+            } catch (error) {
+              console.error('Delete error:', error);
+              Alert.alert(t('common.error'), 'Failed to delete inspection');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleNext = () => {
@@ -402,7 +440,6 @@ export default function AnganwadiTapasaniScreen() {
         anganwadi_number: formData.anganwadi_number,
         supervisor_name: formData.supervisor_name,
         helper_name: formData.helper_name,
-        village_name: formData.village_name,
         building_type: formData.building_type,
         room_availability: formData.room_availability,
         toilet_facility: formData.toilet_facility,
@@ -521,7 +558,6 @@ export default function AnganwadiTapasaniScreen() {
         anganwadi_number: formData.anganwadi_number,
         supervisor_name: formData.supervisor_name,
         helper_name: formData.helper_name,
-        village_name: formData.village_name,
         building_type: formData.building_type,
         room_availability: formData.room_availability,
         toilet_facility: formData.toilet_facility,
@@ -642,7 +678,6 @@ export default function AnganwadiTapasaniScreen() {
         anganwadi_number: formData.anganwadi_number,
         supervisor_name: formData.supervisor_name,
         helper_name: formData.helper_name,
-        village_name: formData.village_name,
         building_type: formData.building_type,
         room_availability: formData.room_availability,
         toilet_facility: formData.toilet_facility,
@@ -823,6 +858,13 @@ export default function AnganwadiTapasaniScreen() {
                 </Picker>
               </View>
 
+              <Text style={[styles.inputLabel, { marginTop: 12 }]}>District / जिल्हा</Text>
+              <View style={styles.dropdownContainer}>
+                <View style={styles.input}>
+                  <Text>Chandrapur</Text>
+                </View>
+              </View>
+
               <Text style={[styles.inputLabel, { marginTop: 12 }]}>Village Name / गावाचे नाव</Text>
               <View style={styles.dropdownContainer}>
                 <Picker
@@ -838,7 +880,7 @@ export default function AnganwadiTapasaniScreen() {
                 </Picker>
               </View>
 
-              <Text style={[styles.inputLabel, { marginTop: 12 }]}>District / जिल्हा</Text>
+              <Text style={[styles.inputLabel, { marginTop: 12 }]}>Taluka / तालुका</Text>
               <View style={styles.dropdownContainer}>
                 <Picker
                   selectedValue={formData.block_name}
@@ -846,7 +888,7 @@ export default function AnganwadiTapasaniScreen() {
                   style={styles.input}
                   enabled={!loadingDropdown}
                 >
-                  <Picker.Item label="Select District" value="" />
+                  <Picker.Item label="Select Taluka" value="" />
                   {tehsilData.map((t, idx) => (
                     <Picker.Item key={idx} label={t} value={t} />
                   ))}
@@ -854,14 +896,6 @@ export default function AnganwadiTapasaniScreen() {
               </View>
 
             </View>
-
-            <Input
-              editable={isEditMode}
-              label="गावाचे नाव"
-              value={formData.village_name}
-              onChangeText={(text) => updateFormData('village_name', text)}
-              placeholder="Enter village name"
-            />
           </View>
         );
 
@@ -1258,14 +1292,36 @@ export default function AnganwadiTapasaniScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {inspectionId && (
-        <View style={{ paddingHorizontal: 16, paddingTop: 12, alignItems: 'flex-end' }}>
-          <Button
-            title={isEditMode ? (t('common.view') || 'View') : (t('common.edit') || 'Edit')}
-            onPress={handleToggleEdit}
-            variant="outline"
-            style={{ minWidth: 100 }}
-          />
-        </View>
+        (() => {
+          const isOwner = Boolean((user?.id && inspectionOwnerId && user.id === inspectionOwnerId));
+          const isAdminRole = hasAccess('fims', 'admin') || ['admin', 'super_admin', 'developer'].includes(userRole ?? '');
+          const canEdit = hasAccess('fims', 'write') || isOwner || isAdminRole;
+          const canDelete = hasAccess('fims', 'delete') || isOwner || isAdminRole;
+
+          if (!canEdit && !canDelete) return null;
+
+          return (
+            <View style={{ paddingHorizontal: 16, paddingTop: 12, alignItems: 'flex-end', flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+              {canEdit && (
+                <Button
+                  title={isEditMode ? (t('common.view') || 'View') : (t('common.edit') || 'Edit')}
+                  onPress={handleToggleEdit}
+                  variant="outline"
+                  style={{ minWidth: 100, marginRight: 8 }}
+                />
+              )}
+
+              {canDelete && (
+                <Button
+                  title={t('common.delete')}
+                  onPress={handleDeleteInspection}
+                  variant="outline"
+                  style={{ minWidth: 100 }}
+                />
+              )}
+            </View>
+          );
+        })()
       )}
       <Stepper steps={STEPS} currentStep={currentStep} />
 

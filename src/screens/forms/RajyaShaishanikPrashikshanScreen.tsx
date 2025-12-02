@@ -24,8 +24,10 @@ import {
   updateAdarshaShalaFormByInspectionId,
   getInspectionById,
   updateInspection,
+  deleteInspection,
 } from '../../services/fimsService';
 import { useAuth } from '../../hooks/useAuth';
+import { usePermissions } from '../../hooks/usePermissions';
 import { useRoute, RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { FormsStackParamList } from '../../types';
@@ -110,6 +112,7 @@ type NavigationProp = StackNavigationProp<FormsStackParamList, 'RajyaShaishanikP
 
 export default function RajyaShaishanikPrashikshanScreen() {
   const { user } = useAuth();
+  const { hasAccess, userRole } = usePermissions(user);
   const route = useRoute<RouteParams>();
   const navigation = useNavigation<NavigationProp>();
   const { categoryId } = route.params;
@@ -127,6 +130,7 @@ export default function RajyaShaishanikPrashikshanScreen() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [existingInspectionId, setExistingInspectionId] = useState<string | null>(null);
   const [existingFormId, setExistingFormId] = useState<string | null>(null);
+  const [inspectionOwnerId, setInspectionOwnerId] = useState<string | null>(null);
 
   const initializeClassData = (): { [key: string]: ClassEnrollment } => {
     const classes = [
@@ -295,6 +299,7 @@ export default function RajyaShaishanikPrashikshanScreen() {
 
       if (inspection) {
         setExistingInspectionId(inspectionId as string);
+        setInspectionOwnerId(inspection.inspector_id || null);
         // prefill some inspection fields
         if (inspection.location_name) updateFormData('location_name', inspection.location_name);
         if (inspection.location_latitude) updateFormData('latitude', inspection.location_latitude);
@@ -437,6 +442,47 @@ export default function RajyaShaishanikPrashikshanScreen() {
       loadExisting();
     }, [inspectionId, getInitialFormData, loadExisting])
   );
+
+  const handleToggleEdit = () => {
+    setIsEditMode(prev => {
+      const next = !prev;
+      Alert.alert('Edit Mode', next ? 'Editing enabled' : 'Editing disabled');
+      return next;
+    });
+  };
+
+  const handleDeleteInspection = () => {
+    if (!existingInspectionId) return;
+
+    const isOwner = Boolean((user?.id && inspectionOwnerId && user.id === inspectionOwnerId));
+    const isAdminRole = hasAccess('fims', 'admin') || ['admin', 'super_admin', 'developer'].includes(userRole ?? '');
+    if (!hasAccess('fims', 'delete') && !isOwner && !isAdminRole) {
+      Alert.alert('त्रुटी', 'आपल्याकडे हा निरीक्षण रेकॉर्ड हटविण्याचा अधिकार नाही');
+      return;
+    }
+
+    Alert.alert(
+      'Delete',
+      'Are you sure you want to delete this inspection?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteInspection(existingInspectionId);
+              Alert.alert('Success', 'Inspection deleted');
+              navigation.goBack();
+            } catch (err) {
+              console.error('Delete error:', err);
+              Alert.alert('त्रुटी', 'रीकोर्ड हटवताना अडचण आली');
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const getCurrentLocation = async () => {
     try {
@@ -1521,7 +1567,7 @@ export default function RajyaShaishanikPrashikshanScreen() {
         'inspector_designation',
         'पदनाम'
       )}
-      {renderDateInput('भेटीचा दिनांक ', formData.visit_date_inspector, 'visit_date_inspector')}
+      {/* Removed inspector date input per design - date field not required on last page */}
     </ScrollView>
   );
 
@@ -1548,7 +1594,32 @@ export default function RajyaShaishanikPrashikshanScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>राज्य शैक्षणिक प्रशिक्षण</Text>
         <Text style={styles.headerSubtitle}>State Educational Training</Text>
-        <View style={styles.stepIndicator}>
+            {inspectionId && (
+              (() => {
+                const isOwner = Boolean((user?.id && inspectionOwnerId && user.id === inspectionOwnerId));
+                const isAdminRole = hasAccess('fims', 'admin') || ['admin', 'super_admin', 'developer'].includes(userRole ?? '');
+                const canEdit = hasAccess('fims', 'write') || isOwner || isAdminRole;
+                const canDelete = hasAccess('fims', 'delete') || isOwner || isAdminRole;
+                if (canEdit || canDelete) {
+                  return (
+                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingVertical: 8, gap: 8 }}>
+                      {canEdit && (
+                        <TouchableOpacity style={[styles.button, { backgroundColor: '#fff', borderWidth: 1, borderColor: '#d1d5db', marginRight: 8 }]} onPress={handleToggleEdit}>
+                          <Text style={{ color: '#111', fontWeight: '600' }}>{isEditMode ? 'View' : 'Edit'}</Text>
+                        </TouchableOpacity>
+                      )}
+                      {canDelete && (
+                        <TouchableOpacity style={[styles.button, { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ef4444' }]} onPress={handleDeleteInspection}>
+                          <Text style={{ color: '#ef4444', fontWeight: '600' }}>Delete</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  );
+                }
+                return null;
+              })()
+            )}
+            <View style={styles.stepIndicator}>
           {STEPS.map((step, index) => (
             <View key={index} style={styles.stepItem}>
               <View
@@ -1582,7 +1653,7 @@ export default function RajyaShaishanikPrashikshanScreen() {
               onPress={handlePrevious}
               disabled={loading}
             >
-              <Text style={styles.buttonOutlineText}>मागे</Text>
+              <Text style={styles.buttonOutlineText} numberOfLines={1} ellipsizeMode="tail">मागे</Text>
             </TouchableOpacity>
           )}
           {currentStep < STEPS.length - 1 ? (
@@ -1591,27 +1662,23 @@ export default function RajyaShaishanikPrashikshanScreen() {
               onPress={handleNext}
               disabled={loading}
             >
-              <Text style={styles.buttonPrimaryText}>पुढे</Text>
+              <Text style={styles.buttonPrimaryText} numberOfLines={1} ellipsizeMode="tail">पुढे</Text>
             </TouchableOpacity>
           ) : (
             <View style={styles.submitButtons}>
               <TouchableOpacity
-                style={[
-                  styles.button,
-                  styles.buttonOutline,
-                  styles.halfButton,
-                ]}
+                style={[styles.button, styles.buttonOutline, styles.submitButtonItem]}
                 onPress={handleSaveAsDraft}
                 disabled={loading}
               >
-                <Text style={styles.buttonOutlineText}>मसुदा जतन करा</Text>
+                <Text style={styles.buttonOutlineText} numberOfLines={1} ellipsizeMode="tail">मसुदा</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, styles.buttonPrimary, styles.halfButton]}
+                style={[styles.button, styles.buttonPrimary, styles.submitButtonItem]}
                 onPress={handleSubmit}
                 disabled={loading}
               >
-                <Text style={styles.buttonPrimaryText}>सबमिट</Text>
+                <Text style={styles.buttonPrimaryText} numberOfLines={1} ellipsizeMode="tail">सबमिट</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -2010,17 +2077,20 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    padding: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    minHeight: 44,
     borderRadius: 8,
     alignItems: 'center',
-    marginHorizontal: 4,
+    justifyContent: 'center',
+    marginHorizontal: 0,
   },
   buttonPrimary: {
     backgroundColor: '#10b981',
   },
   buttonPrimaryText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   buttonOutline: {
@@ -2030,12 +2100,18 @@ const styles = StyleSheet.create({
   },
   buttonOutlineText: {
     color: '#374151',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   submitButtons: {
     flexDirection: 'row',
     flex: 1,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  submitButtonItem: {
+    flex: 1,
+    marginHorizontal: 4,
   },
   halfButton: {
     flex: 1,

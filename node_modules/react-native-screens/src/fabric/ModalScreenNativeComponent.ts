@@ -1,3 +1,5 @@
+'use client';
+
 import codegenNativeComponent from 'react-native/Libraries/Utilities/codegenNativeComponent';
 import type { ViewProps, ColorValue } from 'react-native';
 import type {
@@ -23,6 +25,11 @@ type TransitionProgressEvent = Readonly<{
 
 type HeaderHeightChangeEvent = Readonly<{
   headerHeight: Double;
+}>;
+
+type SheetDetentChangedEvent = Readonly<{
+  index: Int32;
+  isStable: boolean;
 }>;
 
 type GestureResponseDistanceType = Readonly<{
@@ -51,13 +58,12 @@ type StackAnimation =
   | 'slide_from_left'
   | 'slide_from_bottom'
   | 'fade_from_bottom'
-  | 'ios';
+  | 'ios_from_right'
+  | 'ios_from_left';
 
 type SwipeDirection = 'vertical' | 'horizontal';
 
 type ReplaceAnimation = 'pop' | 'push';
-
-type SheetDetentTypes = 'large' | 'medium' | 'all';
 
 export interface NativeProps extends ViewProps {
   onAppear?: DirectEventHandler<ScreenEvent>;
@@ -70,13 +76,17 @@ export interface NativeProps extends ViewProps {
   onTransitionProgress?: DirectEventHandler<TransitionProgressEvent>;
   onGestureCancel?: DirectEventHandler<ScreenEvent>;
   onHeaderBackButtonClicked?: DirectEventHandler<ScreenEvent>;
-  sheetAllowedDetents?: WithDefault<SheetDetentTypes, 'large'>;
-  sheetLargestUndimmedDetent?: WithDefault<SheetDetentTypes, 'all'>;
+  onSheetDetentChanged?: DirectEventHandler<SheetDetentChangedEvent>;
+  sheetAllowedDetents?: number[];
+  sheetLargestUndimmedDetent?: WithDefault<Int32, -1>;
   sheetGrabberVisible?: WithDefault<boolean, false>;
   sheetCornerRadius?: WithDefault<Float, -1.0>;
   sheetExpandsWhenScrolledToEdge?: WithDefault<boolean, false>;
+  sheetInitialDetent?: WithDefault<Int32, 0>;
+  sheetElevation?: WithDefault<Int32, 24>;
   customAnimationOnSwipe?: boolean;
   fullScreenSwipeEnabled?: boolean;
+  fullScreenSwipeShadowEnabled?: WithDefault<boolean, true>;
   homeIndicatorHidden?: boolean;
   preventNativeDismiss?: boolean;
   gestureEnabled?: WithDefault<boolean, true>;
@@ -89,12 +99,13 @@ export interface NativeProps extends ViewProps {
   gestureResponseDistance?: GestureResponseDistanceType;
   stackPresentation?: WithDefault<StackPresentation, 'push'>;
   stackAnimation?: WithDefault<StackAnimation, 'default'>;
-  transitionDuration?: WithDefault<Int32, 350>;
+  transitionDuration?: WithDefault<Int32, 500>;
   replaceAnimation?: WithDefault<ReplaceAnimation, 'pop'>;
   swipeDirection?: WithDefault<SwipeDirection, 'horizontal'>;
   hideKeyboardOnSwipe?: boolean;
   activityState?: WithDefault<Float, -1.0>;
   navigationBarColor?: ColorValue;
+  navigationBarTranslucent?: boolean;
   navigationBarHidden?: boolean;
   nativeBackButtonDismissalEnabled?: boolean;
 }

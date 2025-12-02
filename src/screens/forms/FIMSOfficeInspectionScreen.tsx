@@ -15,7 +15,8 @@ import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { FormsStackParamList, LocationData } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import { createInspection, updateInspection, uploadPhoto, getInspectionById } from '../../services/fimsService';
+import { usePermissions } from '../../hooks/usePermissions';
+import { createInspection, updateInspection, uploadPhoto, getInspectionById, deleteInspection } from '../../services/fimsService';
 import { supabase } from '../../services/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Stepper from '../../components/common/Stepper';
@@ -80,6 +81,7 @@ export default function FIMSOfficeInspectionScreen() {
   const route = useRoute<RouteParams>();
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuth();
+  const { hasAccess, userRole } = usePermissions(user);
   const { categoryId, inspectionId, edit } = route.params as { categoryId: string; inspectionId?: string; edit?: boolean };
 
   const [isEditMode, setIsEditMode] = useState<boolean>(() => Boolean(edit) || !inspectionId);
@@ -89,6 +91,7 @@ export default function FIMSOfficeInspectionScreen() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoMetas, setPhotoMetas] = useState<LocalPhotoMeta[]>([]);
   const [location, setLocation] = useState<LocationData | null>(null);
+  const [inspectionOwnerId, setInspectionOwnerId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<OfficeFormData>({
     visit_date: new Date().toISOString().slice(0, 10),
@@ -204,6 +207,7 @@ export default function FIMSOfficeInspectionScreen() {
       try {
         const inspection = await getInspectionById(inspectionId);
         if (inspection) {
+          setInspectionOwnerId(inspection.inspector_id || null);
           setLocation({
             latitude: inspection.location_latitude || 0,
             longitude: inspection.location_longitude || 0,
@@ -262,6 +266,47 @@ export default function FIMSOfficeInspectionScreen() {
     load();
   }, [inspectionId]);
 
+  const handleToggleEditTop = () => {
+    setIsEditMode(prev => {
+      const next = !prev;
+      Alert.alert('Edit Mode', next ? 'Editing enabled' : 'Editing disabled');
+      return next;
+    });
+  };
+
+  const handleDeleteInspection = () => {
+    if (!inspectionId) return;
+
+    const isOwner = Boolean((user?.id && inspectionOwnerId && user.id === inspectionOwnerId));
+    const isAdminRole = hasAccess('fims', 'admin') || ['admin', 'super_admin', 'developer'].includes(userRole ?? '');
+    if (!hasAccess('fims', 'delete') && !isOwner && !isAdminRole) {
+      Alert.alert(t('common.error'), 'You do not have permission to delete this inspection');
+      return;
+    }
+
+    Alert.alert(
+      t('common.delete'),
+      t('common.deleteConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteInspection(inspectionId);
+              Alert.alert(t('common.success'), 'Inspection deleted successfully');
+              navigation.goBack();
+            } catch (error) {
+              console.error('Delete error:', error);
+              Alert.alert(t('common.error'), 'Failed to delete inspection');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleNext = () => {
     if (currentStep === 0) {
       if (!formData.department_name || !formData.employee_name) {
@@ -308,10 +353,12 @@ export default function FIMSOfficeInspectionScreen() {
         inspector_id: user?.id,
         filled_by_name: formData.employee_name,
         status: 'draft',
+        location_name: location?.address || null,
         location_latitude: location?.latitude,
         location_longitude: location?.longitude,
+        location_accuracy: location?.accuracy ?? null,
         location_address: location?.address || null,
-      });
+      } as any);
 
       // If createInspection returned an offline id, save locally and return
       if (inspection.id && String(inspection.id).startsWith('offline_')) {
@@ -370,6 +417,8 @@ export default function FIMSOfficeInspectionScreen() {
         // ensure filled_by_name
         sanitized.filled_by_name = formData.employee_name || '';
 
+        // do not include per-form location_address (stored on main inspection row)
+
         return sanitized;
       };
 
@@ -418,10 +467,11 @@ export default function FIMSOfficeInspectionScreen() {
         inspector_id: user?.id,
         filled_by_name: formData.employee_name,
         status: 'submitted',
+        location_name: location?.address || null,
         location_latitude: location?.latitude,
         location_longitude: location?.longitude,
-        location_address: location?.address || null,
-      });
+        location_accuracy: location?.accuracy ?? null,
+      } as any);
 
       // If offline inspection id returned, save locally and notify user
       if (inspection.id && String(inspection.id).startsWith('offline_')) {
@@ -556,10 +606,12 @@ export default function FIMSOfficeInspectionScreen() {
       // Update inspection basic fields
       const updatedInspection = await updateInspection(inspectionId, {
         filled_by_name: formData.employee_name,
+        location_name: location?.address || null,
         location_latitude: location?.latitude,
         location_longitude: location?.longitude,
+        location_accuracy: location?.accuracy ?? null,
         location_address: location?.address || null,
-      });
+      } as any);
       console.log('Inspection updated:', updatedInspection);
 
       // Prepare office data to update
@@ -597,6 +649,7 @@ export default function FIMSOfficeInspectionScreen() {
 
       const officeData: any = {
         filled_by_name: formData.employee_name || '',
+        location_address: location?.address || null,
         visit_date: formData.visit_date || new Date().toISOString().slice(0, 10),
         department_name: formData.department_name,
         employee_name: formData.employee_name,
@@ -773,6 +826,20 @@ export default function FIMSOfficeInspectionScreen() {
             <Text style={styles.sectionTitle}>स्थान माहिती</Text>
             <Text style={styles.sectionSubtitle}>Location Information</Text>
             <LocationPicker location={location} onLocationChange={setLocation} disabled={!isEditMode} />
+
+            <Input
+              label="Location / ठिकाण"
+              value={location?.address || ''}
+              onChangeText={(text) => setLocation((prev) => ({
+                latitude: prev?.latitude ?? 0,
+                longitude: prev?.longitude ?? 0,
+                accuracy: prev?.accuracy ?? null,
+                address: text,
+                timestamp: prev?.timestamp ?? Date.now(),
+              }))}
+              editable={isEditMode}
+              placeholder="Capture location or enter address"
+            />
           </View>
         );
 
@@ -912,24 +979,6 @@ export default function FIMSOfficeInspectionScreen() {
                 editable={isEditMode}
                 placeholder="पदनाम प्रविष्ट करा"
               />
-
-              <Input
-                label="कार्यालय प्रमुखाचे अभिप्राय"
-                value={formData.supervisor_remarks}
-                onChangeText={(text) => setFormData({ ...formData, supervisor_remarks: text })}
-                editable={isEditMode}
-                placeholder="कार्यालय प्रमुखाचे अभिप्राय प्रविष्ट करा"
-                multiline
-                numberOfLines={4}
-              />
-
-              <Input
-                label="कार्यालय प्रमुखाची स्वाक्षरी"
-                value={formData.supervisor_signature}
-                onChangeText={(text) => setFormData({ ...formData, supervisor_signature: text })}
-                editable={isEditMode}
-                placeholder="स्वाक्षरी प्रविष्ट करा"
-              />
             </View>
           </ScrollView>
         );
@@ -958,6 +1007,29 @@ export default function FIMSOfficeInspectionScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      {inspectionId && (
+        (() => {
+          const isOwner = Boolean((user?.id && inspectionOwnerId && user.id === inspectionOwnerId));
+          const isAdminRole = hasAccess('fims', 'admin') || ['admin', 'super_admin', 'developer'].includes(userRole ?? '');
+          const canEdit = hasAccess('fims', 'write') || isOwner || isAdminRole;
+          const canDelete = hasAccess('fims', 'delete') || isOwner || isAdminRole;
+          if (!canEdit && !canDelete) return null;
+          return (
+            <View style={{ paddingHorizontal: 16, paddingTop: 12, alignItems: 'flex-end', flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+              {canEdit && (
+                <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#fff', borderWidth: 1, borderColor: '#d1d5db', marginRight: 8 }]} onPress={handleToggleEditTop}>
+                  <Text style={{ color: '#111', fontWeight: '600' }}>{isEditMode ? (t('common.view') || 'View') : (t('common.edit') || 'Edit')}</Text>
+                </TouchableOpacity>
+              )}
+              {canDelete && (
+                <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ef4444' }]} onPress={handleDeleteInspection}>
+                  <Text style={{ color: '#ef4444', fontWeight: '600' }}>{t('common.delete')}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          );
+        })()
+      )}
       <Stepper steps={STEPS} currentStep={currentStep} />
 
       {/* edit banner removed for cleaner UI */}

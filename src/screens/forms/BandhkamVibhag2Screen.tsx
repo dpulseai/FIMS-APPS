@@ -272,7 +272,7 @@ export default function BandhkamVibhag2Screen() {
                 const desc = meta ? JSON.stringify({ photo_location: meta }) : null;
                 const { error: updErr } = await supabase
                   .from('fims_inspection_photos')
-                  .update({ description: desc })
+                  .update({ description: desc } as any)
                   .eq('id', existingId);
                 if (updErr) console.warn('Could not update existing photo description', updErr);
               } catch (e) {

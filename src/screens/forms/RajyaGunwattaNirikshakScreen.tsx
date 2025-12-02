@@ -20,7 +20,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 
 import { FormsStackParamList } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import { createInspection, uploadPhoto, saveRajyaTapasaniForm, getInspectionById, updateInspection, getRajyaTapasaniByInspectionId } from '../../services/fimsService';
+import { usePermissions } from '../../hooks/usePermissions';
+import { createInspection, uploadPhoto, saveRajyaTapasaniForm, getInspectionById, updateInspection, getRajyaTapasaniByInspectionId, deleteInspection } from '../../services/fimsService';
 
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
@@ -30,7 +31,7 @@ import Stepper from '../../components/common/Stepper';
 type RouteParams = RouteProp<FormsStackParamList, 'RajyaGunwattaNirikshak'>;
 type NavigationProp = StackNavigationProp<FormsStackParamList, 'RajyaGunwattaNirikshak'>;
 
-const STEPS = ['निरीक्षक माहिती', 'स्थान माहिती', 'तपासणी अहवाल', 'फोटो'];
+const STEPS = ['निरीक्षक माहिती', 'स्थान माहिती', 'फोटो'];
 
 interface RajyaGunwattaFormData {
   state_quality_inspector_name: string;
@@ -52,6 +53,7 @@ export default function RajyaGunwattaNirikshakScreen() {
   const route = useRoute<RouteParams>();
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuth();
+  const { hasAccess, userRole } = usePermissions(user);
   const { categoryId } = route.params;
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -62,6 +64,7 @@ export default function RajyaGunwattaNirikshakScreen() {
   const [existingPhotoMetas, setExistingPhotoMetas] = useState<any[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [existingInspectionId, setExistingInspectionId] = useState<string | null>(null);
+  const [inspectionOwnerId, setInspectionOwnerId] = useState<string | null>(null);
 
   const { inspectionId } = (route.params || {}) as any;
 
@@ -98,6 +101,7 @@ export default function RajyaGunwattaNirikshakScreen() {
       if (inspection) {
         setExistingInspectionId(inspectionId as string);
         setIsEditMode(true);
+        setInspectionOwnerId(inspection.inspector_id || null);
         // populate some location fields
         if (inspection.location_name) updateFormData('location_name', inspection.location_name || '');
         if (inspection.location_latitude !== undefined) updateFormData('latitude', inspection.location_latitude ?? null);
@@ -138,6 +142,47 @@ export default function RajyaGunwattaNirikshakScreen() {
     if (inspectionId) loadExisting();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inspectionId]);
+
+  const handleToggleEdit = () => {
+    setIsEditMode(prev => {
+      const next = !prev;
+      Alert.alert('Edit Mode', next ? 'Editing enabled' : 'Editing disabled');
+      return next;
+    });
+  };
+
+  const handleDeleteInspection = () => {
+    if (!existingInspectionId) return;
+
+    const isOwner = Boolean((user?.id && inspectionOwnerId && user.id === inspectionOwnerId));
+    const isAdminRole = hasAccess('fims', 'admin') || ['admin', 'super_admin', 'developer'].includes(userRole ?? '');
+    if (!hasAccess('fims', 'delete') && !isOwner && !isAdminRole) {
+      Alert.alert(t('common.error'), 'You do not have permission to delete this inspection');
+      return;
+    }
+
+    Alert.alert(
+      t('common.delete'),
+      t('common.deleteConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteInspection(existingInspectionId);
+              Alert.alert(t('common.success'), 'Inspection deleted successfully');
+              navigation.goBack();
+            } catch (error) {
+              console.error('Delete error:', error);
+              Alert.alert(t('common.error'), 'Failed to delete inspection');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const getCurrentLocation = async () => {
     try {
@@ -635,37 +680,7 @@ export default function RajyaGunwattaNirikshakScreen() {
     </View>
   );
 
-  const renderInspectionReport = () => (
-    <View style={styles.stepContainer}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.icon}>📝</Text>
-        <Text style={styles.sectionTitle}>राज्य गुणवत्ता निरीक्षक यांचा तपासणी अहवाल (State Quality Inspector Inspection Report)</Text>
-      </View>
-      <Text style={styles.sectionSubtitle}>Inspection Report</Text>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>निरीक्षकाचे नाव</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.inspector_name}
-          onChangeText={text => updateFormData('inspector_name', text)}
-          placeholder="निरीक्षकाचे नाव प्रविष्ट करा"
-          placeholderTextColor="#9ca3af"
-        />
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>पदनाम</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.inspector_designation}
-          onChangeText={text => updateFormData('inspector_designation', text)}
-          placeholder="पदनाम प्रविष्ट करा"
-          placeholderTextColor="#9ca3af"
-        />
-      </View>
-    </View>
-  );
+  // Inspection Report step removed per request; fields retained in state but not displayed
 
   const renderPhotoUpload = () => (
     <View style={styles.stepContainer}>
@@ -737,8 +752,7 @@ export default function RajyaGunwattaNirikshakScreen() {
     switch (currentStep) {
       case 0: return renderBasicInfo();
       case 1: return renderLocationInfo();
-      case 2: return renderInspectionReport();
-      case 3: return renderPhotoUpload();
+      case 2: return renderPhotoUpload();
       default: return null;
     }
   };
@@ -746,6 +760,29 @@ export default function RajyaGunwattaNirikshakScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {inspectionId && (
+          (() => {
+            const isOwner = Boolean((user?.id && inspectionOwnerId && user.id === inspectionOwnerId));
+            const isAdminRole = hasAccess('fims', 'admin') || ['admin', 'super_admin', 'developer'].includes(userRole ?? '');
+            const canEdit = hasAccess('fims', 'write') || isOwner || isAdminRole;
+            const canDelete = hasAccess('fims', 'delete') || isOwner || isAdminRole;
+            if (!canEdit && !canDelete) return null;
+            return (
+              <View style={{ paddingHorizontal: 16, paddingTop: 12, alignItems: 'flex-end', flexDirection: 'row', justifyContent: 'flex-end', gap: 8 }}>
+                {canEdit && (
+                  <TouchableOpacity style={[styles.button, { minWidth: 100, backgroundColor: '#fff', borderWidth: 1, borderColor: '#d1d5db', marginRight: 8 }]} onPress={handleToggleEdit}>
+                    <Text style={{ color: '#111', fontWeight: '600' }}>{isEditMode ? (t('common.view') || 'View') : (t('common.edit') || 'Edit')}</Text>
+                  </TouchableOpacity>
+                )}
+                {canDelete && (
+                  <TouchableOpacity style={[styles.button, { minWidth: 100, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ef4444' }]} onPress={handleDeleteInspection}>
+                    <Text style={{ color: '#ef4444', fontWeight: '600' }}>{t('common.delete')}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            );
+          })()
+        )}
         <Stepper steps={STEPS} currentStep={currentStep} />
         {renderStep()}
         <View style={styles.buttonRow}>
