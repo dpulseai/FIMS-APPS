@@ -342,8 +342,8 @@ export default function HealthInspectionScreen() {
     <View key={question.num} style={styles.questionContainer}>
       <Text style={styles.questionText}>{`${question.num}. ${question.text}`}</Text>
       <View style={styles.radioGroup}>
-        {renderRadioButton(question.num, 'होय', 'होय (Yes)')}
-        {renderRadioButton(question.num, 'नाही', 'नाही (No)')}
+        {renderRadioButton(question.num, 'होय', 'होय')}
+        {renderRadioButton(question.num, 'नाही', 'नाही')}
       </View>
     </View>
   );
@@ -353,21 +353,21 @@ export default function HealthInspectionScreen() {
       <Text style={styles.programName}>{program.program}</Text>
       <View style={styles.programInputs}>
         <Input
-          label="लक्ष्य / Target"
+          label="उद्दिष्ट"
           value={program.target}
           onChangeText={(text) => handleProgramChange(index, 'target', text)}
           keyboardType="number-pad"
           containerStyle={styles.programInput}
         />
         <Input
-          label="साध्य / Achieved"
+          label="साध्य "
           value={program.achieved}
           onChangeText={(text) => handleProgramChange(index, 'achieved', text)}
           keyboardType="number-pad"
           containerStyle={styles.programInput}
         />
         <Input
-          label="टक्केवारी / %"
+          label="टक्केवारी"
           value={program.percentage}
           onChangeText={(text) => handleProgramChange(index, 'percentage', text)}
           keyboardType="number-pad"
@@ -402,7 +402,7 @@ export default function HealthInspectionScreen() {
         return (
           <View>
             <Text style={styles.sectionTitle}>प्रश्न १-९</Text>
-            <Text style={styles.sectionSubtitle}>Questions 1-9</Text>
+            {/* <Text style={styles.sectionSubtitle}>Questions 1-9</Text> */}
             {questions.slice(0, 9).map(renderQuestion)}
           </View>
         );
@@ -410,7 +410,7 @@ export default function HealthInspectionScreen() {
         return (
           <View>
             <Text style={styles.sectionTitle}>प्रश्न १०-१८</Text>
-            <Text style={styles.sectionSubtitle}>Questions 10-18</Text>
+            {/* <Text style={styles.sectionSubtitle}>Questions 10-18</Text> */}
             {questions.slice(9, 18).map(renderQuestion)}
           </View>
         );
@@ -418,7 +418,7 @@ export default function HealthInspectionScreen() {
         return (
           <View>
             <Text style={styles.sectionTitle}>प्रश्न १९-२७</Text>
-            <Text style={styles.sectionSubtitle}>Questions 19-27</Text>
+            {/* <Text style={styles.sectionSubtitle}>Questions 19-27</Text> */}
             {questions.slice(18, 27).map(renderQuestion)}
           </View>
         );
@@ -426,7 +426,7 @@ export default function HealthInspectionScreen() {
         return (
           <View>
             <Text style={styles.sectionTitle}>राष्ट्रीय कार्यक्रम १-५०</Text>
-            <Text style={styles.sectionSubtitle}>National Programs 1-50</Text>
+            {/* <Text style={styles.sectionSubtitle}>National Programs 1-50</Text> */}
             {programsData.slice(0, 50).map((program, index) => renderProgramRow(program, index))}
           </View>
         );
@@ -434,7 +434,7 @@ export default function HealthInspectionScreen() {
         return (
           <View>
             <Text style={styles.sectionTitle}>राष्ट्रीय कार्यक्रम ५१-१००</Text>
-            <Text style={styles.sectionSubtitle}>National Programs 51-100</Text>
+            {/* <Text style={styles.sectionSubtitle}>National Programs 51-100</Text> */}
             {programsData.slice(50, 100).map((program, index) => renderProgramRow(program, index + 50))}
           </View>
         );
@@ -442,7 +442,7 @@ export default function HealthInspectionScreen() {
         return (
           <View>
             <Text style={styles.sectionTitle}>राष्ट्रीय कार्यक्रम १०१-१५०</Text>
-            <Text style={styles.sectionSubtitle}>National Programs 101-150</Text>
+            {/* <Text style={styles.sectionSubtitle}>National Programs 101-150</Text> */}
             {programsData.slice(100, 110).map((program, index) => renderProgramRow(program, index + 100))}
           </View>
         );
