@@ -55,6 +55,7 @@ export default function HealthInspectionScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [photoMetas, setPhotoMetas] = useState<Array<{ latitude?: number; longitude?: number; accuracy?: number }>>([]);
   const [location, setLocation] = useState<LocationData | null>(null);
 
   // Basic Information
@@ -449,8 +450,16 @@ export default function HealthInspectionScreen() {
       case 7:
         return (
           <View>
-            <Text style={styles.sectionTitle}>{t('fims.photosSubmit')}</Text>
-            <PhotoUpload photos={photos} onPhotosChange={setPhotos} />
+            <Text style={styles.sectionTitle}>फोटो अपलोड</Text>
+            <PhotoUpload
+              photos={photos}
+              onPhotosChange={(p) => {
+                setPhotos(p);
+                if (photoMetas.length > p.length) setPhotoMetas(photoMetas.slice(0, p.length));
+              }}
+              photoMetas={photoMetas}
+              onPhotoMetaChange={setPhotoMetas}
+            />
           </View>
         );
       default:
@@ -465,19 +474,47 @@ export default function HealthInspectionScreen() {
         <Card>{renderStep()}</Card>
       </ScrollView>
       <View style={styles.footer}>
-        <View style={styles.buttonRow}>
-          {currentStep > 0 && (
-            <Button title={t('common.previous')} onPress={handlePrevious} variant="outline" style={styles.button} disabled={loading} />
-          )}
-          {currentStep < STEPS.length - 1 ? (
-            <Button title={t('common.next')} onPress={handleNext} style={styles.button} disabled={loading} />
-          ) : (
-            <View style={styles.submitButtons}>
-              <Button title={t('fims.saveAsDraft')} onPress={handleSaveAsDraft} variant="outline" style={styles.halfButton} loading={loading} />
-              <Button title={t('fims.submitInspection')} onPress={handleSubmit} style={styles.halfButton} loading={loading} />
-            </View>
-          )}
-        </View>
+        {currentStep < STEPS.length - 1 ? (
+          <View style={styles.buttonRow}>
+            {currentStep > 0 && (
+              <Button
+                title='मागील'
+                onPress={handlePrevious}
+                variant="outline"
+                style={styles.button}
+                disabled={loading}
+              />
+            )}
+            <Button
+              title='पुढे'
+              onPress={handleNext}
+              style={styles.button}
+              disabled={loading}
+            />
+          </View>
+        ) : (
+          <View style={styles.submitButtons}>
+            <Button
+              title="तपासणी सबमिट करा"
+              onPress={handleSubmit}
+              loading={loading}
+            />
+            <Button
+              title="मसुदा सेव्ह करा"
+              onPress={handleSaveAsDraft}
+              variant="outline"
+              loading={loading}
+            />
+            {currentStep > 0 && (
+              <Button
+                title='मागील'
+                onPress={handlePrevious}
+                variant="outline"
+                disabled={loading}
+              />
+            )}
+          </View>
+        )}
       </View>
     </KeyboardAvoidingView>
   );
@@ -551,9 +588,22 @@ const styles = StyleSheet.create({
   programInput: {
     flex: 1,
   },
-  footer: { backgroundColor: '#ffffff', padding: 16, borderTopWidth: 1, borderTopColor: '#e5e7eb' },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  button: { flex: 1, marginHorizontal: 4 },
-  submitButtons: { flexDirection: 'row', flex: 1 },
-  halfButton: { flex: 1, marginHorizontal: 4 },
+  footer: {
+    backgroundColor: '#ffffff',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  button: {
+    flex: 1,
+  },
+  submitButtons: {
+    gap: 12,
+    marginTop: 12,
+  },
 });
