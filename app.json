@@ -29,6 +29,7 @@
       },
       "package": "com.zpchandrapur.fims",
       "versionCode": 4,
+      "targetSdkVersion": 35,
       "permissions": [
         "CAMERA",
         "ACCESS_FINE_LOCATION",
