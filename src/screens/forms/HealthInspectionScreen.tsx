@@ -243,6 +243,7 @@ export default function HealthInspectionScreen() {
         inspector_id: user?.id,
         filled_by_name: user?.email || '',
         status: 'draft',
+        location_name: locationName,
         location_latitude: location?.latitude,
         location_longitude: location?.longitude,
         location_address: location?.address || null,
@@ -251,6 +252,7 @@ export default function HealthInspectionScreen() {
       // Save form data to health_inspection_form table
       const formData: any = {
         inspection_id: inspection.id,
+        planned_date: plannedDate || null,
         programs_data: programsData,
       };
 
@@ -287,6 +289,7 @@ export default function HealthInspectionScreen() {
         inspector_id: user?.id,
         filled_by_name: user?.email || '',
         status: 'submitted',
+        location_name: locationName,
         location_latitude: location?.latitude,
         location_longitude: location?.longitude,
         location_address: location?.address || null,
@@ -295,6 +298,7 @@ export default function HealthInspectionScreen() {
       // Save form data to health_inspection_form table
       const formData: any = {
         inspection_id: inspection.id,
+        planned_date: plannedDate || null,
         programs_data: programsData,
       };
 
