@@ -35,7 +35,6 @@ const STEPS = [
   'Programs 1-50',
   'Programs 51-100',
   'Programs 101-150',
-  'Location',
   'Photos'
 ];
 
@@ -224,7 +223,7 @@ export default function HealthInspectionScreen() {
       Alert.alert(t('common.error'), 'कृपया स्थान नाव भरा / Please fill location name');
       return;
     }
-    if (currentStep === 7 && !location) {
+    if (currentStep === 0 && !location) {
       Alert.alert(t('common.error'), 'Please capture location');
       return;
     }
@@ -395,6 +394,8 @@ export default function HealthInspectionScreen() {
               value={plannedDate}
               onChangeDate={setPlannedDate}
             />
+            <Text style={styles.sectionTitle}>{t('fims.locationDetails')}</Text>
+            <LocationPicker location={location} onLocationChange={setLocation} />
           </View>
         );
       case 1:
@@ -446,13 +447,6 @@ export default function HealthInspectionScreen() {
           </View>
         );
       case 7:
-        return (
-          <View>
-            <Text style={styles.sectionTitle}>{t('fims.locationDetails')}</Text>
-            <LocationPicker location={location} onLocationChange={setLocation} />
-          </View>
-        );
-      case 8:
         return (
           <View>
             <Text style={styles.sectionTitle}>{t('fims.photosSubmit')}</Text>
