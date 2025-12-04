@@ -41,6 +41,7 @@ export default function PahuvaidhakiyaTapasaniScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [photoMetas, setPhotoMetas] = useState<Array<{ latitude?: number; longitude?: number; accuracy?: number }>>([]);
   const [location, setLocation] = useState<LocationData | null>(null);
   // Step 1: Basic Information
   const [instituteNameAddress, setInstituteNameAddress] = useState('');
@@ -675,9 +676,16 @@ export default function PahuvaidhakiyaTapasaniScreen() {
         collected_service_fees_previous: collectedServiceFeesPrevious ? parseInt(collectedServiceFeesPrevious) : 0,
       });
 
-      // Upload photos
+      // Upload photos with metadata
       for (let i = 0; i < photos.length; i++) {
-        await uploadPhoto(inspection.id, photos[i], `photo${i + 1}.jpg`, i + 1);
+        const photoUri = photos[i];
+        // Skip if photo is already uploaded (starts with http:// or https://)
+        if (photoUri.toLowerCase().startsWith('http://') || photoUri.toLowerCase().startsWith('https://')) {
+          console.log('Skipping already uploaded photo:', photoUri);
+          continue;
+        }
+        const meta = photoMetas[i];
+        await uploadPhoto(inspection.id, photoUri, `photo${i + 1}.jpg`, i + 1, meta);
       }
 
       Alert.alert(t('common.success'), t('fims.inspectionSubmitted'));
@@ -956,7 +964,15 @@ export default function PahuvaidhakiyaTapasaniScreen() {
           <View>
             <Text style={styles.sectionTitle}>फोटो</Text>
             <Text style={styles.sectionSubtitle}>Photo Documentation</Text>
-            <PhotoUpload photos={photos} onPhotosChange={setPhotos} />
+            <PhotoUpload
+              photos={photos}
+              onPhotosChange={(p) => {
+                setPhotos(p);
+                if (photoMetas.length > p.length) setPhotoMetas(photoMetas.slice(0, p.length));
+              }}
+              photoMetas={photoMetas}
+              onPhotoMetaChange={setPhotoMetas}
+            />
           </View>
         );
 
@@ -965,7 +981,57 @@ export default function PahuvaidhakiyaTapasaniScreen() {
     }
   };
 
-  return (<KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}><Stepper steps={STEPS} currentStep={currentStep} /><ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}><Card>{renderStep()}</Card></ScrollView><View style={styles.footer}><View style={styles.buttonRow}>{currentStep > 0 && <Button title={t('common.previous')} onPress={handlePrevious} variant="outline" style={styles.button} disabled={loading} />}{currentStep < STEPS.length - 1 ? <Button title={t('common.next')} onPress={handleNext} style={styles.button} disabled={loading} /> : <View style={styles.submitButtons}><Button title={t('fims.saveAsDraft')} onPress={handleSaveAsDraft} variant="outline" style={styles.halfButton} loading={loading} /><Button title={t('fims.submitInspection')} onPress={handleSubmit} style={styles.halfButton} loading={loading} /></View>}</View></View></KeyboardAvoidingView>);
+  return (
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <Stepper steps={STEPS} currentStep={currentStep} />
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+        <Card>{renderStep()}</Card>
+      </ScrollView>
+      <View style={styles.footer}>
+        {currentStep < STEPS.length - 1 ? (
+          <View style={styles.buttonRow}>
+            {currentStep > 0 && (
+              <Button
+                title='मागील'
+                onPress={handlePrevious}
+                variant="outline"
+                style={styles.button}
+                disabled={loading}
+              />
+            )}
+            <Button
+              title='पुढे'
+              onPress={handleNext}
+              style={styles.button}
+              disabled={loading}
+            />
+          </View>
+        ) : (
+          <View style={styles.submitButtons}>
+            <Button
+              title="तपासणी सबमिट करा"
+              onPress={handleSubmit}
+              loading={loading}
+            />
+            <Button
+              title="मसुदा सेव्ह करा"
+              onPress={handleSaveAsDraft}
+              variant="outline"
+              loading={loading}
+            />
+            {currentStep > 0 && (
+              <Button
+                title='मागील'
+                onPress={handlePrevious}
+                variant="outline"
+                disabled={loading}
+              />
+            )}
+          </View>
+        )}
+      </View>
+    </KeyboardAvoidingView>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -978,10 +1044,9 @@ const styles = StyleSheet.create({
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
   switchLabel: { fontSize: 14, color: '#374151', flex: 1 },
   footer: { backgroundColor: '#ffffff', padding: 16, borderTopWidth: 1, borderTopColor: '#e5e7eb' },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  button: { flex: 1, marginHorizontal: 4 },
-  submitButtons: { flexDirection: 'row', flex: 1 },
-  halfButton: { flex: 1, marginHorizontal: 4 },
+  buttonRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  button: { flex: 1 },
+  submitButtons: { gap: 12, marginTop: 12 },
   pickerLabel: { fontSize: 14, fontWeight: '500', color: '#374151', marginBottom: 8, marginTop: 16 },
   pickerContainer: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, backgroundColor: '#ffffff', overflow: 'hidden' },
   picker: { height: 50 }
