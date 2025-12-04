@@ -1076,7 +1076,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   inspectionDetailsScroll: {
-    maxHeight: 500,
+    flex: 1,
   },
   footer: {
     backgroundColor: '#ffffff',
