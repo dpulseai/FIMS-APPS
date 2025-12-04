@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platfo
 import { useTranslation } from 'react-i18next';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { Picker } from '@react-native-picker/picker';
 import { FormsStackParamList, LocationData } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { createInspection, uploadPhoto, savePahuvaidhakiyaTapasaniForm } from '../../services/fimsService';
@@ -719,11 +720,23 @@ export default function PahuvaidhakiyaTapasaniScreen() {
               onChangeDateTime={setVisitDateTime}
               placeholder="YYYY-MM-DD HH:MM"
             />
-            <Input
-              label="तपासणीचा उद्देश / Inspection Purpose"
-              value={inspectionPurposeReason}
-              onChangeText={setInspectionPurposeReason}
-            />
+            <View>
+              <Text style={styles.pickerLabel}>तपासणीचा उद्देश / Inspection Purpose *</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={inspectionPurposeReason}
+                  onValueChange={(value) => setInspectionPurposeReason(value)}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="तपासणीचा उद्देश निवडा" value="" />
+                  <Picker.Item label="नियमित तपासणी" value="नियमित तपासणी" />
+                  <Picker.Item label="रोग तपासणी" value="रोग तपासणी" />
+                  <Picker.Item label="लसीकरण कार्यक्रम" value="लसीकरण कार्यक्रम" />
+                  <Picker.Item label="तक्रार तपासणी" value="तक्रार तपासणी" />
+                  <Picker.Item label="इतर" value="इतर" />
+                </Picker>
+              </View>
+            </View>
           </View>
         );
 
@@ -968,5 +981,8 @@ const styles = StyleSheet.create({
   buttonRow: { flexDirection: 'row', justifyContent: 'space-between' },
   button: { flex: 1, marginHorizontal: 4 },
   submitButtons: { flexDirection: 'row', flex: 1 },
-  halfButton: { flex: 1, marginHorizontal: 4 }
+  halfButton: { flex: 1, marginHorizontal: 4 },
+  pickerLabel: { fontSize: 14, fontWeight: '500', color: '#374151', marginBottom: 8, marginTop: 16 },
+  pickerContainer: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, backgroundColor: '#ffffff', overflow: 'hidden' },
+  picker: { height: 50 }
 });
