@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform, Switch } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
@@ -6,7 +6,8 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { Picker } from '@react-native-picker/picker';
 import { FormsStackParamList, LocationData } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import { createInspection, uploadPhoto, savePahuvaidhakiyaTapasaniForm } from '../../services/fimsService';
+import { createInspection, uploadPhoto, savePahuvaidhakiyaTapasaniForm, getInspectionById } from '../../services/fimsService';
+import { supabase } from '../../services/supabase';
 import Stepper from '../../components/common/Stepper';
 import Input from '../../components/common/Input';
 import DateInput from '../../components/common/DateInput';
@@ -37,7 +38,7 @@ export default function PahuvaidhakiyaTapasaniScreen() {
   const route = useRoute<RouteParams>();
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuth();
-  const { categoryId } = route.params;
+  const { categoryId, inspectionId } = route.params;
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
@@ -225,6 +226,248 @@ export default function PahuvaidhakiyaTapasaniScreen() {
   const [collectedServiceFeesTarget, setCollectedServiceFeesTarget] = useState('');
   const [collectedServiceFeesCurrentMonth, setCollectedServiceFeesCurrentMonth] = useState('');
   const [collectedServiceFeesPrevious, setCollectedServiceFeesPrevious] = useState('');
+
+  // Load existing inspection data when editing
+  useEffect(() => {
+    if (!inspectionId) return;
+
+    const loadExistingInspection = async () => {
+      setLoading(true);
+      try {
+        const inspection = await getInspectionById(inspectionId);
+        if (!inspection) return;
+
+        // Load location data
+        setLocation({
+          latitude: inspection.location_latitude || 0,
+          longitude: inspection.location_longitude || 0,
+          accuracy: null,
+          address: inspection.location_address || null,
+          timestamp: Date.now(),
+        });
+
+        // Load photos
+        if (inspection.photos && inspection.photos.length > 0) {
+          setPhotos(inspection.photos.map((p: any) => p.photo_url));
+          try {
+            const metas = inspection.photos.map((p: any) => {
+              if (!p.description) return {};
+              try {
+                const parsed = JSON.parse(p.description);
+                return parsed?.photo_location || {};
+              } catch (e) {
+                return {};
+              }
+            });
+            setPhotoMetas(metas);
+          } catch (e) {
+            console.warn('Could not parse photo metas from inspection photos', e);
+          }
+        }
+
+        // Load form data from veterinary_inspection_report_form table
+        const { data: formRows, error: formErr } = await supabase
+          .from('veterinary_inspection_report_form')
+          .select('*')
+          .eq('inspection_id', inspectionId)
+          .order('updated_at', { ascending: false })
+          .limit(1);
+
+        if (formErr) {
+          console.error('Error loading veterinary inspection report form data:', formErr);
+          return;
+        }
+
+        const formData = Array.isArray(formRows) && formRows.length > 0 ? formRows[0] : null;
+
+        if (formData) {
+          // Basic Information
+          setInstituteNameAddress(formData.institute_name_address || '');
+          setHeadNameContact(formData.head_name_contact || '');
+          setInspectorNameDesignation(formData.inspector_name_designation || '');
+          setVisitDateTime(formData.visit_date_time || '');
+          setInspectionPurposeReason(formData.inspection_purpose_reason || '');
+
+          // Technical Work Review
+          setTechnicalWorkReview(formData.technical_work_review || '');
+          setWorkType(formData.work_type || '');
+          setTargetCurrentYear(formData.target_current_year || '');
+          setAchievedMonthEnd(formData.achieved_month_end || '');
+          setAchievedPreviousYearMonthEnd(formData.achieved_previous_year_month_end || '');
+
+          // Patient Statistics
+          setOutpatientsTarget(formData.outpatients_target?.toString() || '');
+          setOutpatientsCurrentMonth(formData.outpatients_current_month?.toString() || '');
+          setOutpatientsPrevious(formData.outpatients_previous?.toString() || '');
+          setInpatientsTarget(formData.inpatients_target?.toString() || '');
+          setInpatientsCurrentMonth(formData.inpatients_current_month?.toString() || '');
+          setInpatientsPrevious(formData.inpatients_previous?.toString() || '');
+          setEpilepsyPatientsTarget(formData.epilepsy_patients_target?.toString() || '');
+          setEpilepsyPatientsCurrentMonth(formData.epilepsy_patients_current_month?.toString() || '');
+          setEpilepsyPatientsPrevious(formData.epilepsy_patients_previous?.toString() || '');
+
+          // Surgery Statistics
+          setCastrationHqTarget(formData.castration_headquarters_target?.toString() || '');
+          setCastrationHqCurrentMonth(formData.castration_headquarters_current_month?.toString() || '');
+          setCastrationHqPrevious(formData.castration_headquarters_previous?.toString() || '');
+          setCastrationFieldTarget(formData.castration_field_target?.toString() || '');
+          setCastrationFieldCurrentMonth(formData.castration_field_current_month?.toString() || '');
+          setCastrationFieldPrevious(formData.castration_field_previous?.toString() || '');
+          setMajorSurgeryHqTarget(formData.major_surgery_headquarters_target?.toString() || '');
+          setMajorSurgeryHqCurrentMonth(formData.major_surgery_headquarters_current_month?.toString() || '');
+          setMajorSurgeryHqPrevious(formData.major_surgery_headquarters_previous?.toString() || '');
+          setMajorSurgeryFieldTarget(formData.major_surgery_field_target?.toString() || '');
+          setMajorSurgeryFieldCurrentMonth(formData.major_surgery_field_current_month?.toString() || '');
+          setMajorSurgeryFieldPrevious(formData.major_surgery_field_previous?.toString() || '');
+          setMajorSurgeryTotalTarget(formData.major_surgery_total_target?.toString() || '');
+          setMajorSurgeryTotalCurrentMonth(formData.major_surgery_total_current_month?.toString() || '');
+          setMajorSurgeryTotalPrevious(formData.major_surgery_total_previous?.toString() || '');
+          setMinorSurgeryHqTarget(formData.minor_surgery_headquarters_target?.toString() || '');
+          setMinorSurgeryHqCurrentMonth(formData.minor_surgery_headquarters_current_month?.toString() || '');
+          setMinorSurgeryHqPrevious(formData.minor_surgery_headquarters_previous?.toString() || '');
+
+          // Disease Information
+          setVillageName(formData.village_name || '');
+          setDiseaseName(formData.disease_name || '');
+          setIncubationPeriod(formData.incubation_period || '');
+          setLivestockCount(formData.livestock_count?.toString() || '');
+          setAffectedCount(formData.affected_count?.toString() || '');
+          setDeaths(formData.deaths?.toString() || '');
+          setVaccinatedCount(formData.vaccinated_count?.toString() || '');
+          setActionsTaken(formData.actions_taken || '');
+          setVillagesWithin10km(formData.villages_within_10km?.toString() || '');
+          setLivestockWithin10km(formData.livestock_within_10km || '');
+          setPreviousEndemicDiseaseInfo(formData.previous_endemic_disease_info || '');
+          setEdrSubmissionDate(formData.edr_submission_date || '');
+          setTeamVisitDate(formData.team_visit_date || '');
+
+          // Vaccination Program
+          setVaccineType(formData.vaccine_type || '');
+          setVaccineName(formData.vaccine_name || '');
+          setNumberOfAnimalsInProgram(formData.number_of_animals_in_program || '');
+          setTotalVaccinated(formData.total_vaccinated || '');
+          setRecentlyVaccinatedDate(formData.recently_vaccinated_date || '');
+          setReceivedVaccinated(formData.received_vaccinated || '');
+          setPreviousVaccinated(formData.previous_vaccinated || '');
+          setTotalVaccinatedCount(formData.total_vaccinated_count || '');
+          setVaccinationDate(formData.vaccination_date || '');
+          setSinceAprilVaccinated(formData.since_april_vaccinated || '');
+          setReasonNotVaccinated(formData.reason_not_vaccinated || '');
+
+          // Scheme Progress
+          setDairyAnimalsTarget(formData.dairy_animals_group_distribution_target_current_year || '');
+          setDairyAnimalsAchievedCurrent(formData.dairy_animals_group_distribution_achieved_current_year || '');
+          setDairyAnimalsAchievedPrevious(formData.dairy_animals_group_distribution_achieved_previous_year || '');
+          setDairyAnimalsRemarks(formData.dairy_animals_group_distribution_remarks || '');
+          setGoatSheepTarget(formData.goat_sheep_group_distribution_target_current_year || '');
+          setGoatSheepAchievedCurrent(formData.goat_sheep_group_distribution_achieved_current_year || '');
+          setGoatSheepAchievedPrevious(formData.goat_sheep_group_distribution_achieved_previous_year || '');
+          setGoatSheepRemarks(formData.goat_sheep_group_distribution_remarks || '');
+          setPoultryShedTarget(formData.poultry_shed_construction_target_current_year || '');
+          setPoultryShedAchievedCurrent(formData.poultry_shed_construction_achieved_current_year || '');
+          setPoultryShedAchievedPrevious(formData.poultry_shed_construction_achieved_previous_year || '');
+          setPoultryShedRemarks(formData.poultry_shed_construction_remarks || '');
+          setPigGroupTarget(formData.pig_group_distribution_target_current_year || '');
+          setPigGroupAchievedCurrent(formData.pig_group_distribution_achieved_current_year || '');
+          setPigGroupAchievedPrevious(formData.pig_group_distribution_achieved_previous_year || '');
+          setPigGroupRemarks(formData.pig_group_distribution_remarks || '');
+          setOneDayChicksTarget(formData.one_day_old_chicks_distribution_target_current_year || '');
+          setOneDayChicksAchievedCurrent(formData.one_day_old_chicks_distribution_achieved_current_year || '');
+          setOneDayChicksAchievedPrevious(formData.one_day_old_chicks_distribution_achieved_previous_year || '');
+          setOneDayChicksRemarks(formData.one_day_old_chicks_distribution_remarks || '');
+          setDoubleYolkEggsTarget(formData.double_yolk_eggs_distribution_target_current_year || '');
+          setDoubleYolkEggsAchievedCurrent(formData.double_yolk_eggs_distribution_achieved_current_year || '');
+          setDoubleYolkEggsAchievedPrevious(formData.double_yolk_eggs_distribution_achieved_previous_year || '');
+          setDoubleYolkEggsRemarks(formData.double_yolk_eggs_distribution_remarks || '');
+
+          // Assessment and Instructions
+          setGeneralTechnicalAssessment(formData.general_technical_assessment || '');
+          setGivenInstructions(formData.given_instructions || '');
+
+          // Artificial Insemination - Primary
+          setAiPrimaryForeignTarget(formData.artificial_insemination_primary_foreign_target?.toString() || '');
+          setAiPrimaryForeignCurrentMonth(formData.artificial_insemination_primary_foreign_current_month?.toString() || '');
+          setAiPrimaryForeignPrevious(formData.artificial_insemination_primary_foreign_previous?.toString() || '');
+          setAiPrimaryHybridTarget(formData.artificial_insemination_primary_hybrid_target?.toString() || '');
+          setAiPrimaryHybridCurrentMonth(formData.artificial_insemination_primary_hybrid_current_month?.toString() || '');
+          setAiPrimaryHybridPrevious(formData.artificial_insemination_primary_hybrid_previous?.toString() || '');
+          setAiPrimaryLocalTarget(formData.artificial_insemination_primary_local_target?.toString() || '');
+          setAiPrimaryLocalCurrentMonth(formData.artificial_insemination_primary_local_current_month?.toString() || '');
+          setAiPrimaryLocalPrevious(formData.artificial_insemination_primary_local_previous?.toString() || '');
+          setAiPrimaryBuffaloTarget(formData.artificial_insemination_primary_buffalo_target?.toString() || '');
+          setAiPrimaryBuffaloCurrentMonth(formData.artificial_insemination_primary_buffalo_current_month?.toString() || '');
+          setAiPrimaryBuffaloPrevious(formData.artificial_insemination_primary_buffalo_previous?.toString() || '');
+          setAiPrimaryTotalTarget(formData.artificial_insemination_primary_total_target?.toString() || '');
+          setAiPrimaryTotalCurrentMonth(formData.artificial_insemination_primary_total_current_month?.toString() || '');
+          setAiPrimaryTotalPrevious(formData.artificial_insemination_primary_total_previous?.toString() || '');
+
+          // Born Calves
+          setBornCalvesCowHybridTarget(formData.born_calves_cow_hybrid_target?.toString() || '');
+          setBornCalvesCowHybridCurrentMonth(formData.born_calves_cow_hybrid_current_month?.toString() || '');
+          setBornCalvesCowHybridPrevious(formData.born_calves_cow_hybrid_previous?.toString() || '');
+          setBornCalvesCowLocalTarget(formData.born_calves_cow_local_target?.toString() || '');
+          setBornCalvesCowLocalCurrentMonth(formData.born_calves_cow_local_current_month?.toString() || '');
+          setBornCalvesCowLocalPrevious(formData.born_calves_cow_local_previous?.toString() || '');
+          setBornCalvesBuffaloTarget(formData.born_calves_buffalo_target?.toString() || '');
+          setBornCalvesBuffaloCurrentMonth(formData.born_calves_buffalo_current_month?.toString() || '');
+          setBornCalvesBuffaloPrevious(formData.born_calves_buffalo_previous?.toString() || '');
+          setBornCalvesTotalTarget(formData.born_calves_total_target?.toString() || '');
+          setBornCalvesTotalCurrentMonth(formData.born_calves_total_current_month?.toString() || '');
+          setBornCalvesTotalPrevious(formData.born_calves_total_previous?.toString() || '');
+
+          // Calved Cows
+          setCalvedCowsHybridTarget(formData.calved_cows_hybrid_target?.toString() || '');
+          setCalvedCowsHybridCurrentMonth(formData.calved_cows_hybrid_current_month?.toString() || '');
+          setCalvedCowsHybridPrevious(formData.calved_cows_hybrid_previous?.toString() || '');
+          setCalvedCowsLocalTarget(formData.calved_cows_local_target?.toString() || '');
+          setCalvedCowsLocalCurrentMonth(formData.calved_cows_local_current_month?.toString() || '');
+          setCalvedCowsLocalPrevious(formData.calved_cows_local_previous?.toString() || '');
+          setCalvedBuffaloesTarget(formData.calved_buffaloes_target?.toString() || '');
+          setCalvedBuffaloesCurrentMonth(formData.calved_buffaloes_current_month?.toString() || '');
+          setCalvedBuffaloesPrevious(formData.calved_buffaloes_previous?.toString() || '');
+
+          // Pregnancy Examination
+          setPregnancyExamCowTarget(formData.pregnancy_examination_cow_target?.toString() || '');
+          setPregnancyExamCowCurrentMonth(formData.pregnancy_examination_cow_current_month?.toString() || '');
+          setPregnancyExamCowPrevious(formData.pregnancy_examination_cow_previous?.toString() || '');
+          setPregnancyExamBuffaloTarget(formData.pregnancy_examination_buffalo_target?.toString() || '');
+          setPregnancyExamBuffaloCurrentMonth(formData.pregnancy_examination_buffalo_current_month?.toString() || '');
+          setPregnancyExamBuffaloPrevious(formData.pregnancy_examination_buffalo_previous?.toString() || '');
+          setPregnancyExamTotalTarget(formData.pregnancy_examination_total_target?.toString() || '');
+          setPregnancyExamTotalCurrentMonth(formData.pregnancy_examination_total_current_month?.toString() || '');
+          setPregnancyExamTotalPrevious(formData.pregnancy_examination_total_previous?.toString() || '');
+
+          // Infertility Animals Examination
+          setInfertilityExamCowTarget(formData.infertility_animals_examination_cow_target?.toString() || '');
+          setInfertilityExamCowCurrentMonth(formData.infertility_animals_examination_cow_current_month?.toString() || '');
+          setInfertilityExamCowPrevious(formData.infertility_animals_examination_cow_previous?.toString() || '');
+          setInfertilityExamBuffaloTarget(formData.infertility_animals_examination_buffalo_target?.toString() || '');
+          setInfertilityExamBuffaloCurrentMonth(formData.infertility_animals_examination_buffalo_current_month?.toString() || '');
+          setInfertilityExamBuffaloPrevious(formData.infertility_animals_examination_buffalo_previous?.toString() || '');
+          setInfertilityExamTotalTarget(formData.infertility_animals_examination_total_target?.toString() || '');
+          setInfertilityExamTotalCurrentMonth(formData.infertility_animals_examination_total_current_month?.toString() || '');
+          setInfertilityExamTotalPrevious(formData.infertility_animals_examination_total_previous?.toString() || '');
+
+          // Patients Average Daily Attendance
+          setPatientsAvgDailyAttendanceTarget(formData.patients_average_daily_attendance_target?.toString() || '');
+          setPatientsAvgDailyAttendanceCurrentMonth(formData.patients_average_daily_attendance_current_month?.toString() || '');
+          setPatientsAvgDailyAttendancePrevious(formData.patients_average_daily_attendance_previous?.toString() || '');
+
+          // Collected Service Fees
+          setCollectedServiceFeesTarget(formData.collected_service_fees_target?.toString() || '');
+          setCollectedServiceFeesCurrentMonth(formData.collected_service_fees_current_month?.toString() || '');
+          setCollectedServiceFeesPrevious(formData.collected_service_fees_previous?.toString() || '');
+        }
+      } catch (error) {
+        console.error('Error loading inspection data:', error);
+        Alert.alert(t('common.error'), 'Failed to load inspection data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExistingInspection();
+  }, [inspectionId]);
 
   const handleNext = () => {
     // Validate Step 0: Basic Information - All fields required
