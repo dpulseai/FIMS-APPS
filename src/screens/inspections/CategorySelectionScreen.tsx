@@ -40,7 +40,7 @@ export default function CategorySelectionScreen() {
         // hide health
         // if (ft.includes('health')) return false;
         // hide veterinary variants
-        if (ft.includes('veterinary') || ft.includes('veterin')) return false;
+        // if (ft.includes('veterinary') || ft.includes('veterin')) return false;
         // hide pashu / पशु variations (pashutapasani, pashuvaidyakiya etc.)
         if (ft.includes('pashu') || name.includes('pashu') || name.includes('पशु') || ft.includes('पशु')) return false;
         // hide nyayalay / high court
