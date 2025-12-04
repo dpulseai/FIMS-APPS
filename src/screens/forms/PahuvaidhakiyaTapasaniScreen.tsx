@@ -947,7 +947,7 @@ export default function PahuvaidhakiyaTapasaniScreen() {
         return (
           <View>
             <Text style={styles.sectionTitle}>मूलभूत माहिती</Text>
-            <Text style={styles.sectionSubtitle}>Basic Institution Information</Text>
+            {/* <Text style={styles.sectionSubtitle}>Basic Institution Information</Text> */}
             <Input
               label="संस्थेचे नाव व पत्ता / Institution Name & Address *"
               value={instituteNameAddress}
@@ -956,23 +956,27 @@ export default function PahuvaidhakiyaTapasaniScreen() {
               numberOfLines={3}
             />
             <Input
-              label="प्रमुखाचे नाव व संपर्क / Head's Name & Contact"
+              // label="प्रमुखाचे नाव व संपर्क / Head's Name & Contact"
+              label="प्रमुखाचे नाव व संपर्क *"
               value={headNameContact}
               onChangeText={setHeadNameContact}
             />
             <Input
-              label="निरीक्षकाचे नाव व पदनाम / Inspector's Name & Designation"
+              // label="निरीक्षकाचे नाव व पदनाम / Inspector's Name & Designation"
+              label="निरीक्षकाचे नाव व पदनाम *"
               value={inspectorNameDesignation}
               onChangeText={setInspectorNameDesignation}
             />
             <DateTimeInput
-              label="भेट दिनांक व वेळ / Visit Date & Time"
+              // label="भेट दिनांक व वेळ / Visit Date & Time"
+              label="भेट दिनांक व वेळ *"
               value={visitDateTime}
               onChangeDateTime={setVisitDateTime}
               placeholder="YYYY-MM-DD HH:MM"
             />
             <View>
-              <Text style={styles.pickerLabel}>तपासणीचा उद्देश / Inspection Purpose *</Text>
+              {/* <Text style={styles.pickerLabel}>तपासणीचा उद्देश / Inspection Purpose *</Text> */}
+              <Text style={styles.pickerLabel}>तपासणीचा उद्देश *</Text>
               <View style={styles.pickerContainer}>
                 <Picker
                   selectedValue={inspectionPurposeReason}
@@ -1013,22 +1017,22 @@ export default function PahuvaidhakiyaTapasaniScreen() {
               numberOfLines={4}
             />
             <Input
-              label="कामाचा प्रकार / Work Type"
+              label="कामाचा प्रकार"
               value={workType}
               onChangeText={setWorkType}
             />
             <Input
-              label="चालू वर्षाचे लक्ष्य / Current Year Target"
+              label="चालू वर्षाचे लक्ष्य "
               value={targetCurrentYear}
               onChangeText={setTargetCurrentYear}
             />
             <Input
-              label="महिना अखेरपर्यंत साध्य / Achievement at Month End"
+              label="महिना अखेरपर्यंत साध्य"
               value={achievedMonthEnd}
               onChangeText={setAchievedMonthEnd}
             />
             <Input
-              label="मागील वर्षी साध्य / Previous Year Achievement"
+              label="मागील वर्षी महिना अखेरपर्यंत साध्य"
               value={achievedPreviousYearMonthEnd}
               onChangeText={setAchievedPreviousYearMonthEnd}
             />
@@ -1042,19 +1046,19 @@ export default function PahuvaidhakiyaTapasaniScreen() {
             <Text style={styles.sectionSubtitle}>Patient Statistics</Text>
 
             <Text style={styles.subSectionTitle}>बाह्यरुग्ण / Outpatients</Text>
-            <Input label="लक्ष्य / Target" value={outpatientsTarget} onChangeText={setOutpatientsTarget} keyboardType="numeric" />
-            <Input label="चालू महिना / Current Month" value={outpatientsCurrentMonth} onChangeText={setOutpatientsCurrentMonth} keyboardType="numeric" />
-            <Input label="मागील / Previous" value={outpatientsPrevious} onChangeText={setOutpatientsPrevious} keyboardType="numeric" />
+            <Input label="लक्ष्य" value={outpatientsTarget} onChangeText={setOutpatientsTarget} keyboardType="numeric" />
+            <Input label="चालू महिना" value={outpatientsCurrentMonth} onChangeText={setOutpatientsCurrentMonth} keyboardType="numeric" />
+            <Input label="मागील" value={outpatientsPrevious} onChangeText={setOutpatientsPrevious} keyboardType="numeric" />
 
             <Text style={styles.subSectionTitle}>अंतर्रुग्ण / Inpatients</Text>
-            <Input label="लक्ष्य / Target" value={inpatientsTarget} onChangeText={setInpatientsTarget} keyboardType="numeric" />
-            <Input label="चालू महिना / Current Month" value={inpatientsCurrentMonth} onChangeText={setInpatientsCurrentMonth} keyboardType="numeric" />
-            <Input label="मागील / Previous" value={inpatientsPrevious} onChangeText={setInpatientsPrevious} keyboardType="numeric" />
+            <Input label="लक्ष्य" value={inpatientsTarget} onChangeText={setInpatientsTarget} keyboardType="numeric" />
+            <Input label="चालू महिना" value={inpatientsCurrentMonth} onChangeText={setInpatientsCurrentMonth} keyboardType="numeric" />
+            <Input label="मागील" value={inpatientsPrevious} onChangeText={setInpatientsPrevious} keyboardType="numeric" />
 
             <Text style={styles.subSectionTitle}>अपस्मार रुग्ण / Epilepsy Patients</Text>
-            <Input label="लक्ष्य / Target" value={epilepsyPatientsTarget} onChangeText={setEpilepsyPatientsTarget} keyboardType="numeric" />
-            <Input label="चालू महिना / Current Month" value={epilepsyPatientsCurrentMonth} onChangeText={setEpilepsyPatientsCurrentMonth} keyboardType="numeric" />
-            <Input label="मागील / Previous" value={epilepsyPatientsPrevious} onChangeText={setEpilepsyPatientsPrevious} keyboardType="numeric" />
+            <Input label="लक्ष्य" value={epilepsyPatientsTarget} onChangeText={setEpilepsyPatientsTarget} keyboardType="numeric" />
+            <Input label="चालू महिना" value={epilepsyPatientsCurrentMonth} onChangeText={setEpilepsyPatientsCurrentMonth} keyboardType="numeric" />
+            <Input label="मागील" value={epilepsyPatientsPrevious} onChangeText={setEpilepsyPatientsPrevious} keyboardType="numeric" />
           </ScrollView>
         );
 
@@ -1065,34 +1069,34 @@ export default function PahuvaidhakiyaTapasaniScreen() {
             <Text style={styles.sectionSubtitle}>Surgery Statistics</Text>
 
             <Text style={styles.subSectionTitle}>नपुंसकीकरण - मुख्यालय / Castration - HQ</Text>
-            <Input label="लक्ष्य / Target" value={castrationHqTarget} onChangeText={setCastrationHqTarget} keyboardType="numeric" />
-            <Input label="चालू महिना / Current Month" value={castrationHqCurrentMonth} onChangeText={setCastrationHqCurrentMonth} keyboardType="numeric" />
-            <Input label="मागील / Previous" value={castrationHqPrevious} onChangeText={setCastrationHqPrevious} keyboardType="numeric" />
+            <Input label="लक्ष्य" value={castrationHqTarget} onChangeText={setCastrationHqTarget} keyboardType="numeric" />
+            <Input label="चालू महिना" value={castrationHqCurrentMonth} onChangeText={setCastrationHqCurrentMonth} keyboardType="numeric" />
+            <Input label="मागील" value={castrationHqPrevious} onChangeText={setCastrationHqPrevious} keyboardType="numeric" />
 
             <Text style={styles.subSectionTitle}>नपुंसकीकरण - शेत / Castration - Field</Text>
-            <Input label="लक्ष्य / Target" value={castrationFieldTarget} onChangeText={setCastrationFieldTarget} keyboardType="numeric" />
-            <Input label="चालू महिना / Current Month" value={castrationFieldCurrentMonth} onChangeText={setCastrationFieldCurrentMonth} keyboardType="numeric" />
-            <Input label="मागील / Previous" value={castrationFieldPrevious} onChangeText={setCastrationFieldPrevious} keyboardType="numeric" />
+            <Input label="लक्ष्य" value={castrationFieldTarget} onChangeText={setCastrationFieldTarget} keyboardType="numeric" />
+            <Input label="चालू महिना" value={castrationFieldCurrentMonth} onChangeText={setCastrationFieldCurrentMonth} keyboardType="numeric" />
+            <Input label="मागील" value={castrationFieldPrevious} onChangeText={setCastrationFieldPrevious} keyboardType="numeric" />
 
             <Text style={styles.subSectionTitle}>मोठी शस्त्रक्रिया - मुख्यालय / Major Surgery - HQ</Text>
-            <Input label="लक्ष्य / Target" value={majorSurgeryHqTarget} onChangeText={setMajorSurgeryHqTarget} keyboardType="numeric" />
-            <Input label="चालू महिना / Current Month" value={majorSurgeryHqCurrentMonth} onChangeText={setMajorSurgeryHqCurrentMonth} keyboardType="numeric" />
-            <Input label="मागील / Previous" value={majorSurgeryHqPrevious} onChangeText={setMajorSurgeryHqPrevious} keyboardType="numeric" />
+            <Input label="लक्ष्य" value={majorSurgeryHqTarget} onChangeText={setMajorSurgeryHqTarget} keyboardType="numeric" />
+            <Input label="चालू महिना" value={majorSurgeryHqCurrentMonth} onChangeText={setMajorSurgeryHqCurrentMonth} keyboardType="numeric" />
+            <Input label="मागील" value={majorSurgeryHqPrevious} onChangeText={setMajorSurgeryHqPrevious} keyboardType="numeric" />
 
             <Text style={styles.subSectionTitle}>मोठी शस्त्रक्रिया - शेत / Major Surgery - Field</Text>
-            <Input label="लक्ष्य / Target" value={majorSurgeryFieldTarget} onChangeText={setMajorSurgeryFieldTarget} keyboardType="numeric" />
-            <Input label="चालू महिना / Current Month" value={majorSurgeryFieldCurrentMonth} onChangeText={setMajorSurgeryFieldCurrentMonth} keyboardType="numeric" />
-            <Input label="मागील / Previous" value={majorSurgeryFieldPrevious} onChangeText={setMajorSurgeryFieldPrevious} keyboardType="numeric" />
+            <Input label="लक्ष्य" value={majorSurgeryFieldTarget} onChangeText={setMajorSurgeryFieldTarget} keyboardType="numeric" />
+            <Input label="चालू महिना" value={majorSurgeryFieldCurrentMonth} onChangeText={setMajorSurgeryFieldCurrentMonth} keyboardType="numeric" />
+            <Input label="मागील" value={majorSurgeryFieldPrevious} onChangeText={setMajorSurgeryFieldPrevious} keyboardType="numeric" />
 
             <Text style={styles.subSectionTitle}>मोठी शस्त्रक्रिया - एकूण / Major Surgery - Total</Text>
-            <Input label="लक्ष्य / Target" value={majorSurgeryTotalTarget} onChangeText={setMajorSurgeryTotalTarget} keyboardType="numeric" />
-            <Input label="चालू महिना / Current Month" value={majorSurgeryTotalCurrentMonth} onChangeText={setMajorSurgeryTotalCurrentMonth} keyboardType="numeric" />
-            <Input label="मागील / Previous" value={majorSurgeryTotalPrevious} onChangeText={setMajorSurgeryTotalPrevious} keyboardType="numeric" />
+            <Input label="लक्ष्य" value={majorSurgeryTotalTarget} onChangeText={setMajorSurgeryTotalTarget} keyboardType="numeric" />
+            <Input label="चालू महिना" value={majorSurgeryTotalCurrentMonth} onChangeText={setMajorSurgeryTotalCurrentMonth} keyboardType="numeric" />
+            <Input label="मागील" value={majorSurgeryTotalPrevious} onChangeText={setMajorSurgeryTotalPrevious} keyboardType="numeric" />
 
             <Text style={styles.subSectionTitle}>छोटी शस्त्रक्रिया - मुख्यालय / Minor Surgery - HQ</Text>
-            <Input label="लक्ष्य / Target" value={minorSurgeryHqTarget} onChangeText={setMinorSurgeryHqTarget} keyboardType="numeric" />
-            <Input label="चालू महिना / Current Month" value={minorSurgeryHqCurrentMonth} onChangeText={setMinorSurgeryHqCurrentMonth} keyboardType="numeric" />
-            <Input label="मागील / Previous" value={minorSurgeryHqPrevious} onChangeText={setMinorSurgeryHqPrevious} keyboardType="numeric" />
+            <Input label="लक्ष्य" value={minorSurgeryHqTarget} onChangeText={setMinorSurgeryHqTarget} keyboardType="numeric" />
+            <Input label="चालू महिना" value={minorSurgeryHqCurrentMonth} onChangeText={setMinorSurgeryHqCurrentMonth} keyboardType="numeric" />
+            <Input label="मागील" value={minorSurgeryHqPrevious} onChangeText={setMinorSurgeryHqPrevious} keyboardType="numeric" />
           </ScrollView>
         );
 
@@ -1101,19 +1105,19 @@ export default function PahuvaidhakiyaTapasaniScreen() {
           <ScrollView>
             <Text style={styles.sectionTitle}>रोग माहिती</Text>
             <Text style={styles.sectionSubtitle}>Disease Information</Text>
-            <Input label="गावाचे नाव / Village Name" value={villageName} onChangeText={setVillageName} />
-            <Input label="रोगाचे नाव / Disease Name" value={diseaseName} onChangeText={setDiseaseName} />
-            <Input label="उद्भव कालावधी / Incubation Period" value={incubationPeriod} onChangeText={setIncubationPeriod} />
-            <Input label="पशुधन संख्या / Livestock Count" value={livestockCount} onChangeText={setLivestockCount} keyboardType="numeric" />
-            <Input label="बाधित संख्या / Affected Count" value={affectedCount} onChangeText={setAffectedCount} keyboardType="numeric" />
-            <Input label="मृत्यू / Deaths" value={deaths} onChangeText={setDeaths} keyboardType="numeric" />
-            <Input label="लसीकरण संख्या / Vaccinated Count" value={vaccinatedCount} onChangeText={setVaccinatedCount} keyboardType="numeric" />
-            <Input label="घेतलेल्या कृती / Actions Taken" value={actionsTaken} onChangeText={setActionsTaken} multiline numberOfLines={3} />
-            <Input label="१० किमी परिसरातील गावे / Villages within 10km" value={villagesWithin10km} onChangeText={setVillagesWithin10km} keyboardType="numeric" />
-            <Input label="१० किमी परिसरातील पशुधन / Livestock within 10km" value={livestockWithin10km} onChangeText={setLivestockWithin10km} />
-            <Input label="मागील स्थानिक रोग माहिती / Previous Endemic Disease Info" value={previousEndemicDiseaseInfo} onChangeText={setPreviousEndemicDiseaseInfo} multiline numberOfLines={3} />
-            <DateInput label="EDR सबमिशन दिनांक / EDR Submission Date" value={edrSubmissionDate} onChangeDate={setEdrSubmissionDate} placeholder="YYYY-MM-DD" />
-            <DateInput label="टीम भेट दिनांक / Team Visit Date" value={teamVisitDate} onChangeDate={setTeamVisitDate} placeholder="YYYY-MM-DD" />
+            <Input label="गावाचे नाव " value={villageName} onChangeText={setVillageName} />
+            <Input label="रोगाचे नाव" value={diseaseName} onChangeText={setDiseaseName} />
+            <Input label="उद्भव कालावधी" value={incubationPeriod} onChangeText={setIncubationPeriod} />
+            <Input label="पशुधन संख्या" value={livestockCount} onChangeText={setLivestockCount} keyboardType="numeric" />
+            <Input label="बाधित संख्या" value={affectedCount} onChangeText={setAffectedCount} keyboardType="numeric" />
+            <Input label="मृत्यू" value={deaths} onChangeText={setDeaths} keyboardType="numeric" />
+            <Input label="लसीकरण संख्या" value={vaccinatedCount} onChangeText={setVaccinatedCount} keyboardType="numeric" />
+            <Input label="घेतलेल्या कृती" value={actionsTaken} onChangeText={setActionsTaken} multiline numberOfLines={3} />
+            <Input label="१० किमी परिसरातील गावे" value={villagesWithin10km} onChangeText={setVillagesWithin10km} keyboardType="numeric" />
+            <Input label="१० किमी परिसरातील पशुधन" value={livestockWithin10km} onChangeText={setLivestockWithin10km} />
+            <Input label="मागील स्थानिक रोग माहिती" value={previousEndemicDiseaseInfo} onChangeText={setPreviousEndemicDiseaseInfo} multiline numberOfLines={3} />
+            <DateInput label="EDR सबमिशन दिनांक" value={edrSubmissionDate} onChangeDate={setEdrSubmissionDate} placeholder="YYYY-MM-DD" />
+            <DateInput label="टीम भेट दिनांक" value={teamVisitDate} onChangeDate={setTeamVisitDate} placeholder="YYYY-MM-DD" />
           </ScrollView>
         );
 
@@ -1122,17 +1126,17 @@ export default function PahuvaidhakiyaTapasaniScreen() {
           <ScrollView>
             <Text style={styles.sectionTitle}>लसीकरण कार्यक्रम</Text>
             <Text style={styles.sectionSubtitle}>Vaccination Program</Text>
-            <Input label="लसीचा प्रकार / Vaccine Type" value={vaccineType} onChangeText={setVaccineType} />
-            <Input label="लसीचे नाव / Vaccine Name" value={vaccineName} onChangeText={setVaccineName} />
-            <Input label="कार्यक्रमातील जनावरे / Number of Animals in Program" value={numberOfAnimalsInProgram} onChangeText={setNumberOfAnimalsInProgram} />
-            <Input label="एकूण लसीकरण / Total Vaccinated" value={totalVaccinated} onChangeText={setTotalVaccinated} />
-            <DateInput label="अलीकडील लसीकरण तारीख / Recently Vaccinated Date" value={recentlyVaccinatedDate} onChangeDate={setRecentlyVaccinatedDate} placeholder="YYYY-MM-DD" />
-            <Input label="प्राप्त लसीकरण / Received Vaccinated" value={receivedVaccinated} onChangeText={setReceivedVaccinated} />
-            <Input label="मागील लसीकरण / Previous Vaccinated" value={previousVaccinated} onChangeText={setPreviousVaccinated} />
-            <Input label="एकूण लसीकरण संख्या / Total Vaccinated Count" value={totalVaccinatedCount} onChangeText={setTotalVaccinatedCount} />
-            <DateInput label="लसीकरण तारीख / Vaccination Date" value={vaccinationDate} onChangeDate={setVaccinationDate} placeholder="YYYY-MM-DD" />
-            <Input label="एप्रिलपासून लसीकरण / Since April Vaccinated" value={sinceAprilVaccinated} onChangeText={setSinceAprilVaccinated} />
-            <Input label="लसीकरण न केल्याचे कारण / Reason Not Vaccinated" value={reasonNotVaccinated} onChangeText={setReasonNotVaccinated} multiline numberOfLines={3} />
+            <Input label="लसीचा प्रकार" value={vaccineType} onChangeText={setVaccineType} />
+            <Input label="लसीचे नाव" value={vaccineName} onChangeText={setVaccineName} />
+            <Input label="कार्यक्रमातील जनावरे" value={numberOfAnimalsInProgram} onChangeText={setNumberOfAnimalsInProgram} />
+            <Input label="एकूण लसीकरण" value={totalVaccinated} onChangeText={setTotalVaccinated} />
+            <DateInput label="अलीकडील लसीकरण तारीख" value={recentlyVaccinatedDate} onChangeDate={setRecentlyVaccinatedDate} placeholder="YYYY-MM-DD" />
+            <Input label="प्राप्त लसीकरण" value={receivedVaccinated} onChangeText={setReceivedVaccinated} />
+            <Input label="मागील लसीकरण" value={previousVaccinated} onChangeText={setPreviousVaccinated} />
+            <Input label="एकूण लसीकरण संख्या" value={totalVaccinatedCount} onChangeText={setTotalVaccinatedCount} />
+            <DateInput label="लसीकरण तारीख" value={vaccinationDate} onChangeDate={setVaccinationDate} placeholder="YYYY-MM-DD" />
+            <Input label="एप्रिलपासून लसीकरण" value={sinceAprilVaccinated} onChangeText={setSinceAprilVaccinated} />
+            <Input label="लसीकरण न केल्याचे कारण" value={reasonNotVaccinated} onChangeText={setReasonNotVaccinated} multiline numberOfLines={3} />
           </ScrollView>
         );
 
@@ -1143,40 +1147,40 @@ export default function PahuvaidhakiyaTapasaniScreen() {
             <Text style={styles.sectionSubtitle}>Scheme Progress</Text>
 
             <Text style={styles.subSectionTitle}>दुधारू जनावरांचे गट वितरण / Dairy Animals Group Distribution</Text>
-            <Input label="चालू वर्षाचे लक्ष्य / Current Year Target" value={dairyAnimalsTarget} onChangeText={setDairyAnimalsTarget} />
-            <Input label="चालू वर्षी साध्य / Current Year Achievement" value={dairyAnimalsAchievedCurrent} onChangeText={setDairyAnimalsAchievedCurrent} />
-            <Input label="मागील वर्षी साध्य / Previous Year Achievement" value={dairyAnimalsAchievedPrevious} onChangeText={setDairyAnimalsAchievedPrevious} />
-            <Input label="शेरा / Remarks" value={dairyAnimalsRemarks} onChangeText={setDairyAnimalsRemarks} />
+            <Input label="चालू वर्षाचे लक्ष्य " value={dairyAnimalsTarget} onChangeText={setDairyAnimalsTarget} />
+            <Input label="चालू वर्षी साध्य" value={dairyAnimalsAchievedCurrent} onChangeText={setDairyAnimalsAchievedCurrent} />
+            <Input label="मागील वर्षी साध्य" value={dairyAnimalsAchievedPrevious} onChangeText={setDairyAnimalsAchievedPrevious} />
+            <Input label="शेरा" value={dairyAnimalsRemarks} onChangeText={setDairyAnimalsRemarks} />
 
             <Text style={styles.subSectionTitle}>शेळी/मेंढी गट वितरण / Goat/Sheep Group Distribution</Text>
-            <Input label="चालू वर्षाचे लक्ष्य / Current Year Target" value={goatSheepTarget} onChangeText={setGoatSheepTarget} />
-            <Input label="चालू वर्षी साध्य / Current Year Achievement" value={goatSheepAchievedCurrent} onChangeText={setGoatSheepAchievedCurrent} />
-            <Input label="मागील वर्षी साध्य / Previous Year Achievement" value={goatSheepAchievedPrevious} onChangeText={setGoatSheepAchievedPrevious} />
-            <Input label="शेरा / Remarks" value={goatSheepRemarks} onChangeText={setGoatSheepRemarks} />
+            <Input label="चालू वर्षाचे लक्ष्य" value={goatSheepTarget} onChangeText={setGoatSheepTarget} />
+            <Input label="चालू वर्षी साध्य" value={goatSheepAchievedCurrent} onChangeText={setGoatSheepAchievedCurrent} />
+            <Input label="मागील वर्षी साध्य" value={goatSheepAchievedPrevious} onChangeText={setGoatSheepAchievedPrevious} />
+            <Input label="शेरा" value={goatSheepRemarks} onChangeText={setGoatSheepRemarks} />
 
             <Text style={styles.subSectionTitle}>कुक्कुटपालन शेड बांधकाम / Poultry Shed Construction</Text>
-            <Input label="चालू वर्षाचे लक्ष्य / Current Year Target" value={poultryShedTarget} onChangeText={setPoultryShedTarget} />
-            <Input label="चालू वर्षी साध्य / Current Year Achievement" value={poultryShedAchievedCurrent} onChangeText={setPoultryShedAchievedCurrent} />
-            <Input label="मागील वर्षी साध्य / Previous Year Achievement" value={poultryShedAchievedPrevious} onChangeText={setPoultryShedAchievedPrevious} />
-            <Input label="शेरा / Remarks" value={poultryShedRemarks} onChangeText={setPoultryShedRemarks} />
+            <Input label="चालू वर्षाचे लक्ष्य" value={poultryShedTarget} onChangeText={setPoultryShedTarget} />
+            <Input label="चालू वर्षी साध्य" value={poultryShedAchievedCurrent} onChangeText={setPoultryShedAchievedCurrent} />
+            <Input label="मागील वर्षी साध्य" value={poultryShedAchievedPrevious} onChangeText={setPoultryShedAchievedPrevious} />
+            <Input label="शेरा" value={poultryShedRemarks} onChangeText={setPoultryShedRemarks} />
 
             <Text style={styles.subSectionTitle}>डुकर गट वितरण / Pig Group Distribution</Text>
-            <Input label="चालू वर्षाचे लक्ष्य / Current Year Target" value={pigGroupTarget} onChangeText={setPigGroupTarget} />
-            <Input label="चालू वर्षी साध्य / Current Year Achievement" value={pigGroupAchievedCurrent} onChangeText={setPigGroupAchievedCurrent} />
-            <Input label="मागील वर्षी साध्य / Previous Year Achievement" value={pigGroupAchievedPrevious} onChangeText={setPigGroupAchievedPrevious} />
-            <Input label="शेरा / Remarks" value={pigGroupRemarks} onChangeText={setPigGroupRemarks} />
+            <Input label="चालू वर्षाचे लक्ष्य" value={pigGroupTarget} onChangeText={setPigGroupTarget} />
+            <Input label="चालू वर्षी साध्य" value={pigGroupAchievedCurrent} onChangeText={setPigGroupAchievedCurrent} />
+            <Input label="मागील वर्षी साध्य" value={pigGroupAchievedPrevious} onChangeText={setPigGroupAchievedPrevious} />
+            <Input label="शेरा" value={pigGroupRemarks} onChangeText={setPigGroupRemarks} />
 
             <Text style={styles.subSectionTitle}>एक दिवसांचे चिमणी वितरण / One Day Old Chicks Distribution</Text>
-            <Input label="चालू वर्षाचे लक्ष्य / Current Year Target" value={oneDayChicksTarget} onChangeText={setOneDayChicksTarget} />
-            <Input label="चालू वर्षी साध्य / Current Year Achievement" value={oneDayChicksAchievedCurrent} onChangeText={setOneDayChicksAchievedCurrent} />
-            <Input label="मागील वर्षी साध्य / Previous Year Achievement" value={oneDayChicksAchievedPrevious} onChangeText={setOneDayChicksAchievedPrevious} />
-            <Input label="शेरा / Remarks" value={oneDayChicksRemarks} onChangeText={setOneDayChicksRemarks} />
+            <Input label="चालू वर्षाचे लक्ष्य" value={oneDayChicksTarget} onChangeText={setOneDayChicksTarget} />
+            <Input label="चालू वर्षी साध्य" value={oneDayChicksAchievedCurrent} onChangeText={setOneDayChicksAchievedCurrent} />
+            <Input label="मागील वर्षी साध्य" value={oneDayChicksAchievedPrevious} onChangeText={setOneDayChicksAchievedPrevious} />
+            <Input label="शेरा" value={oneDayChicksRemarks} onChangeText={setOneDayChicksRemarks} />
 
             <Text style={styles.subSectionTitle}>दुहेरी जर्दी अंडे वितरण / Double Yolk Eggs Distribution</Text>
-            <Input label="चालू वर्षाचे लक्ष्य / Current Year Target" value={doubleYolkEggsTarget} onChangeText={setDoubleYolkEggsTarget} />
-            <Input label="चालू वर्षी साध्य / Current Year Achievement" value={doubleYolkEggsAchievedCurrent} onChangeText={setDoubleYolkEggsAchievedCurrent} />
-            <Input label="मागील वर्षी साध्य / Previous Year Achievement" value={doubleYolkEggsAchievedPrevious} onChangeText={setDoubleYolkEggsAchievedPrevious} />
-            <Input label="शेरा / Remarks" value={doubleYolkEggsRemarks} onChangeText={setDoubleYolkEggsRemarks} />
+            <Input label="चालू वर्षाचे लक्ष्य" value={doubleYolkEggsTarget} onChangeText={setDoubleYolkEggsTarget} />
+            <Input label="चालू वर्षी साध्य" value={doubleYolkEggsAchievedCurrent} onChangeText={setDoubleYolkEggsAchievedCurrent} />
+            <Input label="मागील वर्षी साध्य" value={doubleYolkEggsAchievedPrevious} onChangeText={setDoubleYolkEggsAchievedPrevious} />
+            <Input label="शेरा" value={doubleYolkEggsRemarks} onChangeText={setDoubleYolkEggsRemarks} />
           </ScrollView>
         );
 
@@ -1186,14 +1190,14 @@ export default function PahuvaidhakiyaTapasaniScreen() {
             <Text style={styles.sectionTitle}>मूल्यांकन आणि सूचना</Text>
             <Text style={styles.sectionSubtitle}>Assessment and Instructions</Text>
             <Input
-              label="सामान्य तांत्रिक मूल्यांकन / General Technical Assessment *"
+              label="सामान्य तांत्रिक मूल्यांकन *"
               value={generalTechnicalAssessment}
               onChangeText={setGeneralTechnicalAssessment}
               multiline
               numberOfLines={6}
             />
             <Input
-              label="दिलेल्या सूचना / Given Instructions *"
+              label="दिलेल्या सूचना *"
               value={givenInstructions}
               onChangeText={setGivenInstructions}
               multiline
