@@ -148,14 +148,36 @@ export default function PahuvaidhakiyaTapasaniScreen() {
   const [givenInstructions, setGivenInstructions] = useState('');
 
   const handleNext = () => {
-    if (currentStep === 0 && !instituteNameAddress) {
-      Alert.alert(t('common.error'), 'Please fill institution name');
-      return;
+    // Validate Step 0: Basic Information - All fields required
+    if (currentStep === 0) {
+      if (!instituteNameAddress || !instituteNameAddress.trim()) {
+        Alert.alert(t('common.error'), 'Please fill institution name and address');
+        return;
+      }
+      if (!headNameContact || !headNameContact.trim()) {
+        Alert.alert(t('common.error'), 'Please fill head\'s name and contact');
+        return;
+      }
+      if (!inspectorNameDesignation || !inspectorNameDesignation.trim()) {
+        Alert.alert(t('common.error'), 'Please fill inspector\'s name and designation');
+        return;
+      }
+      if (!visitDateTime || !visitDateTime.trim()) {
+        Alert.alert(t('common.error'), 'Please fill visit date and time');
+        return;
+      }
+      if (!inspectionPurposeReason || !inspectionPurposeReason.trim()) {
+        Alert.alert(t('common.error'), 'Please fill inspection purpose');
+        return;
+      }
     }
+
+    // Validate Step 1: Location required
     if (currentStep === 1 && !location) {
-      Alert.alert(t('common.error'), 'Capture location');
+      Alert.alert(t('common.error'), 'Please capture location');
       return;
     }
+
     if (currentStep < STEPS.length - 1) setCurrentStep(currentStep + 1);
   };
 
