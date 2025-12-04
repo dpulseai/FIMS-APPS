@@ -44,7 +44,7 @@ export default function CategorySelectionScreen() {
         // hide pashu / पशु variations (pashutapasani, pashuvaidyakiya etc.)
         if (ft.includes('pashu') || name.includes('pashu') || name.includes('पशु') || ft.includes('पशु')) return false;
         // hide nyayalay / high court
-        if (ft.includes('nyayalay') || name.includes('nyayalay') || name.includes('न्यायालय') || ft.includes('high court')) return false;
+        // if (ft.includes('nyayalay') || name.includes('nyayalay') || name.includes('न्यायालय') || ft.includes('high court')) return false;
         return true;
       });
       setCategories(filtered);
