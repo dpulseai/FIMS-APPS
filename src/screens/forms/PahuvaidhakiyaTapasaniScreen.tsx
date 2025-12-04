@@ -5,9 +5,11 @@ import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { FormsStackParamList, LocationData } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import { createInspection, uploadPhoto } from '../../services/fimsService';
+import { createInspection, uploadPhoto, savePahuvaidhakiyaTapasaniForm } from '../../services/fimsService';
 import Stepper from '../../components/common/Stepper';
 import Input from '../../components/common/Input';
+import DateInput from '../../components/common/DateInput';
+import DateTimeInput from '../../components/common/DateTimeInput';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
 import PhotoUpload from '../../components/PhotoUpload';
@@ -147,6 +149,81 @@ export default function PahuvaidhakiyaTapasaniScreen() {
   const [generalTechnicalAssessment, setGeneralTechnicalAssessment] = useState('');
   const [givenInstructions, setGivenInstructions] = useState('');
 
+  // Additional fields from database schema
+  // Artificial Insemination - Primary
+  const [aiPrimaryForeignTarget, setAiPrimaryForeignTarget] = useState('');
+  const [aiPrimaryForeignCurrentMonth, setAiPrimaryForeignCurrentMonth] = useState('');
+  const [aiPrimaryForeignPrevious, setAiPrimaryForeignPrevious] = useState('');
+  const [aiPrimaryHybridTarget, setAiPrimaryHybridTarget] = useState('');
+  const [aiPrimaryHybridCurrentMonth, setAiPrimaryHybridCurrentMonth] = useState('');
+  const [aiPrimaryHybridPrevious, setAiPrimaryHybridPrevious] = useState('');
+  const [aiPrimaryLocalTarget, setAiPrimaryLocalTarget] = useState('');
+  const [aiPrimaryLocalCurrentMonth, setAiPrimaryLocalCurrentMonth] = useState('');
+  const [aiPrimaryLocalPrevious, setAiPrimaryLocalPrevious] = useState('');
+  const [aiPrimaryBuffaloTarget, setAiPrimaryBuffaloTarget] = useState('');
+  const [aiPrimaryBuffaloCurrentMonth, setAiPrimaryBuffaloCurrentMonth] = useState('');
+  const [aiPrimaryBuffaloPrevious, setAiPrimaryBuffaloPrevious] = useState('');
+  const [aiPrimaryTotalTarget, setAiPrimaryTotalTarget] = useState('');
+  const [aiPrimaryTotalCurrentMonth, setAiPrimaryTotalCurrentMonth] = useState('');
+  const [aiPrimaryTotalPrevious, setAiPrimaryTotalPrevious] = useState('');
+
+  // Born Calves
+  const [bornCalvesCowHybridTarget, setBornCalvesCowHybridTarget] = useState('');
+  const [bornCalvesCowHybridCurrentMonth, setBornCalvesCowHybridCurrentMonth] = useState('');
+  const [bornCalvesCowHybridPrevious, setBornCalvesCowHybridPrevious] = useState('');
+  const [bornCalvesCowLocalTarget, setBornCalvesCowLocalTarget] = useState('');
+  const [bornCalvesCowLocalCurrentMonth, setBornCalvesCowLocalCurrentMonth] = useState('');
+  const [bornCalvesCowLocalPrevious, setBornCalvesCowLocalPrevious] = useState('');
+  const [bornCalvesBuffaloTarget, setBornCalvesBuffaloTarget] = useState('');
+  const [bornCalvesBuffaloCurrentMonth, setBornCalvesBuffaloCurrentMonth] = useState('');
+  const [bornCalvesBuffaloPrevious, setBornCalvesBuffaloPrevious] = useState('');
+  const [bornCalvesTotalTarget, setBornCalvesTotalTarget] = useState('');
+  const [bornCalvesTotalCurrentMonth, setBornCalvesTotalCurrentMonth] = useState('');
+  const [bornCalvesTotalPrevious, setBornCalvesTotalPrevious] = useState('');
+
+  // Calved Cows
+  const [calvedCowsHybridTarget, setCalvedCowsHybridTarget] = useState('');
+  const [calvedCowsHybridCurrentMonth, setCalvedCowsHybridCurrentMonth] = useState('');
+  const [calvedCowsHybridPrevious, setCalvedCowsHybridPrevious] = useState('');
+  const [calvedCowsLocalTarget, setCalvedCowsLocalTarget] = useState('');
+  const [calvedCowsLocalCurrentMonth, setCalvedCowsLocalCurrentMonth] = useState('');
+  const [calvedCowsLocalPrevious, setCalvedCowsLocalPrevious] = useState('');
+  const [calvedBuffaloesTarget, setCalvedBuffaloesTarget] = useState('');
+  const [calvedBuffaloesCurrentMonth, setCalvedBuffaloesCurrentMonth] = useState('');
+  const [calvedBuffaloesPrevious, setCalvedBuffaloesPrevious] = useState('');
+
+  // Pregnancy Examination
+  const [pregnancyExamCowTarget, setPregnancyExamCowTarget] = useState('');
+  const [pregnancyExamCowCurrentMonth, setPregnancyExamCowCurrentMonth] = useState('');
+  const [pregnancyExamCowPrevious, setPregnancyExamCowPrevious] = useState('');
+  const [pregnancyExamBuffaloTarget, setPregnancyExamBuffaloTarget] = useState('');
+  const [pregnancyExamBuffaloCurrentMonth, setPregnancyExamBuffaloCurrentMonth] = useState('');
+  const [pregnancyExamBuffaloPrevious, setPregnancyExamBuffaloPrevious] = useState('');
+  const [pregnancyExamTotalTarget, setPregnancyExamTotalTarget] = useState('');
+  const [pregnancyExamTotalCurrentMonth, setPregnancyExamTotalCurrentMonth] = useState('');
+  const [pregnancyExamTotalPrevious, setPregnancyExamTotalPrevious] = useState('');
+
+  // Infertility Animals Examination
+  const [infertilityExamCowTarget, setInfertilityExamCowTarget] = useState('');
+  const [infertilityExamCowCurrentMonth, setInfertilityExamCowCurrentMonth] = useState('');
+  const [infertilityExamCowPrevious, setInfertilityExamCowPrevious] = useState('');
+  const [infertilityExamBuffaloTarget, setInfertilityExamBuffaloTarget] = useState('');
+  const [infertilityExamBuffaloCurrentMonth, setInfertilityExamBuffaloCurrentMonth] = useState('');
+  const [infertilityExamBuffaloPrevious, setInfertilityExamBuffaloPrevious] = useState('');
+  const [infertilityExamTotalTarget, setInfertilityExamTotalTarget] = useState('');
+  const [infertilityExamTotalCurrentMonth, setInfertilityExamTotalCurrentMonth] = useState('');
+  const [infertilityExamTotalPrevious, setInfertilityExamTotalPrevious] = useState('');
+
+  // Patients Average Daily Attendance (with target, current_month, previous)
+  const [patientsAvgDailyAttendanceTarget, setPatientsAvgDailyAttendanceTarget] = useState('');
+  const [patientsAvgDailyAttendanceCurrentMonth, setPatientsAvgDailyAttendanceCurrentMonth] = useState('');
+  const [patientsAvgDailyAttendancePrevious, setPatientsAvgDailyAttendancePrevious] = useState('');
+
+  // Collected Service Fees (with target, current_month, previous)
+  const [collectedServiceFeesTarget, setCollectedServiceFeesTarget] = useState('');
+  const [collectedServiceFeesCurrentMonth, setCollectedServiceFeesCurrentMonth] = useState('');
+  const [collectedServiceFeesPrevious, setCollectedServiceFeesPrevious] = useState('');
+
   const handleNext = () => {
     // Validate Step 0: Basic Information - All fields required
     if (currentStep === 0) {
@@ -188,7 +265,7 @@ export default function PahuvaidhakiyaTapasaniScreen() {
   const handleSaveAsDraft = async () => {
     try {
       setLoading(true);
-      await createInspection({
+      const inspection = await createInspection({
         category_id: categoryId,
         inspector_id: user?.id,
         filled_by_name: inspectorNameDesignation || user?.email || '',
@@ -197,10 +274,118 @@ export default function PahuvaidhakiyaTapasaniScreen() {
         location_longitude: location?.longitude,
         location_address: location?.address || null
       });
+
+      // Save all form data to pahuvaidhakiya_tapasani table
+      await savePahuvaidhakiyaTapasaniForm(inspection.id, {
+        // Basic Information
+        institute_name_address: instituteNameAddress,
+        head_name_contact: headNameContact,
+        inspector_name_designation: inspectorNameDesignation,
+        visit_date_time: visitDateTime,
+        inspection_purpose_reason: inspectionPurposeReason,
+
+        // Technical Work Review
+        technical_work_review: technicalWorkReview,
+        work_type: workType,
+        target_current_year: targetCurrentYear,
+        achieved_month_end: achievedMonthEnd,
+        achieved_previous_year_month_end: achievedPreviousYearMonthEnd,
+
+        // Patient Statistics
+        outpatients_target: outpatientsTarget ? parseInt(outpatientsTarget) : 0,
+        outpatients_current_month: outpatientsCurrentMonth ? parseInt(outpatientsCurrentMonth) : 0,
+        outpatients_previous: outpatientsPrevious ? parseInt(outpatientsPrevious) : 0,
+        inpatients_target: inpatientsTarget ? parseInt(inpatientsTarget) : 0,
+        inpatients_current_month: inpatientsCurrentMonth ? parseInt(inpatientsCurrentMonth) : 0,
+        inpatients_previous: inpatientsPrevious ? parseInt(inpatientsPrevious) : 0,
+        epilepsy_patients_target: epilepsyPatientsTarget ? parseInt(epilepsyPatientsTarget) : 0,
+        epilepsy_patients_current_month: epilepsyPatientsCurrentMonth ? parseInt(epilepsyPatientsCurrentMonth) : 0,
+        epilepsy_patients_previous: epilepsyPatientsPrevious ? parseInt(epilepsyPatientsPrevious) : 0,
+
+        // Surgery Statistics
+        castration_headquarters_target: castrationHqTarget ? parseInt(castrationHqTarget) : 0,
+        castration_headquarters_current_month: castrationHqCurrentMonth ? parseInt(castrationHqCurrentMonth) : 0,
+        castration_headquarters_previous: castrationHqPrevious ? parseInt(castrationHqPrevious) : 0,
+        castration_field_target: castrationFieldTarget ? parseInt(castrationFieldTarget) : 0,
+        castration_field_current_month: castrationFieldCurrentMonth ? parseInt(castrationFieldCurrentMonth) : 0,
+        castration_field_previous: castrationFieldPrevious ? parseInt(castrationFieldPrevious) : 0,
+        major_surgery_headquarters_target: majorSurgeryHqTarget ? parseInt(majorSurgeryHqTarget) : 0,
+        major_surgery_headquarters_current_month: majorSurgeryHqCurrentMonth ? parseInt(majorSurgeryHqCurrentMonth) : 0,
+        major_surgery_headquarters_previous: majorSurgeryHqPrevious ? parseInt(majorSurgeryHqPrevious) : 0,
+        major_surgery_field_target: majorSurgeryFieldTarget ? parseInt(majorSurgeryFieldTarget) : 0,
+        major_surgery_field_current_month: majorSurgeryFieldCurrentMonth ? parseInt(majorSurgeryFieldCurrentMonth) : 0,
+        major_surgery_field_previous: majorSurgeryFieldPrevious ? parseInt(majorSurgeryFieldPrevious) : 0,
+        major_surgery_total_target: majorSurgeryTotalTarget ? parseInt(majorSurgeryTotalTarget) : 0,
+        major_surgery_total_current_month: majorSurgeryTotalCurrentMonth ? parseInt(majorSurgeryTotalCurrentMonth) : 0,
+        major_surgery_total_previous: majorSurgeryTotalPrevious ? parseInt(majorSurgeryTotalPrevious) : 0,
+        minor_surgery_headquarters_target: minorSurgeryHqTarget ? parseInt(minorSurgeryHqTarget) : 0,
+        minor_surgery_headquarters_current_month: minorSurgeryHqCurrentMonth ? parseInt(minorSurgeryHqCurrentMonth) : 0,
+        minor_surgery_headquarters_previous: minorSurgeryHqPrevious ? parseInt(minorSurgeryHqPrevious) : 0,
+
+        // Disease Information
+        village_name: villageName,
+        disease_name: diseaseName,
+        incubation_period: incubationPeriod,
+        livestock_count: livestockCount ? parseInt(livestockCount) : 0,
+        affected_count: affectedCount ? parseInt(affectedCount) : 0,
+        deaths: deaths ? parseInt(deaths) : 0,
+        vaccinated_count: vaccinatedCount ? parseInt(vaccinatedCount) : 0,
+        actions_taken: actionsTaken,
+        villages_within_10km: villagesWithin10km ? parseInt(villagesWithin10km) : 0,
+        livestock_within_10km: livestockWithin10km,
+        previous_endemic_disease_info: previousEndemicDiseaseInfo,
+        edr_submission_date: edrSubmissionDate || null,
+        team_visit_date: teamVisitDate || null,
+
+        // Vaccination Program
+        vaccine_type: vaccineType,
+        vaccine_name: vaccineName,
+        number_of_animals_in_program: numberOfAnimalsInProgram,
+        total_vaccinated: totalVaccinated,
+        recently_vaccinated_date: recentlyVaccinatedDate || null,
+        received_vaccinated: receivedVaccinated,
+        previous_vaccinated: previousVaccinated,
+        total_vaccinated_count: totalVaccinatedCount,
+        vaccination_date: vaccinationDate || null,
+        since_april_vaccinated: sinceAprilVaccinated,
+        reason_not_vaccinated: reasonNotVaccinated,
+
+        // Scheme Progress
+        dairy_animals_group_distribution_target_current_year: dairyAnimalsTarget,
+        dairy_animals_group_distribution_achieved_current_year: dairyAnimalsAchievedCurrent,
+        dairy_animals_group_distribution_achieved_previous_year: dairyAnimalsAchievedPrevious,
+        dairy_animals_group_distribution_remarks: dairyAnimalsRemarks,
+        goat_sheep_group_distribution_target_current_year: goatSheepTarget,
+        goat_sheep_group_distribution_achieved_current_year: goatSheepAchievedCurrent,
+        goat_sheep_group_distribution_achieved_previous_year: goatSheepAchievedPrevious,
+        goat_sheep_group_distribution_remarks: goatSheepRemarks,
+        poultry_shed_construction_target_current_year: poultryShedTarget,
+        poultry_shed_construction_achieved_current_year: poultryShedAchievedCurrent,
+        poultry_shed_construction_achieved_previous_year: poultryShedAchievedPrevious,
+        poultry_shed_construction_remarks: poultryShedRemarks,
+        pig_group_distribution_target_current_year: pigGroupTarget,
+        pig_group_distribution_achieved_current_year: pigGroupAchievedCurrent,
+        pig_group_distribution_achieved_previous_year: pigGroupAchievedPrevious,
+        pig_group_distribution_remarks: pigGroupRemarks,
+        one_day_old_chicks_distribution_target_current_year: oneDayChicksTarget,
+        one_day_old_chicks_distribution_achieved_current_year: oneDayChicksAchievedCurrent,
+        one_day_old_chicks_distribution_achieved_previous_year: oneDayChicksAchievedPrevious,
+        one_day_old_chicks_distribution_remarks: oneDayChicksRemarks,
+        double_yolk_eggs_distribution_target_current_year: doubleYolkEggsTarget,
+        double_yolk_eggs_distribution_achieved_current_year: doubleYolkEggsAchievedCurrent,
+        double_yolk_eggs_distribution_achieved_previous_year: doubleYolkEggsAchievedPrevious,
+        double_yolk_eggs_distribution_remarks: doubleYolkEggsRemarks,
+
+        // Assessment and Instructions
+        general_technical_assessment: generalTechnicalAssessment,
+        given_instructions: givenInstructions,
+      });
+
       Alert.alert(t('common.success'), t('fims.inspectionSaved'));
       navigation.goBack();
     } catch (error) {
-      Alert.alert(t('common.error'), 'Failed');
+      Alert.alert(t('common.error'), 'Failed to save inspection');
+      console.error('Save draft error:', error);
     } finally {
       setLoading(false);
     }
@@ -222,13 +407,123 @@ export default function PahuvaidhakiyaTapasaniScreen() {
         location_longitude: location?.longitude,
         location_address: location?.address || null
       });
+
+      // Save all form data to pahuvaidhakiya_tapasani table
+      await savePahuvaidhakiyaTapasaniForm(inspection.id, {
+        // Basic Information
+        institute_name_address: instituteNameAddress,
+        head_name_contact: headNameContact,
+        inspector_name_designation: inspectorNameDesignation,
+        visit_date_time: visitDateTime,
+        inspection_purpose_reason: inspectionPurposeReason,
+
+        // Technical Work Review
+        technical_work_review: technicalWorkReview,
+        work_type: workType,
+        target_current_year: targetCurrentYear,
+        achieved_month_end: achievedMonthEnd,
+        achieved_previous_year_month_end: achievedPreviousYearMonthEnd,
+
+        // Patient Statistics
+        outpatients_target: outpatientsTarget ? parseInt(outpatientsTarget) : 0,
+        outpatients_current_month: outpatientsCurrentMonth ? parseInt(outpatientsCurrentMonth) : 0,
+        outpatients_previous: outpatientsPrevious ? parseInt(outpatientsPrevious) : 0,
+        inpatients_target: inpatientsTarget ? parseInt(inpatientsTarget) : 0,
+        inpatients_current_month: inpatientsCurrentMonth ? parseInt(inpatientsCurrentMonth) : 0,
+        inpatients_previous: inpatientsPrevious ? parseInt(inpatientsPrevious) : 0,
+        epilepsy_patients_target: epilepsyPatientsTarget ? parseInt(epilepsyPatientsTarget) : 0,
+        epilepsy_patients_current_month: epilepsyPatientsCurrentMonth ? parseInt(epilepsyPatientsCurrentMonth) : 0,
+        epilepsy_patients_previous: epilepsyPatientsPrevious ? parseInt(epilepsyPatientsPrevious) : 0,
+
+        // Surgery Statistics
+        castration_headquarters_target: castrationHqTarget ? parseInt(castrationHqTarget) : 0,
+        castration_headquarters_current_month: castrationHqCurrentMonth ? parseInt(castrationHqCurrentMonth) : 0,
+        castration_headquarters_previous: castrationHqPrevious ? parseInt(castrationHqPrevious) : 0,
+        castration_field_target: castrationFieldTarget ? parseInt(castrationFieldTarget) : 0,
+        castration_field_current_month: castrationFieldCurrentMonth ? parseInt(castrationFieldCurrentMonth) : 0,
+        castration_field_previous: castrationFieldPrevious ? parseInt(castrationFieldPrevious) : 0,
+        major_surgery_headquarters_target: majorSurgeryHqTarget ? parseInt(majorSurgeryHqTarget) : 0,
+        major_surgery_headquarters_current_month: majorSurgeryHqCurrentMonth ? parseInt(majorSurgeryHqCurrentMonth) : 0,
+        major_surgery_headquarters_previous: majorSurgeryHqPrevious ? parseInt(majorSurgeryHqPrevious) : 0,
+        major_surgery_field_target: majorSurgeryFieldTarget ? parseInt(majorSurgeryFieldTarget) : 0,
+        major_surgery_field_current_month: majorSurgeryFieldCurrentMonth ? parseInt(majorSurgeryFieldCurrentMonth) : 0,
+        major_surgery_field_previous: majorSurgeryFieldPrevious ? parseInt(majorSurgeryFieldPrevious) : 0,
+        major_surgery_total_target: majorSurgeryTotalTarget ? parseInt(majorSurgeryTotalTarget) : 0,
+        major_surgery_total_current_month: majorSurgeryTotalCurrentMonth ? parseInt(majorSurgeryTotalCurrentMonth) : 0,
+        major_surgery_total_previous: majorSurgeryTotalPrevious ? parseInt(majorSurgeryTotalPrevious) : 0,
+        minor_surgery_headquarters_target: minorSurgeryHqTarget ? parseInt(minorSurgeryHqTarget) : 0,
+        minor_surgery_headquarters_current_month: minorSurgeryHqCurrentMonth ? parseInt(minorSurgeryHqCurrentMonth) : 0,
+        minor_surgery_headquarters_previous: minorSurgeryHqPrevious ? parseInt(minorSurgeryHqPrevious) : 0,
+
+        // Disease Information
+        village_name: villageName,
+        disease_name: diseaseName,
+        incubation_period: incubationPeriod,
+        livestock_count: livestockCount ? parseInt(livestockCount) : 0,
+        affected_count: affectedCount ? parseInt(affectedCount) : 0,
+        deaths: deaths ? parseInt(deaths) : 0,
+        vaccinated_count: vaccinatedCount ? parseInt(vaccinatedCount) : 0,
+        actions_taken: actionsTaken,
+        villages_within_10km: villagesWithin10km ? parseInt(villagesWithin10km) : 0,
+        livestock_within_10km: livestockWithin10km,
+        previous_endemic_disease_info: previousEndemicDiseaseInfo,
+        edr_submission_date: edrSubmissionDate || null,
+        team_visit_date: teamVisitDate || null,
+
+        // Vaccination Program
+        vaccine_type: vaccineType,
+        vaccine_name: vaccineName,
+        number_of_animals_in_program: numberOfAnimalsInProgram,
+        total_vaccinated: totalVaccinated,
+        recently_vaccinated_date: recentlyVaccinatedDate || null,
+        received_vaccinated: receivedVaccinated,
+        previous_vaccinated: previousVaccinated,
+        total_vaccinated_count: totalVaccinatedCount,
+        vaccination_date: vaccinationDate || null,
+        since_april_vaccinated: sinceAprilVaccinated,
+        reason_not_vaccinated: reasonNotVaccinated,
+
+        // Scheme Progress
+        dairy_animals_group_distribution_target_current_year: dairyAnimalsTarget,
+        dairy_animals_group_distribution_achieved_current_year: dairyAnimalsAchievedCurrent,
+        dairy_animals_group_distribution_achieved_previous_year: dairyAnimalsAchievedPrevious,
+        dairy_animals_group_distribution_remarks: dairyAnimalsRemarks,
+        goat_sheep_group_distribution_target_current_year: goatSheepTarget,
+        goat_sheep_group_distribution_achieved_current_year: goatSheepAchievedCurrent,
+        goat_sheep_group_distribution_achieved_previous_year: goatSheepAchievedPrevious,
+        goat_sheep_group_distribution_remarks: goatSheepRemarks,
+        poultry_shed_construction_target_current_year: poultryShedTarget,
+        poultry_shed_construction_achieved_current_year: poultryShedAchievedCurrent,
+        poultry_shed_construction_achieved_previous_year: poultryShedAchievedPrevious,
+        poultry_shed_construction_remarks: poultryShedRemarks,
+        pig_group_distribution_target_current_year: pigGroupTarget,
+        pig_group_distribution_achieved_current_year: pigGroupAchievedCurrent,
+        pig_group_distribution_achieved_previous_year: pigGroupAchievedPrevious,
+        pig_group_distribution_remarks: pigGroupRemarks,
+        one_day_old_chicks_distribution_target_current_year: oneDayChicksTarget,
+        one_day_old_chicks_distribution_achieved_current_year: oneDayChicksAchievedCurrent,
+        one_day_old_chicks_distribution_achieved_previous_year: oneDayChicksAchievedPrevious,
+        one_day_old_chicks_distribution_remarks: oneDayChicksRemarks,
+        double_yolk_eggs_distribution_target_current_year: doubleYolkEggsTarget,
+        double_yolk_eggs_distribution_achieved_current_year: doubleYolkEggsAchievedCurrent,
+        double_yolk_eggs_distribution_achieved_previous_year: doubleYolkEggsAchievedPrevious,
+        double_yolk_eggs_distribution_remarks: doubleYolkEggsRemarks,
+
+        // Assessment and Instructions
+        general_technical_assessment: generalTechnicalAssessment,
+        given_instructions: givenInstructions,
+      });
+
+      // Upload photos
       for (let i = 0; i < photos.length; i++) {
         await uploadPhoto(inspection.id, photos[i], `photo${i + 1}.jpg`, i + 1);
       }
+
       Alert.alert(t('common.success'), t('fims.inspectionSubmitted'));
       navigation.navigate('CategorySelection');
     } catch (error) {
-      Alert.alert(t('common.error'), 'Failed');
+      Alert.alert(t('common.error'), 'Failed to submit inspection');
+      console.error('Submit error:', error);
     } finally {
       setLoading(false);
     }
@@ -258,10 +553,10 @@ export default function PahuvaidhakiyaTapasaniScreen() {
               value={inspectorNameDesignation}
               onChangeText={setInspectorNameDesignation}
             />
-            <Input
+            <DateTimeInput
               label="भेट दिनांक व वेळ / Visit Date & Time"
               value={visitDateTime}
-              onChangeText={setVisitDateTime}
+              onChangeDateTime={setVisitDateTime}
               placeholder="YYYY-MM-DD HH:MM"
             />
             <Input
@@ -393,8 +688,8 @@ export default function PahuvaidhakiyaTapasaniScreen() {
             <Input label="१० किमी परिसरातील गावे / Villages within 10km" value={villagesWithin10km} onChangeText={setVillagesWithin10km} keyboardType="numeric" />
             <Input label="१० किमी परिसरातील पशुधन / Livestock within 10km" value={livestockWithin10km} onChangeText={setLivestockWithin10km} />
             <Input label="मागील स्थानिक रोग माहिती / Previous Endemic Disease Info" value={previousEndemicDiseaseInfo} onChangeText={setPreviousEndemicDiseaseInfo} multiline numberOfLines={3} />
-            <Input label="EDR सबमिशन दिनांक / EDR Submission Date" value={edrSubmissionDate} onChangeText={setEdrSubmissionDate} placeholder="YYYY-MM-DD" />
-            <Input label="टीम भेट दिनांक / Team Visit Date" value={teamVisitDate} onChangeText={setTeamVisitDate} placeholder="YYYY-MM-DD" />
+            <DateInput label="EDR सबमिशन दिनांक / EDR Submission Date" value={edrSubmissionDate} onChangeDate={setEdrSubmissionDate} placeholder="YYYY-MM-DD" />
+            <DateInput label="टीम भेट दिनांक / Team Visit Date" value={teamVisitDate} onChangeDate={setTeamVisitDate} placeholder="YYYY-MM-DD" />
           </ScrollView>
         );
 
@@ -407,11 +702,11 @@ export default function PahuvaidhakiyaTapasaniScreen() {
             <Input label="लसीचे नाव / Vaccine Name" value={vaccineName} onChangeText={setVaccineName} />
             <Input label="कार्यक्रमातील जनावरे / Number of Animals in Program" value={numberOfAnimalsInProgram} onChangeText={setNumberOfAnimalsInProgram} />
             <Input label="एकूण लसीकरण / Total Vaccinated" value={totalVaccinated} onChangeText={setTotalVaccinated} />
-            <Input label="अलीकडील लसीकरण तारीख / Recently Vaccinated Date" value={recentlyVaccinatedDate} onChangeText={setRecentlyVaccinatedDate} placeholder="YYYY-MM-DD" />
+            <DateInput label="अलीकडील लसीकरण तारीख / Recently Vaccinated Date" value={recentlyVaccinatedDate} onChangeDate={setRecentlyVaccinatedDate} placeholder="YYYY-MM-DD" />
             <Input label="प्राप्त लसीकरण / Received Vaccinated" value={receivedVaccinated} onChangeText={setReceivedVaccinated} />
             <Input label="मागील लसीकरण / Previous Vaccinated" value={previousVaccinated} onChangeText={setPreviousVaccinated} />
             <Input label="एकूण लसीकरण संख्या / Total Vaccinated Count" value={totalVaccinatedCount} onChangeText={setTotalVaccinatedCount} />
-            <Input label="लसीकरण तारीख / Vaccination Date" value={vaccinationDate} onChangeText={setVaccinationDate} placeholder="YYYY-MM-DD" />
+            <DateInput label="लसीकरण तारीख / Vaccination Date" value={vaccinationDate} onChangeDate={setVaccinationDate} placeholder="YYYY-MM-DD" />
             <Input label="एप्रिलपासून लसीकरण / Since April Vaccinated" value={sinceAprilVaccinated} onChangeText={setSinceAprilVaccinated} />
             <Input label="लसीकरण न केल्याचे कारण / Reason Not Vaccinated" value={reasonNotVaccinated} onChangeText={setReasonNotVaccinated} multiline numberOfLines={3} />
           </ScrollView>
