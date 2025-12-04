@@ -144,6 +144,21 @@ export default function InspectionsListScreen() {
       return;
     }
 
+    // If it's a Pahuvaidhakiya Tapasani (Veterinary) form, open the PahuvaidhakiyaTapasani screen
+    if (
+      inspection.form_type === 'pahuvaidhakiya' ||
+      inspection.form_type === 'veterinary' ||
+      cat.includes('pahuvaidhakiya') ||
+      cat.includes('veterinary') ||
+      cat.includes('पशु')
+    ) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'PahuvaidhakiyaTapasani',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
     // Rajya Shaishanik (Education Training) form
     if (
       inspection.form_type === 'rajya_shaishanik' ||
