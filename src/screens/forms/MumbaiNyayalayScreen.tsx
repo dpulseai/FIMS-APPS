@@ -21,7 +21,9 @@ type NavigationProp = StackNavigationProp<FormsStackParamList, 'MumbaiNyayalay'>
 const STEPS = [
   'Basic Info',
   'Location',
-  'Inspection Details',
+  'Inspection Part 1',
+  'Inspection Part 2',
+  'Inspection Part 3',
   'Photos'
 ];
 
@@ -723,10 +725,10 @@ export default function MumbaiNyayalayScreen() {
     </View>
   );
 
-  const renderInspectionDetails = () => (
+  const renderInspectionDetailsPart1 = () => (
     <ScrollView style={styles.inspectionDetailsScroll}>
-      <Text style={styles.sectionTitle}>मा. उच्च न्यायालय, मुंबई तपासणी प्रपत्र</Text>
-      <Text style={styles.sectionSubtitle}>Hon. High Court, Mumbai Inspection Form</Text>
+      <Text style={styles.sectionTitle}>मा. उच्च न्यायालय, मुंबई तपासणी प्रपत्र - भाग 1</Text>
+      <Text style={styles.sectionSubtitle}>Hon. High Court, Mumbai Inspection Form - Part 1</Text>
 
       {renderInspectionPoint(
         '1) शाळा इमारत बांधकाम वर्ष / Building Construction Year',
@@ -787,6 +789,13 @@ export default function MumbaiNyayalayScreen() {
         drinkingWaterFeedback,
         setDrinkingWaterFeedback
       )}
+    </ScrollView>
+  );
+
+  const renderInspectionDetailsPart2 = () => (
+    <ScrollView style={styles.inspectionDetailsScroll}>
+      <Text style={styles.sectionTitle}>मा. उच्च न्यायालय, मुंबई तपासणी प्रपत्र - भाग 2</Text>
+      <Text style={styles.sectionSubtitle}>Hon. High Court, Mumbai Inspection Form - Part 2</Text>
 
       {renderInspectionPoint(
         '7) शाळेला संरक्षक भिंत / Boundary Wall',
@@ -837,6 +846,13 @@ export default function MumbaiNyayalayScreen() {
         electricityFeedback,
         setElectricityFeedback
       )}
+    </ScrollView>
+  );
+
+  const renderInspectionDetailsPart3 = () => (
+    <ScrollView style={styles.inspectionDetailsScroll}>
+      <Text style={styles.sectionTitle}>मा. उच्च न्यायालय, मुंबई तपासणी प्रपत्र - भाग 3</Text>
+      <Text style={styles.sectionSubtitle}>Hon. High Court, Mumbai Inspection Form - Part 3</Text>
 
       {renderInspectionPoint(
         '12) विद्यार्थ्यांना बसण्यासाठी बैठक व्यवस्था / Seating Arrangement',
@@ -928,8 +944,12 @@ export default function MumbaiNyayalayScreen() {
       case 1:
         return renderLocationInfo();
       case 2:
-        return renderInspectionDetails();
+        return renderInspectionDetailsPart1();
       case 3:
+        return renderInspectionDetailsPart2();
+      case 4:
+        return renderInspectionDetailsPart3();
+      case 5:
         return renderPhotos();
       default:
         return null;
