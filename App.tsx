@@ -122,9 +122,7 @@ export default function App() {
     
     const initApp = async () => {
       try {
-        // Give native modules time to initialize
-        console.log('[App] Waiting for native modules...');
-        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log('[App] Starting initialization...');
         
         // Load saved language preference (non-blocking)
         loadSavedLanguage().catch(err => 
