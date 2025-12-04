@@ -255,6 +255,18 @@ export default function PahuvaidhakiyaTapasaniScreen() {
       return;
     }
 
+    // Validate Step 5: Disease Information - Date fields required
+    if (currentStep === 5) {
+      if (!edrSubmissionDate || !edrSubmissionDate.trim()) {
+        Alert.alert(t('common.error'), 'Please fill EDR submission date');
+        return;
+      }
+      if (!teamVisitDate || !teamVisitDate.trim()) {
+        Alert.alert(t('common.error'), 'Please fill team visit date');
+        return;
+      }
+    }
+
     if (currentStep < STEPS.length - 1) setCurrentStep(currentStep + 1);
   };
 
@@ -334,19 +346,19 @@ export default function PahuvaidhakiyaTapasaniScreen() {
         villages_within_10km: villagesWithin10km ? parseInt(villagesWithin10km) : 0,
         livestock_within_10km: livestockWithin10km,
         previous_endemic_disease_info: previousEndemicDiseaseInfo,
-        edr_submission_date: edrSubmissionDate || null,
-        team_visit_date: teamVisitDate || null,
+        edr_submission_date: edrSubmissionDate || '1900-01-01',
+        team_visit_date: teamVisitDate || '1900-01-01',
 
         // Vaccination Program
         vaccine_type: vaccineType,
         vaccine_name: vaccineName,
         number_of_animals_in_program: numberOfAnimalsInProgram,
         total_vaccinated: totalVaccinated,
-        recently_vaccinated_date: recentlyVaccinatedDate || null,
+        recently_vaccinated_date: recentlyVaccinatedDate || '',
         received_vaccinated: receivedVaccinated,
         previous_vaccinated: previousVaccinated,
         total_vaccinated_count: totalVaccinatedCount,
-        vaccination_date: vaccinationDate || null,
+        vaccination_date: vaccinationDate || '',
         since_april_vaccinated: sinceAprilVaccinated,
         reason_not_vaccinated: reasonNotVaccinated,
 
@@ -379,6 +391,80 @@ export default function PahuvaidhakiyaTapasaniScreen() {
         // Assessment and Instructions
         general_technical_assessment: generalTechnicalAssessment,
         given_instructions: givenInstructions,
+
+        // Artificial Insemination - Primary
+        artificial_insemination_primary_foreign_target: aiPrimaryForeignTarget ? parseInt(aiPrimaryForeignTarget) : 0,
+        artificial_insemination_primary_foreign_current_month: aiPrimaryForeignCurrentMonth ? parseInt(aiPrimaryForeignCurrentMonth) : 0,
+        artificial_insemination_primary_foreign_previous: aiPrimaryForeignPrevious ? parseInt(aiPrimaryForeignPrevious) : 0,
+        artificial_insemination_primary_hybrid_target: aiPrimaryHybridTarget ? parseInt(aiPrimaryHybridTarget) : 0,
+        artificial_insemination_primary_hybrid_current_month: aiPrimaryHybridCurrentMonth ? parseInt(aiPrimaryHybridCurrentMonth) : 0,
+        artificial_insemination_primary_hybrid_previous: aiPrimaryHybridPrevious ? parseInt(aiPrimaryHybridPrevious) : 0,
+        artificial_insemination_primary_local_target: aiPrimaryLocalTarget ? parseInt(aiPrimaryLocalTarget) : 0,
+        artificial_insemination_primary_local_current_month: aiPrimaryLocalCurrentMonth ? parseInt(aiPrimaryLocalCurrentMonth) : 0,
+        artificial_insemination_primary_local_previous: aiPrimaryLocalPrevious ? parseInt(aiPrimaryLocalPrevious) : 0,
+        artificial_insemination_primary_buffalo_target: aiPrimaryBuffaloTarget ? parseInt(aiPrimaryBuffaloTarget) : 0,
+        artificial_insemination_primary_buffalo_current_month: aiPrimaryBuffaloCurrentMonth ? parseInt(aiPrimaryBuffaloCurrentMonth) : 0,
+        artificial_insemination_primary_buffalo_previous: aiPrimaryBuffaloPrevious ? parseInt(aiPrimaryBuffaloPrevious) : 0,
+        artificial_insemination_primary_total_target: aiPrimaryTotalTarget ? parseInt(aiPrimaryTotalTarget) : 0,
+        artificial_insemination_primary_total_current_month: aiPrimaryTotalCurrentMonth ? parseInt(aiPrimaryTotalCurrentMonth) : 0,
+        artificial_insemination_primary_total_previous: aiPrimaryTotalPrevious ? parseInt(aiPrimaryTotalPrevious) : 0,
+
+        // Born Calves
+        born_calves_cow_hybrid_target: bornCalvesCowHybridTarget ? parseInt(bornCalvesCowHybridTarget) : 0,
+        born_calves_cow_hybrid_current_month: bornCalvesCowHybridCurrentMonth ? parseInt(bornCalvesCowHybridCurrentMonth) : 0,
+        born_calves_cow_hybrid_previous: bornCalvesCowHybridPrevious ? parseInt(bornCalvesCowHybridPrevious) : 0,
+        born_calves_cow_local_target: bornCalvesCowLocalTarget ? parseInt(bornCalvesCowLocalTarget) : 0,
+        born_calves_cow_local_current_month: bornCalvesCowLocalCurrentMonth ? parseInt(bornCalvesCowLocalCurrentMonth) : 0,
+        born_calves_cow_local_previous: bornCalvesCowLocalPrevious ? parseInt(bornCalvesCowLocalPrevious) : 0,
+        born_calves_buffalo_target: bornCalvesBuffaloTarget ? parseInt(bornCalvesBuffaloTarget) : 0,
+        born_calves_buffalo_current_month: bornCalvesBuffaloCurrentMonth ? parseInt(bornCalvesBuffaloCurrentMonth) : 0,
+        born_calves_buffalo_previous: bornCalvesBuffaloPrevious ? parseInt(bornCalvesBuffaloPrevious) : 0,
+        born_calves_total_target: bornCalvesTotalTarget ? parseInt(bornCalvesTotalTarget) : 0,
+        born_calves_total_current_month: bornCalvesTotalCurrentMonth ? parseInt(bornCalvesTotalCurrentMonth) : 0,
+        born_calves_total_previous: bornCalvesTotalPrevious ? parseInt(bornCalvesTotalPrevious) : 0,
+
+        // Calved Cows
+        calved_cows_hybrid_target: calvedCowsHybridTarget ? parseInt(calvedCowsHybridTarget) : 0,
+        calved_cows_hybrid_current_month: calvedCowsHybridCurrentMonth ? parseInt(calvedCowsHybridCurrentMonth) : 0,
+        calved_cows_hybrid_previous: calvedCowsHybridPrevious ? parseInt(calvedCowsHybridPrevious) : 0,
+        calved_cows_local_target: calvedCowsLocalTarget ? parseInt(calvedCowsLocalTarget) : 0,
+        calved_cows_local_current_month: calvedCowsLocalCurrentMonth ? parseInt(calvedCowsLocalCurrentMonth) : 0,
+        calved_cows_local_previous: calvedCowsLocalPrevious ? parseInt(calvedCowsLocalPrevious) : 0,
+        calved_buffaloes_target: calvedBuffaloesTarget ? parseInt(calvedBuffaloesTarget) : 0,
+        calved_buffaloes_current_month: calvedBuffaloesCurrentMonth ? parseInt(calvedBuffaloesCurrentMonth) : 0,
+        calved_buffaloes_previous: calvedBuffaloesPrevious ? parseInt(calvedBuffaloesPrevious) : 0,
+
+        // Pregnancy Examination
+        pregnancy_examination_cow_target: pregnancyExamCowTarget ? parseInt(pregnancyExamCowTarget) : 0,
+        pregnancy_examination_cow_current_month: pregnancyExamCowCurrentMonth ? parseInt(pregnancyExamCowCurrentMonth) : 0,
+        pregnancy_examination_cow_previous: pregnancyExamCowPrevious ? parseInt(pregnancyExamCowPrevious) : 0,
+        pregnancy_examination_buffalo_target: pregnancyExamBuffaloTarget ? parseInt(pregnancyExamBuffaloTarget) : 0,
+        pregnancy_examination_buffalo_current_month: pregnancyExamBuffaloCurrentMonth ? parseInt(pregnancyExamBuffaloCurrentMonth) : 0,
+        pregnancy_examination_buffalo_previous: pregnancyExamBuffaloPrevious ? parseInt(pregnancyExamBuffaloPrevious) : 0,
+        pregnancy_examination_total_target: pregnancyExamTotalTarget ? parseInt(pregnancyExamTotalTarget) : 0,
+        pregnancy_examination_total_current_month: pregnancyExamTotalCurrentMonth ? parseInt(pregnancyExamTotalCurrentMonth) : 0,
+        pregnancy_examination_total_previous: pregnancyExamTotalPrevious ? parseInt(pregnancyExamTotalPrevious) : 0,
+
+        // Infertility Animals Examination
+        infertility_animals_examination_cow_target: infertilityExamCowTarget ? parseInt(infertilityExamCowTarget) : 0,
+        infertility_animals_examination_cow_current_month: infertilityExamCowCurrentMonth ? parseInt(infertilityExamCowCurrentMonth) : 0,
+        infertility_animals_examination_cow_previous: infertilityExamCowPrevious ? parseInt(infertilityExamCowPrevious) : 0,
+        infertility_animals_examination_buffalo_target: infertilityExamBuffaloTarget ? parseInt(infertilityExamBuffaloTarget) : 0,
+        infertility_animals_examination_buffalo_current_month: infertilityExamBuffaloCurrentMonth ? parseInt(infertilityExamBuffaloCurrentMonth) : 0,
+        infertility_animals_examination_buffalo_previous: infertilityExamBuffaloPrevious ? parseInt(infertilityExamBuffaloPrevious) : 0,
+        infertility_animals_examination_total_target: infertilityExamTotalTarget ? parseInt(infertilityExamTotalTarget) : 0,
+        infertility_animals_examination_total_current_month: infertilityExamTotalCurrentMonth ? parseInt(infertilityExamTotalCurrentMonth) : 0,
+        infertility_animals_examination_total_previous: infertilityExamTotalPrevious ? parseInt(infertilityExamTotalPrevious) : 0,
+
+        // Patients Average Daily Attendance
+        patients_average_daily_attendance_target: patientsAvgDailyAttendanceTarget ? parseInt(patientsAvgDailyAttendanceTarget) : 0,
+        patients_average_daily_attendance_current_month: patientsAvgDailyAttendanceCurrentMonth ? parseInt(patientsAvgDailyAttendanceCurrentMonth) : 0,
+        patients_average_daily_attendance_previous: patientsAvgDailyAttendancePrevious ? parseInt(patientsAvgDailyAttendancePrevious) : 0,
+
+        // Collected Service Fees
+        collected_service_fees_target: collectedServiceFeesTarget ? parseInt(collectedServiceFeesTarget) : 0,
+        collected_service_fees_current_month: collectedServiceFeesCurrentMonth ? parseInt(collectedServiceFeesCurrentMonth) : 0,
+        collected_service_fees_previous: collectedServiceFeesPrevious ? parseInt(collectedServiceFeesPrevious) : 0,
       });
 
       Alert.alert(t('common.success'), t('fims.inspectionSaved'));
@@ -467,19 +553,19 @@ export default function PahuvaidhakiyaTapasaniScreen() {
         villages_within_10km: villagesWithin10km ? parseInt(villagesWithin10km) : 0,
         livestock_within_10km: livestockWithin10km,
         previous_endemic_disease_info: previousEndemicDiseaseInfo,
-        edr_submission_date: edrSubmissionDate || null,
-        team_visit_date: teamVisitDate || null,
+        edr_submission_date: edrSubmissionDate || '1900-01-01',
+        team_visit_date: teamVisitDate || '1900-01-01',
 
         // Vaccination Program
         vaccine_type: vaccineType,
         vaccine_name: vaccineName,
         number_of_animals_in_program: numberOfAnimalsInProgram,
         total_vaccinated: totalVaccinated,
-        recently_vaccinated_date: recentlyVaccinatedDate || null,
+        recently_vaccinated_date: recentlyVaccinatedDate || '',
         received_vaccinated: receivedVaccinated,
         previous_vaccinated: previousVaccinated,
         total_vaccinated_count: totalVaccinatedCount,
-        vaccination_date: vaccinationDate || null,
+        vaccination_date: vaccinationDate || '',
         since_april_vaccinated: sinceAprilVaccinated,
         reason_not_vaccinated: reasonNotVaccinated,
 
@@ -512,6 +598,80 @@ export default function PahuvaidhakiyaTapasaniScreen() {
         // Assessment and Instructions
         general_technical_assessment: generalTechnicalAssessment,
         given_instructions: givenInstructions,
+
+        // Artificial Insemination - Primary
+        artificial_insemination_primary_foreign_target: aiPrimaryForeignTarget ? parseInt(aiPrimaryForeignTarget) : 0,
+        artificial_insemination_primary_foreign_current_month: aiPrimaryForeignCurrentMonth ? parseInt(aiPrimaryForeignCurrentMonth) : 0,
+        artificial_insemination_primary_foreign_previous: aiPrimaryForeignPrevious ? parseInt(aiPrimaryForeignPrevious) : 0,
+        artificial_insemination_primary_hybrid_target: aiPrimaryHybridTarget ? parseInt(aiPrimaryHybridTarget) : 0,
+        artificial_insemination_primary_hybrid_current_month: aiPrimaryHybridCurrentMonth ? parseInt(aiPrimaryHybridCurrentMonth) : 0,
+        artificial_insemination_primary_hybrid_previous: aiPrimaryHybridPrevious ? parseInt(aiPrimaryHybridPrevious) : 0,
+        artificial_insemination_primary_local_target: aiPrimaryLocalTarget ? parseInt(aiPrimaryLocalTarget) : 0,
+        artificial_insemination_primary_local_current_month: aiPrimaryLocalCurrentMonth ? parseInt(aiPrimaryLocalCurrentMonth) : 0,
+        artificial_insemination_primary_local_previous: aiPrimaryLocalPrevious ? parseInt(aiPrimaryLocalPrevious) : 0,
+        artificial_insemination_primary_buffalo_target: aiPrimaryBuffaloTarget ? parseInt(aiPrimaryBuffaloTarget) : 0,
+        artificial_insemination_primary_buffalo_current_month: aiPrimaryBuffaloCurrentMonth ? parseInt(aiPrimaryBuffaloCurrentMonth) : 0,
+        artificial_insemination_primary_buffalo_previous: aiPrimaryBuffaloPrevious ? parseInt(aiPrimaryBuffaloPrevious) : 0,
+        artificial_insemination_primary_total_target: aiPrimaryTotalTarget ? parseInt(aiPrimaryTotalTarget) : 0,
+        artificial_insemination_primary_total_current_month: aiPrimaryTotalCurrentMonth ? parseInt(aiPrimaryTotalCurrentMonth) : 0,
+        artificial_insemination_primary_total_previous: aiPrimaryTotalPrevious ? parseInt(aiPrimaryTotalPrevious) : 0,
+
+        // Born Calves
+        born_calves_cow_hybrid_target: bornCalvesCowHybridTarget ? parseInt(bornCalvesCowHybridTarget) : 0,
+        born_calves_cow_hybrid_current_month: bornCalvesCowHybridCurrentMonth ? parseInt(bornCalvesCowHybridCurrentMonth) : 0,
+        born_calves_cow_hybrid_previous: bornCalvesCowHybridPrevious ? parseInt(bornCalvesCowHybridPrevious) : 0,
+        born_calves_cow_local_target: bornCalvesCowLocalTarget ? parseInt(bornCalvesCowLocalTarget) : 0,
+        born_calves_cow_local_current_month: bornCalvesCowLocalCurrentMonth ? parseInt(bornCalvesCowLocalCurrentMonth) : 0,
+        born_calves_cow_local_previous: bornCalvesCowLocalPrevious ? parseInt(bornCalvesCowLocalPrevious) : 0,
+        born_calves_buffalo_target: bornCalvesBuffaloTarget ? parseInt(bornCalvesBuffaloTarget) : 0,
+        born_calves_buffalo_current_month: bornCalvesBuffaloCurrentMonth ? parseInt(bornCalvesBuffaloCurrentMonth) : 0,
+        born_calves_buffalo_previous: bornCalvesBuffaloPrevious ? parseInt(bornCalvesBuffaloPrevious) : 0,
+        born_calves_total_target: bornCalvesTotalTarget ? parseInt(bornCalvesTotalTarget) : 0,
+        born_calves_total_current_month: bornCalvesTotalCurrentMonth ? parseInt(bornCalvesTotalCurrentMonth) : 0,
+        born_calves_total_previous: bornCalvesTotalPrevious ? parseInt(bornCalvesTotalPrevious) : 0,
+
+        // Calved Cows
+        calved_cows_hybrid_target: calvedCowsHybridTarget ? parseInt(calvedCowsHybridTarget) : 0,
+        calved_cows_hybrid_current_month: calvedCowsHybridCurrentMonth ? parseInt(calvedCowsHybridCurrentMonth) : 0,
+        calved_cows_hybrid_previous: calvedCowsHybridPrevious ? parseInt(calvedCowsHybridPrevious) : 0,
+        calved_cows_local_target: calvedCowsLocalTarget ? parseInt(calvedCowsLocalTarget) : 0,
+        calved_cows_local_current_month: calvedCowsLocalCurrentMonth ? parseInt(calvedCowsLocalCurrentMonth) : 0,
+        calved_cows_local_previous: calvedCowsLocalPrevious ? parseInt(calvedCowsLocalPrevious) : 0,
+        calved_buffaloes_target: calvedBuffaloesTarget ? parseInt(calvedBuffaloesTarget) : 0,
+        calved_buffaloes_current_month: calvedBuffaloesCurrentMonth ? parseInt(calvedBuffaloesCurrentMonth) : 0,
+        calved_buffaloes_previous: calvedBuffaloesPrevious ? parseInt(calvedBuffaloesPrevious) : 0,
+
+        // Pregnancy Examination
+        pregnancy_examination_cow_target: pregnancyExamCowTarget ? parseInt(pregnancyExamCowTarget) : 0,
+        pregnancy_examination_cow_current_month: pregnancyExamCowCurrentMonth ? parseInt(pregnancyExamCowCurrentMonth) : 0,
+        pregnancy_examination_cow_previous: pregnancyExamCowPrevious ? parseInt(pregnancyExamCowPrevious) : 0,
+        pregnancy_examination_buffalo_target: pregnancyExamBuffaloTarget ? parseInt(pregnancyExamBuffaloTarget) : 0,
+        pregnancy_examination_buffalo_current_month: pregnancyExamBuffaloCurrentMonth ? parseInt(pregnancyExamBuffaloCurrentMonth) : 0,
+        pregnancy_examination_buffalo_previous: pregnancyExamBuffaloPrevious ? parseInt(pregnancyExamBuffaloPrevious) : 0,
+        pregnancy_examination_total_target: pregnancyExamTotalTarget ? parseInt(pregnancyExamTotalTarget) : 0,
+        pregnancy_examination_total_current_month: pregnancyExamTotalCurrentMonth ? parseInt(pregnancyExamTotalCurrentMonth) : 0,
+        pregnancy_examination_total_previous: pregnancyExamTotalPrevious ? parseInt(pregnancyExamTotalPrevious) : 0,
+
+        // Infertility Animals Examination
+        infertility_animals_examination_cow_target: infertilityExamCowTarget ? parseInt(infertilityExamCowTarget) : 0,
+        infertility_animals_examination_cow_current_month: infertilityExamCowCurrentMonth ? parseInt(infertilityExamCowCurrentMonth) : 0,
+        infertility_animals_examination_cow_previous: infertilityExamCowPrevious ? parseInt(infertilityExamCowPrevious) : 0,
+        infertility_animals_examination_buffalo_target: infertilityExamBuffaloTarget ? parseInt(infertilityExamBuffaloTarget) : 0,
+        infertility_animals_examination_buffalo_current_month: infertilityExamBuffaloCurrentMonth ? parseInt(infertilityExamBuffaloCurrentMonth) : 0,
+        infertility_animals_examination_buffalo_previous: infertilityExamBuffaloPrevious ? parseInt(infertilityExamBuffaloPrevious) : 0,
+        infertility_animals_examination_total_target: infertilityExamTotalTarget ? parseInt(infertilityExamTotalTarget) : 0,
+        infertility_animals_examination_total_current_month: infertilityExamTotalCurrentMonth ? parseInt(infertilityExamTotalCurrentMonth) : 0,
+        infertility_animals_examination_total_previous: infertilityExamTotalPrevious ? parseInt(infertilityExamTotalPrevious) : 0,
+
+        // Patients Average Daily Attendance
+        patients_average_daily_attendance_target: patientsAvgDailyAttendanceTarget ? parseInt(patientsAvgDailyAttendanceTarget) : 0,
+        patients_average_daily_attendance_current_month: patientsAvgDailyAttendanceCurrentMonth ? parseInt(patientsAvgDailyAttendanceCurrentMonth) : 0,
+        patients_average_daily_attendance_previous: patientsAvgDailyAttendancePrevious ? parseInt(patientsAvgDailyAttendancePrevious) : 0,
+
+        // Collected Service Fees
+        collected_service_fees_target: collectedServiceFeesTarget ? parseInt(collectedServiceFeesTarget) : 0,
+        collected_service_fees_current_month: collectedServiceFeesCurrentMonth ? parseInt(collectedServiceFeesCurrentMonth) : 0,
+        collected_service_fees_previous: collectedServiceFeesPrevious ? parseInt(collectedServiceFeesPrevious) : 0,
       });
 
       // Upload photos
