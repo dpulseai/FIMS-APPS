@@ -36,6 +36,7 @@ export default function MumbaiNyayalayScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [photoMetas, setPhotoMetas] = useState<Array<{ latitude?: number; longitude?: number; accuracy?: number }>>([]);
   const [location, setLocation] = useState<LocationData | null>(null);
   const [isEditMode] = useState<boolean>(() => Boolean(edit) || !inspectionId);
   const [createdInspectionId, setCreatedInspectionId] = useState<string | null>(inspectionId || null);
@@ -482,13 +483,21 @@ export default function MumbaiNyayalayScreen() {
       // Save to dedicated Mumbai High Court form table
       await saveMumbaiHighCourtForm(inspId, formData);
 
-      // Upload photos
+      // Only upload new photos (skip photos that are already uploaded - HTTP URLs)
       for (let i = 0; i < photos.length; i++) {
+        const photoUri = photos[i];
+        // Skip if photo is already uploaded (starts with http:// or https://)
+        if (photoUri.toLowerCase().startsWith('http://') || photoUri.toLowerCase().startsWith('https://')) {
+          console.log('Skipping already uploaded photo:', photoUri);
+          continue;
+        }
+        const meta = photoMetas[i];
         await uploadPhoto(
           inspId,
-          photos[i],
+          photoUri,
           `mumbai_nyayalay_photo_${i + 1}.jpg`,
-          i + 1
+          i + 1,
+          meta
         );
       }
 
@@ -937,7 +946,12 @@ export default function MumbaiNyayalayScreen() {
       <Text style={styles.sectionSubtitle}>Photo Documentation</Text>
       <PhotoUpload
         photos={photos}
-        onPhotosChange={setPhotos}
+        onPhotosChange={(p) => {
+          setPhotos(p);
+          if (photoMetas.length > p.length) setPhotoMetas(photoMetas.slice(0, p.length));
+        }}
+        photoMetas={photoMetas}
+        onPhotoMetaChange={setPhotoMetas}
         disabled={!isEditMode}
       />
     </View>
