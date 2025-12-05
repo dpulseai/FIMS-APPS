@@ -986,45 +986,47 @@ export default function MumbaiNyayalayScreen() {
         <Card>{renderStep()}</Card>
       </ScrollView>
       <View style={styles.footer}>
-        <View style={styles.buttonRow}>
-          {currentStep > 0 && (
+        {currentStep < STEPS.length - 1 ? (
+          <View style={styles.buttonRow}>
+            {currentStep > 0 && (
+              <Button
+                title='मागील'
+                onPress={handlePrevious}
+                variant="outline"
+                style={styles.button}
+                disabled={loading}
+              />
+            )}
             <Button
-              title={t('common.previous')}
-              onPress={handlePrevious}
-              variant="outline"
-              style={styles.button}
-              disabled={loading}
-            />
-          )}
-          {currentStep < STEPS.length - 1 ? (
-            <Button
-              title={t('common.next')}
+              title='पुढे'
               onPress={handleNext}
               style={styles.button}
               disabled={loading}
             />
-          ) : (
-            <View style={styles.submitButtons}>
-              {isEditMode && (
-                <>
-                  <Button
-                    title={t('fims.saveAsDraft')}
-                    onPress={handleSaveAsDraft}
-                    variant="outline"
-                    style={styles.halfButton}
-                    loading={loading}
-                  />
-                  <Button
-                    title={t('fims.submitInspection')}
-                    onPress={handleSubmit}
-                    style={styles.halfButton}
-                    loading={loading}
-                  />
-                </>
-              )}
-            </View>
-          )}
-        </View>
+          </View>
+        ) : (
+          <View style={styles.submitButtons}>
+            <Button
+              title="तपासणी सबमिट करा"
+              onPress={handleSubmit}
+              loading={loading}
+            />
+            <Button
+              title="मसुदा सेव्ह करा"
+              onPress={handleSaveAsDraft}
+              variant="outline"
+              loading={loading}
+            />
+            {currentStep > 0 && (
+              <Button
+                title='मागील'
+                onPress={handlePrevious}
+                variant="outline"
+                disabled={loading}
+              />
+            )}
+          </View>
+        )}
       </View>
     </KeyboardAvoidingView>
   );
@@ -1112,14 +1114,9 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    marginHorizontal: 4,
   },
   submitButtons: {
-    flexDirection: 'row',
-    flex: 1,
-  },
-  halfButton: {
-    flex: 1,
-    marginHorizontal: 4,
+    gap: 12,
+    marginTop: 12,
   },
 });
