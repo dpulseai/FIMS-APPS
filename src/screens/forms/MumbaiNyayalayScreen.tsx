@@ -41,6 +41,10 @@ export default function MumbaiNyayalayScreen() {
   const [isEditMode] = useState<boolean>(() => Boolean(edit) || !inspectionId);
   const [createdInspectionId, setCreatedInspectionId] = useState<string | null>(inspectionId || null);
 
+  // Location Information
+  const [locationName, setLocationName] = useState('');
+  const [plannedDate, setPlannedDate] = useState('');
+
   // Basic Information
   const [inspectionDate, setInspectionDate] = useState('');
   const [districtName, setDistrictName] = useState('');
@@ -186,6 +190,10 @@ export default function MumbaiNyayalayScreen() {
       if (error) throw error;
 
       if (inspection) {
+        // Load location name and planned date
+        setLocationName(inspection.location_name || '');
+        setPlannedDate(inspection.planned_date || '');
+
         // Load basic data
         if (inspection.location_latitude && inspection.location_longitude) {
           setLocation({
@@ -199,6 +207,7 @@ export default function MumbaiNyayalayScreen() {
 
         // Load form data
         const formData = inspection.form_data || {};
+        setLocationName(formData.location_name || inspection.location_name || '');
         setInspectionDate(formData.inspection_date || '');
         setDistrictName(formData.district_name || '');
         setTalukaName(formData.taluka_name || '');
@@ -329,6 +338,7 @@ export default function MumbaiNyayalayScreen() {
 
   const collectFormData = () => {
     return {
+      location_name: locationName,
       inspection_date: inspectionDate,
       district_name: districtName,
       taluka_name: talukaName,
@@ -410,6 +420,8 @@ export default function MumbaiNyayalayScreen() {
         // Update existing
         await updateInspection(inspId, {
           status: 'draft',
+          location_name: locationName || null,
+          planned_date: plannedDate || null,
           location_latitude: location?.latitude,
           location_longitude: location?.longitude,
           location_address: location?.address || null,
@@ -422,6 +434,8 @@ export default function MumbaiNyayalayScreen() {
           inspector_id: user?.id,
           filled_by_name: principalName || user?.email || '',
           status: 'draft',
+          location_name: locationName || null,
+          planned_date: plannedDate || null,
           location_latitude: location?.latitude,
           location_longitude: location?.longitude,
           location_address: location?.address || null,
@@ -460,6 +474,8 @@ export default function MumbaiNyayalayScreen() {
         // Update existing
         await updateInspection(inspId, {
           status: 'submitted',
+          location_name: locationName || null,
+          planned_date: plannedDate || null,
           location_latitude: location?.latitude,
           location_longitude: location?.longitude,
           location_address: location?.address || null,
@@ -472,6 +488,8 @@ export default function MumbaiNyayalayScreen() {
           inspector_id: user?.id,
           filled_by_name: principalName || user?.email || '',
           status: 'submitted',
+          location_name: locationName || null,
+          planned_date: plannedDate || null,
           location_latitude: location?.latitude,
           location_longitude: location?.longitude,
           location_address: location?.address || null,
@@ -517,14 +535,14 @@ export default function MumbaiNyayalayScreen() {
       <Text style={styles.sectionSubtitle}>Basic Information</Text>
 
       <DateInput
-        label="तपासणी दिनांक / Inspection Date *"
+        label="तपासणी दिनांक *"
         value={inspectionDate}
         onChangeDate={setInspectionDate}
         disabled={!isEditMode}
       />
 
       <Input
-        label="जिल्हा नाव / District Name *"
+        label="जिल्हा नाव*"
         value={districtName}
         onChangeText={setDistrictName}
         placeholder="जिल्हा नाव प्रविष्ट करा"
@@ -532,7 +550,7 @@ export default function MumbaiNyayalayScreen() {
       />
 
       <Input
-        label="तालुक्याचे नाव / Taluka Name *"
+        label="तालुक्याचे नाव *"
         value={talukaName}
         onChangeText={setTalukaName}
         placeholder="तालुक्याचे नाव प्रविष्ट करा"
@@ -540,7 +558,7 @@ export default function MumbaiNyayalayScreen() {
       />
 
       <Input
-        label="केंद्राचे नाव / Center Name"
+        label="केंद्राचे नाव "
         value={centerName}
         onChangeText={setCenterName}
         placeholder="केंद्राचे नाव प्रविष्ट करा"
@@ -548,7 +566,7 @@ export default function MumbaiNyayalayScreen() {
       />
 
       <Input
-        label="शाळेचे नाव / School Name *"
+        label="शाळेचे नाव *"
         value={schoolName}
         onChangeText={setSchoolName}
         placeholder="शाळेचे नाव प्रविष्ट करा"
@@ -556,7 +574,7 @@ export default function MumbaiNyayalayScreen() {
       />
 
       <Input
-        label="व्यवस्थापनाचे नाव - जिल्हा परिषद / म.न.पा / न.पा. / Management Name"
+        label="व्यवस्थापनाचे नाव - जिल्हा परिषद / म.न.पा / न.पा."
         value={managementName}
         onChangeText={setManagementName}
         placeholder="व्यवस्थापनाचे नाव प्रविष्ट करा"
@@ -564,7 +582,7 @@ export default function MumbaiNyayalayScreen() {
       />
 
       <Input
-        label="मुख्याध्यापकाचे नाव / Principal Name"
+        label="मुख्याध्यापकाचे नाव"
         value={principalName}
         onChangeText={setPrincipalName}
         placeholder="मुख्याध्यापकाचे नाव प्रविष्ट करा"
@@ -572,7 +590,7 @@ export default function MumbaiNyayalayScreen() {
       />
 
       <Input
-        label="युडायस नं. / UDISE Number"
+        label="युडायस नं. "
         value={udiseNumber}
         onChangeText={setUdiseNumber}
         placeholder="युडायस नं. प्रविष्ट करा"
@@ -589,7 +607,7 @@ export default function MumbaiNyayalayScreen() {
         </View>
 
         <View style={styles.tableRow}>
-          <Text style={styles.tableCell}>एकूण मुले / Total Boys</Text>
+          <Text style={styles.tableCell}>एकूण मुले</Text>
           <Input
             value={totalBoys}
             onChangeText={setTotalBoys}
@@ -600,7 +618,7 @@ export default function MumbaiNyayalayScreen() {
         </View>
 
         <View style={styles.tableRow}>
-          <Text style={styles.tableCell}>एकूण मुली / Total Girls</Text>
+          <Text style={styles.tableCell}>एकूण मुली</Text>
           <Input
             value={totalGirls}
             onChangeText={setTotalGirls}
@@ -611,7 +629,7 @@ export default function MumbaiNyayalayScreen() {
         </View>
 
         <View style={styles.tableRow}>
-          <Text style={styles.tableCell}>एकूण विद्यार्थी / Total Students</Text>
+          <Text style={styles.tableCell}>एकूण विद्यार्थी</Text>
           <Input
             value={totalStudents}
             editable={false}
@@ -620,7 +638,7 @@ export default function MumbaiNyayalayScreen() {
         </View>
 
         <View style={styles.tableRow}>
-          <Text style={styles.tableCell}>एकूण मंजूर शिक्षक संख्या / Sanctioned Teachers</Text>
+          <Text style={styles.tableCell}>एकूण मंजूर शिक्षक संख्या</Text>
           <Input
             value={sanctionedTeachers}
             onChangeText={setSanctionedTeachers}
@@ -631,7 +649,7 @@ export default function MumbaiNyayalayScreen() {
         </View>
 
         <View style={styles.tableRow}>
-          <Text style={styles.tableCell}>कार्यरत शिक्षक संख्या / Working Teachers</Text>
+          <Text style={styles.tableCell}>कार्यरत शिक्षक संख्या</Text>
           <Input
             value={workingTeachers}
             onChangeText={setWorkingTeachers}
@@ -642,7 +660,7 @@ export default function MumbaiNyayalayScreen() {
         </View>
 
         <View style={styles.tableRow}>
-          <Text style={styles.tableCell}>रिक्त शिक्षक संख्या / Vacant Teachers</Text>
+          <Text style={styles.tableCell}>रिक्त शिक्षक संख्या</Text>
           <Input
             value={vacantTeachers}
             editable={false}
@@ -651,7 +669,7 @@ export default function MumbaiNyayalayScreen() {
         </View>
 
         <View style={styles.tableRow}>
-          <Text style={styles.tableCell}>एकूण मंजूर शिक्षकेत्तर कर्मचारी संख्या / Sanctioned Non-Teaching</Text>
+          <Text style={styles.tableCell}>एकूण मंजूर शिक्षकेत्तर कर्मचारी संख्या</Text>
           <Input
             value={sanctionedNonTeaching}
             onChangeText={setSanctionedNonTeaching}
@@ -662,7 +680,7 @@ export default function MumbaiNyayalayScreen() {
         </View>
 
         <View style={styles.tableRow}>
-          <Text style={styles.tableCell}>एकूण कार्यरत शिक्षकेत्तर कर्मचारी संख्या / Working Non-Teaching</Text>
+          <Text style={styles.tableCell}>एकूण कार्यरत शिक्षकेत्तर कर्मचारी संख्या</Text>
           <Input
             value={workingNonTeaching}
             onChangeText={setWorkingNonTeaching}
@@ -673,7 +691,7 @@ export default function MumbaiNyayalayScreen() {
         </View>
 
         <View style={styles.tableRow}>
-          <Text style={styles.tableCell}>रिक्त शिक्षकेत्तर कर्मचारी संख्या / Vacant Non-Teaching</Text>
+          <Text style={styles.tableCell}>रिक्त शिक्षकेत्तर कर्मचारी संख्या</Text>
           <Input
             value={vacantNonTeaching}
             editable={false}
@@ -686,8 +704,25 @@ export default function MumbaiNyayalayScreen() {
 
   const renderLocationInfo = () => (
     <View>
-      <Text style={styles.sectionTitle}>{t('fims.locationDetails')}</Text>
-      <Text style={styles.sectionSubtitle}>Location Information</Text>
+      {/* <Text style={styles.sectionTitle}>{t('fims.locationDetails')}</Text> */}
+      <Text style={styles.sectionTitle}>स्थान माहिती</Text>
+      <Text style={styles.sectionSubtitle}>(Location Information)</Text>
+
+      <Input
+        label="स्थानाचे नाव (Location Name)"
+        value={locationName}
+        onChangeText={setLocationName}
+        placeholder="स्थानाचे नाव प्रविष्ट करा"
+        editable={isEditMode}
+      />
+
+      <DateInput
+        label="नियोजित तारीख (Planned Date)"
+        value={plannedDate}
+        onChangeDate={setPlannedDate}
+        disabled={!isEditMode}
+      />
+
       <LocationPicker
         location={location}
         onLocationChange={setLocation}
@@ -746,7 +781,7 @@ export default function MumbaiNyayalayScreen() {
       <Text style={styles.sectionSubtitle}>Hon. High Court, Mumbai Inspection Form - Part 1</Text>
 
       {renderInspectionPoint(
-        '1) शाळा इमारत बांधकाम वर्ष / Building Construction Year',
+        '1) शाळा इमारत बांधकाम वर्ष',
         buildingConstructionYearStatus,
         setBuildingConstructionYearStatus,
         buildingConstructionYearMeasures,
@@ -756,7 +791,7 @@ export default function MumbaiNyayalayScreen() {
       )}
 
       {renderInspectionPoint(
-        '2) शाळा बांधकाम प्रकार व स्थिती / Building Type & Structure',
+        '2) शाळा बांधकाम प्रकार व स्थिती',
         buildingTypeStructureStatus,
         setBuildingTypeStructureStatus,
         buildingTypeStructureMeasures,
@@ -766,7 +801,7 @@ export default function MumbaiNyayalayScreen() {
       )}
 
       {renderInspectionPoint(
-        '3) विद्यार्थ्यांच्या प्रमाणात वर्ग खोल्या / Adequate Classrooms',
+        '3) विद्यार्थ्यांच्या प्रमाणात वर्ग खोल्या',
         classroomsAdequateStatus,
         setClassroomsAdequateStatus,
         classroomsAdequateMeasures,
@@ -776,7 +811,7 @@ export default function MumbaiNyayalayScreen() {
       )}
 
       {renderInspectionPoint(
-        '4) मुलांसाठी व मुलींसाठी स्वतंत्र स्वच्छतागृह / Separate Toilets',
+        '4) मुलांसाठी व मुलींसाठी स्वतंत्र स्वच्छतागृह',
         separateToiletsStatus,
         setSeparateToiletsStatus,
         separateToiletsMeasures,
@@ -786,7 +821,7 @@ export default function MumbaiNyayalayScreen() {
       )}
 
       {renderInspectionPoint(
-        '5) विशेष गरजा असणाऱ्या विद्यार्थ्यांसाठी (CWSN) स्वच्छतागृह / CWSN Toilets',
+        '5) विशेष गरजा असणाऱ्या विद्यार्थ्यांसाठी (CWSN) स्वच्छतागृह',
         cwsnToiletsStatus,
         setCwsnToiletsStatus,
         cwsnToiletsMeasures,
@@ -796,7 +831,7 @@ export default function MumbaiNyayalayScreen() {
       )}
 
       {renderInspectionPoint(
-        '6) पिण्याचे स्वच्छ पाणी व वापरासाठी पाणी / Drinking Water',
+        '6) पिण्याचे स्वच्छ पाणी व वापरासाठी पाणी',
         drinkingWaterStatus,
         setDrinkingWaterStatus,
         drinkingWaterMeasures,
@@ -813,7 +848,7 @@ export default function MumbaiNyayalayScreen() {
       <Text style={styles.sectionSubtitle}>Hon. High Court, Mumbai Inspection Form - Part 2</Text>
 
       {renderInspectionPoint(
-        '7) शाळेला संरक्षक भिंत / Boundary Wall',
+        '7) शाळेला संरक्षक भिंत',
         boundaryWallStatus,
         setBoundaryWallStatus,
         boundaryWallMeasures,
@@ -823,7 +858,7 @@ export default function MumbaiNyayalayScreen() {
       )}
 
       {renderInspectionPoint(
-        '8) मुलांना खेळण्यासाठी मैदान / Playground',
+        '8) मुलांना खेळण्यासाठी मैदान',
         playgroundStatus,
         setPlaygroundStatus,
         playgroundMeasures,
@@ -833,7 +868,7 @@ export default function MumbaiNyayalayScreen() {
       )}
 
       {renderInspectionPoint(
-        '9) किचनशेड / Kitchen Shed',
+        '9) किचनशेड',
         kitchenShedStatus,
         setKitchenShedStatus,
         kitchenShedMeasures,
@@ -843,7 +878,7 @@ export default function MumbaiNyayalayScreen() {
       )}
 
       {renderInspectionPoint(
-        '10) उताराचा रस्ता (रॅम्प) / Ramp Facility',
+        '10) उताराचा रस्ता (रॅम्प)',
         rampFacilityStatus,
         setRampFacilityStatus,
         rampFacilityMeasures,
@@ -853,7 +888,7 @@ export default function MumbaiNyayalayScreen() {
       )}
 
       {renderInspectionPoint(
-        '11) शाळेमध्ये लाईटची सोय / Electricity',
+        '11) शाळेमध्ये लाईटची सोय',
         electricityStatus,
         setElectricityStatus,
         electricityMeasures,
@@ -870,7 +905,7 @@ export default function MumbaiNyayalayScreen() {
       <Text style={styles.sectionSubtitle}>Hon. High Court, Mumbai Inspection Form - Part 3</Text>
 
       {renderInspectionPoint(
-        '12) विद्यार्थ्यांना बसण्यासाठी बैठक व्यवस्था / Seating Arrangement',
+        '12) विद्यार्थ्यांना बसण्यासाठी बैठक व्यवस्था',
         seatingArrangementStatus,
         setSeatingArrangementStatus,
         seatingArrangementMeasures,
@@ -880,7 +915,7 @@ export default function MumbaiNyayalayScreen() {
       )}
 
       {renderInspectionPoint(
-        '13) शाळा व शाळा परिसर स्वच्छता / Cleanliness',
+        '13) शाळा व शाळा परिसर स्वच्छता',
         cleanlinessStatus,
         setCleanlinessStatus,
         cleanlinessMeasures,
@@ -890,7 +925,7 @@ export default function MumbaiNyayalayScreen() {
       )}
 
       {renderInspectionPoint(
-        '14) शाळा इमारतींचा/परिसराचा वापर अवैध कामांसाठी / Illegal Use',
+        '14) शाळा इमारतींचा/परिसराचा वापर अवैध कामांसाठी',
         illegalUseStatus,
         setIllegalUseStatus,
         illegalUseMeasures,
@@ -900,7 +935,7 @@ export default function MumbaiNyayalayScreen() {
       )}
 
       {renderInspectionPoint(
-        '15) शाळेच्या इमारत व जागेवर अतिक्रमण / Encroachment',
+        '15) शाळेच्या इमारत व जागेवर अतिक्रमण',
         encroachmentStatus,
         setEncroachmentStatus,
         encroachmentMeasures,
@@ -910,7 +945,7 @@ export default function MumbaiNyayalayScreen() {
       )}
 
       {renderInspectionPoint(
-        '16) भौतिक सुविधा व इतर बाबींबाबत उल्लेखनीय काम / Notable Work',
+        '16) भौतिक सुविधा व इतर बाबींबाबत उल्लेखनीय काम',
         notableWorkStatus,
         setNotableWorkStatus,
         notableWorkMeasures,
@@ -923,7 +958,7 @@ export default function MumbaiNyayalayScreen() {
       <Text style={styles.sectionSubtitle}>Inspector Information</Text>
 
       <Input
-        label="निरीक्षकाचे नाव / Inspector Name"
+        label="निरीक्षकाचे नाव"
         value={inspectorName}
         onChangeText={setInspectorName}
         placeholder="निरीक्षकाचे नाव प्रविष्ट करा"
@@ -931,7 +966,7 @@ export default function MumbaiNyayalayScreen() {
       />
 
       <Input
-        label="पदनाम / Designation"
+        label="पदनाम"
         value={inspectorDesignation}
         onChangeText={setInspectorDesignation}
         placeholder="पदनाम प्रविष्ट करा"
@@ -943,7 +978,8 @@ export default function MumbaiNyayalayScreen() {
   const renderPhotos = () => (
     <View>
       <Text style={styles.sectionTitle}>{t('fims.photosSubmit')}</Text>
-      <Text style={styles.sectionSubtitle}>Photo Documentation</Text>
+      <Text style={styles.sectionSubtitle}>Upload School Inspection Photos</Text>
+        <Text style={styles.sectionSubtitle}>शाळेच्या भौतिक सुविधांच्या तपासणीसाठी फोटो अपलोड करा</Text>
       <PhotoUpload
         photos={photos}
         onPhotosChange={(p) => {
