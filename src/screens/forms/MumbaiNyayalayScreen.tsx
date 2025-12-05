@@ -190,10 +190,6 @@ export default function MumbaiNyayalayScreen() {
       if (error) throw error;
 
       if (inspection) {
-        // Load location name and planned date
-        setLocationName(inspection.location_name || '');
-        setPlannedDate(inspection.planned_date || '');
-
         // Load basic data
         if (inspection.location_latitude && inspection.location_longitude) {
           setLocation({
@@ -207,7 +203,15 @@ export default function MumbaiNyayalayScreen() {
 
         // Load form data
         const formData = inspection.form_data || {};
+
+        // Load location name and planned date (from both database columns and form_data)
         setLocationName(formData.location_name || inspection.location_name || '');
+
+        // Handle planned_date - ensure it's in the correct format
+        const plannedDateValue = inspection.planned_date || '';
+        console.log('Loading planned_date:', plannedDateValue, 'Type:', typeof plannedDateValue);
+        setPlannedDate(plannedDateValue);
+
         setInspectionDate(formData.inspection_date || '');
         setDistrictName(formData.district_name || '');
         setTalukaName(formData.taluka_name || '');
