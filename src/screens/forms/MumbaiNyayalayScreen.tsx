@@ -5,7 +5,7 @@ import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { FormsStackParamList, LocationData } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
-import { createInspection, updateInspection, uploadPhoto } from '../../services/fimsService';
+import { createInspection, updateInspection, uploadPhoto, saveMumbaiHighCourtForm } from '../../services/fimsService';
 import { supabase } from '../../services/supabase';
 import Stepper from '../../components/common/Stepper';
 import Input from '../../components/common/Input';
@@ -430,6 +430,9 @@ export default function MumbaiNyayalayScreen() {
         setCreatedInspectionId(inspId);
       }
 
+      // Save to dedicated Mumbai High Court form table
+      await saveMumbaiHighCourtForm(inspId, formData);
+
       Alert.alert(t('common.success'), t('fims.inspectionSaved'));
       navigation.goBack();
     } catch (error) {
@@ -475,6 +478,9 @@ export default function MumbaiNyayalayScreen() {
         } as any);
         inspId = inspection.id;
       }
+
+      // Save to dedicated Mumbai High Court form table
+      await saveMumbaiHighCourtForm(inspId, formData);
 
       // Upload photos
       for (let i = 0; i < photos.length; i++) {
@@ -1057,6 +1063,8 @@ const styles = StyleSheet.create({
   tableInput: {
     margin: 4,
     padding: 8,
+    minWidth: 80,
+    flex: 0,
   },
   readOnlyInput: {
     backgroundColor: '#f3f4f6',

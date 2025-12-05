@@ -883,3 +883,160 @@ export const upsertMahatmaGandhiFormRecord = async (
     throw error;
   }
 };
+
+/**
+ * Save or update Mumbai High Court School Inspection form row linked to an inspection
+ */
+export const saveMumbaiHighCourtForm = async (inspectionId: string, formData: any): Promise<void> => {
+  if (!isSupabaseConfigured) {
+    throw new Error('Supabase client not initialized');
+  }
+
+  try {
+    // Check if a form already exists for this inspection
+    const { data: existingForms, error: fetchError } = await supabase
+      .from('mumbai_high_court_school_inspection_form')
+      .select('id')
+      .eq('inspection_id', inspectionId);
+
+    if (fetchError) throw fetchError;
+
+    // Map the form data to database schema
+    const payload = {
+      inspection_id: inspectionId,
+      inspection_date: formData.inspection_date || new Date().toISOString().split('T')[0],
+      district_name: formData.district_name || '',
+      taluka_name: formData.taluka_name || '',
+      center_name: formData.center_name || null,
+      school_name: formData.school_name || '',
+      management_name: formData.management_name || null,
+      headmaster_name: formData.principal_name || null,
+      udise_number: formData.udise_number || null,
+
+      // Building details - extracted from status fields
+      building_year: formData.building_construction_year_status || null,
+      building_type: formData.building_type_structure_status || null,
+      building_condition_ok: null, // Not in current form
+      building_repair_level: null,
+      building_measures: formData.building_type_structure_measures || null,
+      building_feedback: formData.building_type_structure_feedback || null,
+
+      // Classrooms
+      classrooms_as_per_students: formData.classrooms_adequate_status?.toLowerCase().includes('yes') ||
+                                   formData.classrooms_adequate_status?.toLowerCase().includes('हो') || null,
+      required_rooms: null,
+      available_rooms: null,
+      new_required_rooms: null,
+      rooms_good_condition: null,
+      rooms_repair_action: null,
+      rooms_repair_measures: formData.classrooms_adequate_measures || null,
+      rooms_repair_feedback: formData.classrooms_adequate_feedback || null,
+
+      // Toilets
+      separate_toilets_available: formData.separate_toilets_status?.toLowerCase().includes('yes') ||
+                                   formData.separate_toilets_status?.toLowerCase().includes('हो') || null,
+      toilets_as_per_strength: null,
+      toilets_regular_cleaning: null,
+      toilets_enough_water: null,
+
+      // CWSN Toilets
+      cwsn_toilet_available: formData.cwsn_toilets_status?.toLowerCase().includes('yes') ||
+                             formData.cwsn_toilets_status?.toLowerCase().includes('हो') || null,
+      cwsn_toilet_regular_cleaning: null,
+      cwsn_toilet_enough_water: null,
+
+      // Drinking Water
+      drinking_water_available: formData.drinking_water_status?.toLowerCase().includes('yes') ||
+                                formData.drinking_water_status?.toLowerCase().includes('हो') || null,
+      water_tank_available: null,
+      water_tank_capacity_liters: null,
+      water_storage_type: null,
+      water_tank_cleaning_done: null,
+      water_tank_cleaning_interval_days: null,
+
+      // Boundary Wall (protection_devotee in schema)
+      protection_devotee_type: formData.boundary_wall_status || null,
+      protection_devotee_condition_ok: null,
+
+      // Playground
+      playground_condition: formData.playground_status?.toLowerCase().includes('yes') ||
+                            formData.playground_status?.toLowerCase().includes('हो') || null,
+      playground_ownership: null,
+      playground_area: null,
+
+      // Kitchen Shed
+      kitchen_shed_available: formData.kitchen_shed_status?.toLowerCase().includes('yes') ||
+                              formData.kitchen_shed_status?.toLowerCase().includes('हो') || null,
+      kitchen_shed_cleanliness: null,
+
+      // Ramp
+      ramp_available: formData.ramp_facility_status?.toLowerCase().includes('yes') ||
+                      formData.ramp_facility_status?.toLowerCase().includes('हो') || null,
+      ramp_ratio_ok: null,
+      ramp_railings: null,
+
+      // Electricity
+      electricity_available_all_rooms: formData.electricity_status?.toLowerCase().includes('yes') ||
+                                       formData.electricity_status?.toLowerCase().includes('हो') || null,
+      electricity_disconnected_bill: null,
+      electricity_needed_rooms_count: null,
+      fans_lights_condition_ok: null,
+
+      // Seating
+      student_seating_arrangement: formData.seating_arrangement_status || null,
+      available_benches_count: null,
+      required_benches_count: null,
+      shortage_benches_count: null,
+      benches_condition: formData.seating_arrangement_measures || null,
+
+      // Cleanliness
+      school_cleanliness_classrooms: formData.cleanliness_status?.toLowerCase().includes('yes') ||
+                                     formData.cleanliness_status?.toLowerCase().includes('हो') || null,
+      school_cleanliness_building: null,
+      school_cleanliness_playground: null,
+      classrooms_painting: null,
+      classrooms_academic_use_only: null,
+
+      // Illegal Use
+      illegal_citizen_use: formData.illegal_use_status?.toLowerCase().includes('yes') ||
+                           formData.illegal_use_status?.toLowerCase().includes('हो') || null,
+      police_action_needed: null,
+
+      // Encroachment
+      encroachment_status: formData.encroachment_status?.toLowerCase().includes('yes') ||
+                           formData.encroachment_status?.toLowerCase().includes('हो') || null,
+      encroachment_condition: formData.encroachment_measures || null,
+
+      // Overall facilities
+      facilities_measures: formData.notable_work_measures || null,
+      facilities_feedback: formData.notable_work_feedback || null,
+      physical_facilities_remark: formData.notable_work_status || null,
+
+      // Inspector info
+      filled_by_name: formData.inspector_name || '',
+      visit_date: formData.inspection_date || new Date().toISOString().split('T')[0]
+    };
+
+    if (existingForms && existingForms.length > 0) {
+      // Update existing form
+      const { error } = await supabase
+        .from('mumbai_high_court_school_inspection_form')
+        .update(payload)
+        .eq('inspection_id', inspectionId);
+
+      if (error) throw error;
+      console.log('[fimsService] Updated Mumbai High Court form for inspection:', inspectionId);
+    } else {
+      // Insert new form
+      const { error } = await supabase
+        .from('mumbai_high_court_school_inspection_form')
+        .insert(payload);
+
+      if (error) throw error;
+      console.log('[fimsService] Created Mumbai High Court form for inspection:', inspectionId);
+    }
+  } catch (error) {
+    console.error('Error saving Mumbai High Court inspection form:', error);
+    throw error;
+  }
+};
