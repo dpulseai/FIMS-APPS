@@ -47,7 +47,21 @@ export default function CategorySelectionScreen() {
         // if (ft.includes('nyayalay') || name.includes('nyayalay') || name.includes('न्यायालय') || ft.includes('high court')) return false;
         return true;
       });
-      setCategories(filtered);
+
+      // Fix incorrect category names from database
+      const correctedCategories = filtered.map((category: InspectionCategory) => {
+        // Fix "office_inspcetion" typo to "Office Inspection"
+        if (category.form_type === 'office' || category.name?.toLowerCase().includes('office_inspcetion')) {
+          return {
+            ...category,
+            name: 'Office Inspection',
+            name_marathi: category.name_marathi || 'कार्यालय तपासणी'
+          };
+        }
+        return category;
+      });
+
+      setCategories(correctedCategories);
     } catch (error) {
       console.error('Error loading categories:', error);
       Alert.alert(t('common.error'), 'Failed to load inspection categories');

@@ -39,8 +39,26 @@ export default function InspectionsListScreen() {
       // ensure we pass undefined (not null) when user id is not available
       const userId = user?.id ?? undefined;
       const data = await getInspections(userId, userRole ?? undefined);
-      setInspections(data);
-      setFilteredInspections(data);
+
+      // Fix incorrect category names from database
+      const correctedData = data.map((inspection: Inspection) => {
+        // Fix "office_inspcetion" typo to "Office Inspection"
+        if (
+          inspection.form_type === 'office' ||
+          inspection.category_name?.toLowerCase().includes('office_inspcetion') ||
+          inspection.category_name?.toLowerCase().includes('office_inspection')
+        ) {
+          return {
+            ...inspection,
+            category_name: 'Office Inspection',
+            category_name_marathi: inspection.category_name_marathi || 'कार्यालय तपासणी'
+          };
+        }
+        return inspection;
+      });
+
+      setInspections(correctedData);
+      setFilteredInspections(correctedData);
     } catch (error) {
       console.error('Error loading inspections:', error);
       Alert.alert(t('common.error'), 'Failed to load inspections');

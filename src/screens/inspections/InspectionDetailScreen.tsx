@@ -35,6 +35,17 @@ export default function InspectionDetailScreen() {
   const loadInspectionDetails = async () => {
     try {
       const data = await getInspectionById(inspectionId);
+
+      // Fix incorrect category names from database
+      if (data && (
+        data.form_type === 'office' ||
+        data.category_name?.toLowerCase().includes('office_inspcetion') ||
+        data.category_name?.toLowerCase().includes('office_inspection')
+      )) {
+        data.category_name = 'Office Inspection';
+        data.category_name_marathi = data.category_name_marathi || 'कार्यालय तपासणी';
+      }
+
       setInspection(data);
     } catch (error) {
       console.error('Error loading inspection:', error);
