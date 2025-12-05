@@ -225,8 +225,14 @@ export default function InspectionsListScreen() {
     }
 
 
-       // If it's an ZPDarMahinyala form, open the ZPDarMahinyala screen inside NewInspection
-    if (inspection.form_type === 'High Court Order Inspection Form' || inspection.category_name?.toLowerCase().includes('mumbainyayalay')) {
+    // If it's a MumbaiNyayalay (High Court) form, open the MumbaiNyayalay screen inside NewInspection
+    if (
+      inspection.form_type === 'High Court Order Inspection Form' ||
+      inspection.form_type === 'mumbai_nyayalay' ||
+      cat.includes('mumbainyayalay') ||
+      cat.includes('mumbai nyayalay') ||
+      cat.includes('high court')
+    ) {
       (navigation as any).navigate('NewInspection', {
         screen: 'MumbaiNyayalay',
         params: { ...params, edit: true },
