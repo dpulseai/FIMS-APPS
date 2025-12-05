@@ -39,8 +39,26 @@ export default function InspectionsListScreen() {
       // ensure we pass undefined (not null) when user id is not available
       const userId = user?.id ?? undefined;
       const data = await getInspections(userId, userRole ?? undefined);
-      setInspections(data);
-      setFilteredInspections(data);
+
+      // Fix incorrect category names from database
+      const correctedData = data.map((inspection: Inspection) => {
+        // Fix "office_inspcetion" typo to "Office Inspection"
+        if (
+          inspection.form_type === 'office' ||
+          inspection.category_name?.toLowerCase().includes('office_inspcetion') ||
+          inspection.category_name?.toLowerCase().includes('office_inspection')
+        ) {
+          return {
+            ...inspection,
+            category_name: 'Office Inspection',
+            category_name_marathi: inspection.category_name_marathi || 'कार्यालय तपासणी'
+          };
+        }
+        return inspection;
+      });
+
+      setInspections(correctedData);
+      setFilteredInspections(correctedData);
     } catch (error) {
       console.error('Error loading inspections:', error);
       Alert.alert(t('common.error'), 'Failed to load inspections');
@@ -144,6 +162,21 @@ export default function InspectionsListScreen() {
       return;
     }
 
+    // If it's a Pahuvaidhakiya Tapasani (Veterinary) form, open the PahuvaidhakiyaTapasani screen
+    if (
+      inspection.form_type === 'pahuvaidhakiya' ||
+      inspection.form_type === 'veterinary' ||
+      cat.includes('pahuvaidhakiya') ||
+      cat.includes('veterinary') ||
+      cat.includes('पशु')
+    ) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'PahuvaidhakiyaTapasani',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
     // Rajya Shaishanik (Education Training) form
     if (
       inspection.form_type === 'rajya_shaishanik' ||
@@ -210,10 +243,46 @@ export default function InspectionsListScreen() {
     }
 
 
-       // If it's an ZPDarMahinyala form, open the ZPDarMahinyala screen inside NewInspection
-    if (inspection.form_type === 'High Court Order Inspection Form' || inspection.category_name?.toLowerCase().includes('mumbainyayalay')) {
+    // If it's a MumbaiNyayalay (High Court) form, open the MumbaiNyayalay screen inside NewInspection
+    if (
+      inspection.form_type === 'High Court Order Inspection Form' ||
+      inspection.form_type === 'mumbai_nyayalay' ||
+      cat.includes('mumbainyayalay') ||
+      cat.includes('mumbai nyayalay') ||
+      cat.includes('high court')
+    ) {
       (navigation as any).navigate('NewInspection', {
         screen: 'MumbaiNyayalay',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
+    // If it's a Sub Centre Monitoring form, open the SubCenterMonitoring screen inside NewInspection
+    if (
+      inspection.form_type === 'sub_centre_monitoring' ||
+      inspection.form_type === 'Sub Centre Monitoring Checklist' ||
+      cat.includes('sub centre') ||
+      cat.includes('sub center') ||
+      cat.includes('subcentre') ||
+      cat.includes('subcenter')
+    ) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'SubCenterMonitoring',
+        params: { ...params, edit: true },
+      });
+      return;
+    }
+
+    // If it's a Health Inspection form, open the HealthInspection screen inside NewInspection
+    if (
+      inspection.form_type === 'health_inspection' ||
+      inspection.form_type === 'health' ||
+      cat.includes('health') ||
+      cat.includes('आरोग्य')
+    ) {
+      (navigation as any).navigate('NewInspection', {
+        screen: 'HealthInspection',
         params: { ...params, edit: true },
       });
       return;

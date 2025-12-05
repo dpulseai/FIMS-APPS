@@ -38,16 +38,30 @@ export default function CategorySelectionScreen() {
         const ft = (c.form_type || '').toLowerCase();
         const name = (c.name || '').toLowerCase();
         // hide health
-        if (ft.includes('health')) return false;
+        // if (ft.includes('health')) return false;
         // hide veterinary variants
-        if (ft.includes('veterinary') || ft.includes('veterin')) return false;
+        // if (ft.includes('veterinary') || ft.includes('veterin')) return false;
         // hide pashu / पशु variations (pashutapasani, pashuvaidyakiya etc.)
         if (ft.includes('pashu') || name.includes('pashu') || name.includes('पशु') || ft.includes('पशु')) return false;
         // hide nyayalay / high court
-        if (ft.includes('nyayalay') || name.includes('nyayalay') || name.includes('न्यायालय') || ft.includes('high court')) return false;
+        // if (ft.includes('nyayalay') || name.includes('nyayalay') || name.includes('न्यायालय') || ft.includes('high court')) return false;
         return true;
       });
-      setCategories(filtered);
+
+      // Fix incorrect category names from database
+      const correctedCategories = filtered.map((category: InspectionCategory) => {
+        // Fix "office_inspcetion" typo to "Office Inspection"
+        if (category.form_type === 'office' || category.name?.toLowerCase().includes('office_inspcetion')) {
+          return {
+            ...category,
+            name: 'Office Inspection',
+            name_marathi: category.name_marathi || 'कार्यालय तपासणी'
+          };
+        }
+        return category;
+      });
+
+      setCategories(correctedCategories);
     } catch (error) {
       console.error('Error loading categories:', error);
       Alert.alert(t('common.error'), 'Failed to load inspection categories');
