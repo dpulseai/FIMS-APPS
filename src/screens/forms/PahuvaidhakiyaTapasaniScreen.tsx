@@ -949,7 +949,7 @@ export default function PahuvaidhakiyaTapasaniScreen() {
             <Text style={styles.sectionTitle}>मूलभूत माहिती</Text>
             {/* <Text style={styles.sectionSubtitle}>Basic Institution Information</Text> */}
             <Input
-              label="संस्थेचे नाव व पत्ता / Institution Name & Address *"
+              label="संस्थेचे नाव व पत्ता *"
               value={instituteNameAddress}
               onChangeText={setInstituteNameAddress}
               multiline
