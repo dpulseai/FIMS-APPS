@@ -11,7 +11,6 @@ import { supabase } from '../../services/supabase';
 import Stepper from '../../components/common/Stepper';
 import Input from '../../components/common/Input';
 import DateInput from '../../components/common/DateInput';
-import DateTimeInput from '../../components/common/DateTimeInput';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
 import PhotoUpload from '../../components/PhotoUpload';
@@ -980,12 +979,13 @@ export default function PahuvaidhakiyaTapasaniScreen() {
               value={inspectorNameDesignation}
               onChangeText={setInspectorNameDesignation}
             />
-            <DateTimeInput
-              // label="भेट दिनांक व वेळ / Visit Date & Time"
-              label="भेट दिनांक व वेळ *"
+            <DateInput
+              // label="भेट दिनांक / Visit Date"
+              label="भेट दिनांक *"
               value={visitDateTime}
-              onChangeDateTime={setVisitDateTime}
-              placeholder="YYYY-MM-DD HH:MM"
+              onChangeDate={setVisitDateTime}
+              placeholder="YYYY-MM-DD"
+              minimumDate={new Date(new Date().setHours(0, 0, 0, 0) + 86400000)}
             />
             <View>
               {/* <Text style={styles.pickerLabel}>तपासणीचा उद्देश / Inspection Purpose *</Text> */}
@@ -1023,6 +1023,7 @@ export default function PahuvaidhakiyaTapasaniScreen() {
               label="नियोजित तारीख"
               value={plannedDate}
               onChangeDate={setPlannedDate}
+              minimumDate={new Date()}
             />
             <LocationPicker location={location} onLocationChange={setLocation} />
           </View>
