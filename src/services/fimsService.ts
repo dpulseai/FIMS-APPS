@@ -422,6 +422,14 @@ export const savePahuvaidhakiyaTapasaniForm = async (inspectionId: string, formD
 
       if (error) throw error;
     }
+
+    // Also update the form_data column in fims_inspections table for website compatibility
+    const { error: inspectionUpdateError } = await supabase
+      .from('fims_inspections')
+      .update({ form_data: formData })
+      .eq('id', inspectionId);
+
+    if (inspectionUpdateError) throw inspectionUpdateError;
   } catch (error) {
     console.error('Error saving veterinary_inspection_report_form:', error);
     throw error;
