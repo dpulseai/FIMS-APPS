@@ -25,6 +25,7 @@ export interface Inspection {
   form_type?: string;
   status: 'draft' | 'in_progress' | 'submitted' | 'approved' | 'rejected' | 'revisit';
   location_name?: string | null;
+  planned_date?: string | null;
   location_latitude: number | null;
   location_longitude: number | null;
   location_accuracy?: number | null;
