@@ -220,6 +220,7 @@ export default function HealthInspectionScreen() {
 
         // Load basic info
         setLocationName(inspection.location_name || '');
+        setPlannedDate(inspection.planned_date || '');
 
         // Load location data
         setLocation({
@@ -265,8 +266,6 @@ export default function HealthInspectionScreen() {
         const formData = Array.isArray(formRows) && formRows.length > 0 ? formRows[0] : null;
 
         if (formData) {
-          setPlannedDate(formData.planned_date || '');
-
           // Load 27 questions
           const loadedAnswers: { [key: number]: string } = {};
           for (let i = 1; i <= 27; i++) {
@@ -335,6 +334,7 @@ export default function HealthInspectionScreen() {
           location_latitude: location?.latitude,
           location_longitude: location?.longitude,
           location_address: location?.address || null,
+          planned_date: plannedDate || null,
         });
       } else {
         // Create new inspection
@@ -347,6 +347,7 @@ export default function HealthInspectionScreen() {
           location_latitude: location?.latitude,
           location_longitude: location?.longitude,
           location_address: location?.address || null,
+          planned_date: plannedDate || null,
         });
         inspectionIdToUse = inspection.id;
       }
@@ -410,6 +411,7 @@ export default function HealthInspectionScreen() {
           location_latitude: location?.latitude,
           location_longitude: location?.longitude,
           location_address: location?.address || null,
+          planned_date: plannedDate || null,
         });
       } else {
         // Create new inspection
@@ -422,6 +424,7 @@ export default function HealthInspectionScreen() {
           location_latitude: location?.latitude,
           location_longitude: location?.longitude,
           location_address: location?.address || null,
+          planned_date: plannedDate || null,
         });
         inspectionIdToUse = inspection.id;
       }
@@ -545,6 +548,7 @@ export default function HealthInspectionScreen() {
               label="नियोजित तारीख / Planned Date"
               value={plannedDate}
               onChangeDate={setPlannedDate}
+              minimumDate={new Date()}
             />
             <Text style={styles.sectionTitle}>{t('fims.locationDetails')}</Text>
             <LocationPicker location={location} onLocationChange={setLocation} />

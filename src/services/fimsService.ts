@@ -27,6 +27,18 @@ export const getInspections = async (userId?: string, userRole?: string): Promis
           photo_name,
           description,
           photo_order
+        ),
+        mahatma_gandhi_rastriya_gramin_tapasani_praptra (
+          id,
+          work_name,
+          officer_name,
+          gram_panchayat,
+          village,
+          tehsil,
+          district,
+          total_amount,
+          current_status,
+          created_at
         )
       `)
       .order('created_at', { ascending: false });
@@ -49,6 +61,7 @@ export const getInspections = async (userId?: string, userRole?: string): Promis
       form_type: item.fims_categories?.form_type,
       status: item.status,
       location_name: item.location_name,
+      planned_date: item.planned_date,
       location_latitude: item.latitude,
       location_longitude: item.longitude,
       location_address: item.address,
@@ -59,6 +72,8 @@ export const getInspections = async (userId?: string, userRole?: string): Promis
       created_at: item.created_at,
       updated_at: item.updated_at,
       photos: item.fims_inspection_photos || [],
+      // Include Mahatma Gandhi form data if available
+      mahatma_gandhi_form: item.mahatma_gandhi_rastriya_gramin_tapasani_praptra?.[0] || null,
     }));
   } catch (error) {
     console.error('Error fetching inspections:', error);
@@ -188,6 +203,7 @@ export const getInspectionById = async (id: string): Promise<Inspection | null> 
       form_type: inspection.fims_categories?.form_type,
       status: inspection.status,
       location_name: inspection.location_name,
+      planned_date: inspection.planned_date,
       location_latitude: inspection.latitude,
       location_longitude: inspection.longitude,
       location_address: inspection.address,
@@ -233,6 +249,7 @@ export const createInspection = async (inspectionData: Partial<Inspection>): Pro
       category_id: offlineInspection.category_id,
       status: offlineInspection.status,
       location_name: null,
+      planned_date: null,
       location_latitude: offlineInspection.location_latitude ?? null,
       location_longitude: offlineInspection.location_longitude ?? null,
       location_address: offlineInspection.location_address ?? null,
@@ -256,6 +273,7 @@ export const createInspection = async (inspectionData: Partial<Inspection>): Pro
       filled_by_name: inspectionData.filled_by_name,
       status: inspectionData.status || 'draft',
       location_name: inspectionData.location_name,
+      planned_date: inspectionData.planned_date || null,
       latitude: inspectionData.location_latitude,
       longitude: inspectionData.location_longitude,
       address: inspectionData.location_address,
@@ -282,6 +300,7 @@ export const createInspection = async (inspectionData: Partial<Inspection>): Pro
       category_id: inspection.category_id,
       status: inspection.status,
       location_name: inspection.location_name,
+      planned_date: inspection.planned_date,
       location_latitude: inspection.latitude,
       location_longitude: inspection.longitude,
       location_address: inspection.address,
@@ -422,6 +441,14 @@ export const savePahuvaidhakiyaTapasaniForm = async (inspectionId: string, formD
 
       if (error) throw error;
     }
+
+    // Also update the form_data column in fims_inspections table for website compatibility
+    const { error: inspectionUpdateError } = await supabase
+      .from('fims_inspections')
+      .update({ form_data: formData })
+      .eq('id', inspectionId);
+
+    if (inspectionUpdateError) throw inspectionUpdateError;
   } catch (error) {
     console.error('Error saving veterinary_inspection_report_form:', error);
     throw error;
@@ -713,6 +740,14 @@ export const createMahatmaGandhiFormRecord = async (
   }
 
   try {
+    console.log('=== CREATE MAHATMA GANDHI FORM RECORD ===');
+    console.log('Inspection ID:', inspectionId);
+    console.log('Form Data Sample:', {
+      officer_name: formData.inspector_name,
+      work_name: formData.work_name,
+      gram_panchayat: formData.gram_panchayat,
+    });
+
     const { data, error } = await supabase
       .from('mahatma_gandhi_rastriya_gramin_tapasani_praptra')
       .insert({ 
@@ -784,8 +819,16 @@ export const createMahatmaGandhiFormRecord = async (
       .select()
       .single();
 
-    if (error) throw error;
-    console.log('[fimsService] created mahatma gandhi form record:', data);
+    if (error) {
+      console.error('CREATE ERROR:', error);
+      throw error;
+    }
+    console.log('[fimsService] CREATED mahatma gandhi form record:', {
+      id: data?.id,
+      inspection_id: data?.inspection_id,
+      work_name: data?.work_name,
+    });
+    console.log('=========================================');
     return data;
   } catch (error) {
     console.error('Error creating Mahatma Gandhi form record:', error);
@@ -802,7 +845,6 @@ export const upsertMahatmaGandhiFormRecord = async (
   }
 
   const payload = {
-    inspection_id: inspectionId,
     inspection_date: formData.inspection_date || new Date().toISOString().split('T')[0],
     officer_name: formData.inspector_name,
     work_name: formData.work_name,
@@ -869,14 +911,78 @@ export const upsertMahatmaGandhiFormRecord = async (
   };
 
   try {
-    const { data, error } = await supabase
-      .from('mahatma_gandhi_rastriya_gramin_tapasani_praptra')
-      .upsert([payload], { onConflict: 'inspection_id' })
-      .select()
-      .single();
+    console.log('=== MAHATMA GANDHI FORM UPSERT DEBUG ===');
+    console.log('Inspection ID:', inspectionId);
+    console.log('Payload keys:', Object.keys(payload));
+    console.log('Sample payload values:', {
+      work_name: payload.work_name,
+      officer_name: payload.officer_name,
+      gram_panchayat: payload.gram_panchayat,
+      total_amount: payload.total_amount,
+    });
 
-    if (error) throw error;
-    console.log('[fimsService] upserted mahatma gandhi form record:', data);
+    // First, check if a record exists for this inspection_id
+    const { data: existing, error: fetchError } = await supabase
+      .from('mahatma_gandhi_rastriya_gramin_tapasani_praptra')
+      .select('id')
+      .eq('inspection_id', inspectionId)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('Error checking existing record:', fetchError);
+      throw fetchError;
+    }
+
+    console.log('Existing record found:', existing ? 'YES (updating)' : 'NO (inserting)');
+
+    let data, error;
+
+    if (existing) {
+      // Update existing record
+      console.log('Updating record with ID:', existing.id);
+      const result = await supabase
+        .from('mahatma_gandhi_rastriya_gramin_tapasani_praptra')
+        .update(payload)
+        .eq('inspection_id', inspectionId)
+        .select()
+        .single();
+      
+      data = result.data;
+      error = result.error;
+      console.log('[fimsService] UPDATED mahatma gandhi form record:', {
+        id: data?.id,
+        inspection_id: data?.inspection_id,
+        work_name: data?.work_name,
+        officer_name: data?.officer_name,
+      });
+    } else {
+      // Insert new record
+      console.log('Inserting new record for inspection_id:', inspectionId);
+      const result = await supabase
+        .from('mahatma_gandhi_rastriya_gramin_tapasani_praptra')
+        .insert({ ...payload, inspection_id: inspectionId })
+        .select()
+        .single();
+      
+      data = result.data;
+      error = result.error;
+      console.log('[fimsService] INSERTED mahatma gandhi form record:', {
+        id: data?.id,
+        inspection_id: data?.inspection_id,
+        work_name: data?.work_name,
+        officer_name: data?.officer_name,
+      });
+    }
+
+    if (error) {
+      console.error('Database operation error:', error);
+      throw error;
+    }
+
+    console.log('=== MAHATMA GANDHI FORM UPSERT SUCCESS ===');
+    console.log('Record ID:', data?.id);
+    console.log('Table: mahatma_gandhi_rastriya_gramin_tapasani_praptra');
+    console.log('=========================================');
     return data;
   } catch (error) {
     console.error('Error upserting Mahatma Gandhi form record:', error);

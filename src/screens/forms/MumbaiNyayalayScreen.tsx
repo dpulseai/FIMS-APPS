@@ -543,6 +543,7 @@ export default function MumbaiNyayalayScreen() {
         value={inspectionDate}
         onChangeDate={setInspectionDate}
         disabled={!isEditMode}
+        minimumDate={new Date(new Date().setHours(0, 0, 0, 0))}
       />
 
       <Input
@@ -725,6 +726,7 @@ export default function MumbaiNyayalayScreen() {
         value={plannedDate}
         onChangeDate={setPlannedDate}
         disabled={!isEditMode}
+        minimumDate={new Date(new Date().setHours(0, 0, 0, 0))}
       />
 
       <LocationPicker

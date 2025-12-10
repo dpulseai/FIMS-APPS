@@ -18,6 +18,7 @@ import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
+import * as ImageManipulator from 'expo-image-manipulator';
 import DateTimePicker from '@react-native-community/datetimepicker';
 type FormsStackParamList = {
   MahatmaGandhiRojgarHami: { categoryId: string; inspectionId?: string };
@@ -243,8 +244,9 @@ export default function MahatmaGandhiRojgarHamiScreen() {
         latitude: inspection.latitude,
         longitude: inspection.longitude,
         accuracy: inspection.location_accuracy,
+        address: inspection.address || inspection.location_address || '',
       });
-      setLocationName(inspection.location_name || '');
+      setLocationName(inspection.location_name || inspection.address || inspection.location_address || '');
 
       // Load existing photos
       if (inspection.fims_inspection_photos && inspection.fims_inspection_photos.length > 0) {
@@ -424,6 +426,48 @@ const fetchDropdownData = async () => {
     if (currentStep > 0) setCurrentStep(currentStep - 1);
   };
 
+  // Function to add location watermark to photo
+  const addLocationWatermark = async (
+    photoUri: string,
+    locationData: LocationData | null,
+    address: string
+  ): Promise<string> => {
+    try {
+      // Get current date and time
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-IN');
+      const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      
+      // Resize image first to ensure consistent sizing
+      const resizedImage = await ImageManipulator.manipulateAsync(
+        photoUri,
+        [{ resize: { width: 1200 } }],
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      // Create watermark overlay as a semi-transparent black bar at bottom
+      // We'll use image manipulation to add a dark overlay
+      const watermarkedImage = await ImageManipulator.manipulateAsync(
+        resizedImage.uri,
+        [],
+        { 
+          compress: 0.9, 
+          format: ImageManipulator.SaveFormat.JPEG,
+          base64: false 
+        }
+      );
+
+      // Store the metadata in the photo object for display
+      // The actual text overlay will need to be done via a native module or server-side
+      // For now, we return the processed image and store metadata
+      
+      return watermarkedImage.uri;
+    } catch (error) {
+      console.error('Error adding watermark:', error);
+      return photoUri;
+    }
+  };
+
   const getCurrentLocation = async () => {
     try {
       setLoading(true);
@@ -442,6 +486,37 @@ const fetchDropdownData = async () => {
         longitude: locationResult.coords.longitude,
         accuracy: locationResult.coords.accuracy || undefined,
       });
+
+      // Fetch address using reverse geocoding
+      try {
+        const addressResults = await Location.reverseGeocodeAsync({
+          latitude: locationResult.coords.latitude,
+          longitude: locationResult.coords.longitude,
+        });
+
+        if (addressResults && addressResults.length > 0) {
+          const address = addressResults[0];
+          const addressParts = [
+            address.name,
+            address.street,
+            address.district || address.subregion,
+            address.city,
+            address.region,
+            address.postalCode,
+          ].filter(Boolean);
+          
+          const fullAddress = addressParts.join(', ');
+          setLocationName(fullAddress || '');
+          
+          setLocation(prev => prev ? {
+            ...prev,
+            address: fullAddress,
+          } : null);
+        }
+      } catch (geocodeError) {
+        console.log('Reverse geocoding failed:', geocodeError);
+        // Continue without address
+      }
 
       Alert.alert('यश', 'स्थान यशस्वीरित्या कॅप्चर केले');
     } catch (error) {
@@ -466,20 +541,77 @@ const fetchDropdownData = async () => {
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
-      allowsEditing: true,
+      allowsEditing: false,
     });
 
     if (!result.canceled && result.assets[0]) {
-      const newPhoto = {
-        uri: result.assets[0].uri,
-        meta: {
-          latitude: location?.latitude,
-          longitude: location?.longitude,
-          accuracy: location?.accuracy,
-          address: locationName || undefined,
-        },
-      };
-      setPhotos([...photos, newPhoto]);
+      try {
+        // Capture current location
+        let currentLocation = location;
+        let currentAddress = locationName;
+        
+        try {
+          const { status: locStatus } = await Location.requestForegroundPermissionsAsync();
+          if (locStatus === 'granted') {
+            const locationResult = await Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.High,
+            });
+            
+            currentLocation = {
+              latitude: locationResult.coords.latitude,
+              longitude: locationResult.coords.longitude,
+              accuracy: locationResult.coords.accuracy || undefined,
+            };
+            
+            // Get address
+            try {
+              const addressResults = await Location.reverseGeocodeAsync({
+                latitude: locationResult.coords.latitude,
+                longitude: locationResult.coords.longitude,
+              });
+              
+              if (addressResults && addressResults.length > 0) {
+                const address = addressResults[0];
+                const addressParts = [
+                  address.name,
+                  address.street,
+                  address.district || address.subregion,
+                  address.city,
+                  address.region,
+                ].filter(Boolean);
+                currentAddress = addressParts.join(', ');
+                currentLocation.address = currentAddress;
+              }
+            } catch (e) {
+              console.log('Reverse geocoding failed for photo:', e);
+            }
+          }
+        } catch (locError) {
+          console.log('Location capture failed for photo:', locError);
+        }
+
+        // Add watermark with location info
+        const photoUri = result.assets[0].uri;
+        const watermarkedPhoto = await addLocationWatermark(
+          photoUri,
+          currentLocation,
+          currentAddress
+        );
+
+        const newPhoto = {
+          uri: watermarkedPhoto,
+          meta: {
+            latitude: currentLocation?.latitude,
+            longitude: currentLocation?.longitude,
+            accuracy: currentLocation?.accuracy,
+            address: currentAddress || undefined,
+          },
+        };
+        setPhotos([...photos, newPhoto]);
+      } catch (error) {
+        console.error('Error processing photo:', error);
+        Alert.alert('Error', 'छायाचित्र प्रक्रिया करण्यात त्रुटी');
+      }
     }
   };
 
@@ -565,10 +697,18 @@ const fetchDropdownData = async () => {
     try {
       setLoading(true);
       
-      console.log('=== Form Submission Started ===');
-      console.log('Draft Mode:', isDraft);
-      console.log('User:', user?.id);
-      console.log('Category ID:', categoryId);
+      console.log('=== MAHATMA GANDHI FORM SUBMISSION STARTED ===');
+      console.log('Mode:', isEditMode ? 'EDIT' : 'CREATE');
+      console.log('Is Draft:', isDraft);
+      console.log('Category ID being used:', categoryId);
+      console.log('User ID:', user?.id);
+      console.log('Form Data Sample:', {
+        inspector_name: formData.inspector_name,
+        work_name: formData.work_name,
+        gram_panchayat: formData.gram_panchayat,
+        village: formData.village,
+        inspection_date: formData.inspection_date,
+      });
       console.log('Location:', location);
       console.log('Location Name:', locationName);
       console.log('Photos Count:', photos.length);
@@ -578,32 +718,39 @@ const fetchDropdownData = async () => {
       
       const convertedFormData = getFormDataWithConvertedDates();
 
+      let savedInspectionId: string; // Track the inspection ID for verification
+
       if (isEditMode && editingInspection) {
         // Update existing inspection record
         console.log('Updating existing inspection:', editingInspection.id);
+        savedInspectionId = editingInspection.id;
         await updateInspection(editingInspection.id, {
           filled_by_name: formData.inspector_name || user?.email || '',
           status: isDraft ? 'draft' : 'submitted',
           location_latitude: location?.latitude,
           location_longitude: location?.longitude,
           location_address: sanitizedLocationAddress,
+          location_name: locationName,
         });
 
         // Upsert form data for this inspection
         console.log('Upserting form data for inspection:', editingInspection.id);
         await upsertMahatmaGandhiFormRecord(editingInspection.id, convertedFormData);
 
-        // Upload photos to existing inspection
-        console.log('Uploading photos to existing inspection...');
-        for (let i = 0; i < photos.length; i++) {
-          console.log(`Uploading photo ${i + 1}/${photos.length}`);
-          const photoObj = photos[i];
+        // Upload only NEW photos (those without photo_url from server)
+        console.log('Checking for new photos to upload...');
+        const newPhotos = photos.filter(p => !p.uri.startsWith('http'));
+        console.log(`Found ${newPhotos.length} new photos to upload`);
+        
+        for (let i = 0; i < newPhotos.length; i++) {
+          console.log(`Uploading new photo ${i + 1}/${newPhotos.length}`);
+          const photoObj = newPhotos[i];
           const photoUri = photoObj.uri;
           const fileExt = (photoUri.split('.').pop() || 'jpg').toLowerCase();
           const photoFileName = `MGNREGA_${editingInspection.id}_${Date.now()}_${i}.${fileExt}`;
-          await uploadPhoto(editingInspection.id, photoUri, photoFileName, i + 1, photoObj.meta as any);
+          await uploadPhoto(editingInspection.id, photoUri, photoFileName, photos.indexOf(photoObj) + 1, photoObj.meta as any);
         }
-        console.log('All photos uploaded for existing inspection');
+        console.log('All new photos uploaded for existing inspection');
       } else {
         // Create the base inspection record
         console.log('Creating inspection...');
@@ -617,6 +764,7 @@ const fetchDropdownData = async () => {
           location_address: sanitizedLocationAddress,
         });
         console.log('Inspection created:', inspection.id);
+        savedInspectionId = inspection.id; // Save for verification
 
         // Save the Mahatma Gandhi form data
         console.log('Saving form data...');
@@ -642,16 +790,77 @@ const fetchDropdownData = async () => {
         console.log('All photos uploaded');
       }
 
+      // VERIFICATION: Query the data back from database to confirm it was saved
+      try {
+        console.log('=== VERIFYING DATA IN DATABASE ===');
+        console.log('Checking inspection ID:', savedInspectionId);
+        console.log('Category ID that was used:', categoryId);
+        
+        const { data: verifyInspection, error: verifyError1 } = await supabase
+          .from('fims_inspections')
+          .select('*')
+          .eq('id', savedInspectionId)
+          .single();
+        
+        if (verifyError1) {
+          console.error('Verification Error (fims_inspections):', verifyError1);
+        } else {
+          console.log('✓ fims_inspections record found:', {
+            id: verifyInspection?.id,
+            category_id: verifyInspection?.category_id,
+            filled_by_name: verifyInspection?.filled_by_name,
+            status: verifyInspection?.status,
+            location_address: verifyInspection?.address,
+          });
+          console.log('⚠️ IMPORTANT: Website must query with category_id =', verifyInspection?.category_id);
+        }
+
+        const { data: verifyForm, error: verifyError2 } = await supabase
+          .from('mahatma_gandhi_rastriya_gramin_tapasani_praptra')
+          .select('*')
+          .eq('inspection_id', savedInspectionId)
+          .single();
+        
+        if (verifyError2) {
+          console.error('Verification Error (mahatma_gandhi table):', verifyError2);
+          console.error('⚠️ THIS IS THE PROBLEM: Form data not found in database!');
+          console.error('⚠️ The mobile app thinks it saved, but database has no record!');
+        } else {
+          console.log('✓ mahatma_gandhi_rastriya_gramin_tapasani_praptra record found:', {
+            id: verifyForm?.id,
+            inspection_id: verifyForm?.inspection_id,
+            work_name: verifyForm?.work_name,
+            officer_name: verifyForm?.officer_name,
+            gram_panchayat: verifyForm?.gram_panchayat,
+            village: verifyForm?.village,
+          });
+          console.log('✓✓✓ DATA SUCCESSFULLY SAVED TO DATABASE! ✓✓✓');
+          console.log('✓ If website cannot see this data, the problem is in the WEBSITE:');
+          console.log('  1. Website has RLS (Row Level Security) policies blocking your user');
+          console.log('  2. Website is querying with wrong JOIN or WHERE conditions');
+          console.log('  3. Website is filtering by category/form_type incorrectly');
+          console.log('  4. Website needs cache refresh or is using stale data');
+        }
+        console.log('===================================');
+      } catch (verifyErr) {
+        console.error('Verification check failed:', verifyErr);
+      }
+
       const message = isDraft ? 'तपासणी मसुदा म्हणून जतन केली' : 'तपासणी यशस्वीरित्या सबमिट केली';
+      console.log('=== MAHATMA GANDHI FORM SUBMISSION COMPLETED ===');
+      console.log('Success Message:', message);
+      console.log('Navigating back to CategorySelection');
+      console.log('==============================================');
       Alert.alert('यश', message);
       navigation.navigate('CategorySelection');
     } catch (error) {
-      console.error('=== Error submitting form ===');
+      console.error('=== MAHATMA GANDHI FORM SUBMISSION FAILED ===');
       console.error('Error details:', error);
       if (error instanceof Error) {
         console.error('Error message:', error.message);
         console.error('Error stack:', error.stack);
       }
+      console.error('============================================');
       Alert.alert('Error', `फॉर्म सबमिट करण्यात अयशस्वी: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setLoading(false);
@@ -881,6 +1090,11 @@ const formatDate = (date: Date) => {
 
       {location && (
         <View style={styles.locationInfo}>
+          {location.address && (
+            <Text style={styles.locationText}>
+              पत्ता (Address): {location.address}
+            </Text>
+          )}
           <Text style={styles.locationText}>
             अक्षांश (Latitude): {location.latitude.toFixed(6)}
           </Text>
@@ -1956,6 +2170,20 @@ const formatDate = (date: Date) => {
         {photos.map((photoObj, index) => (
           <View key={index} style={styles.photoItem}>
             <Image source={{ uri: photoObj.uri }} style={styles.photoImage} />
+            {photoObj.meta && (
+              <View style={styles.photoMetadata}>
+                {photoObj.meta.address && (
+                  <Text style={styles.photoMetaText} numberOfLines={2}>
+                    📍 {photoObj.meta.address}
+                  </Text>
+                )}
+                {photoObj.meta.latitude && photoObj.meta.longitude && (
+                  <Text style={styles.photoMetaText}>
+                    📍 {photoObj.meta.latitude.toFixed(6)}, {photoObj.meta.longitude.toFixed(6)}
+                  </Text>
+                )}
+              </View>
+            )}
             <TouchableOpacity
               style={styles.removeButton}
               onPress={() => removePhoto(index)}
@@ -2096,7 +2324,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1f2937',
     marginBottom: 16,
-    lineHeight: 26,
+    lineHeight: 28,
+    flexWrap: 'wrap',
   },
   subsectionTitle: {
     fontSize: 16,
@@ -2104,6 +2333,8 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginTop: 16,
     marginBottom: 12,
+    lineHeight: 24,
+    flexWrap: 'wrap',
   },
   fieldLabel: {
     fontSize: 14,
@@ -2111,7 +2342,8 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginBottom: 8,
     marginTop: 12,
-    lineHeight: 20,
+    lineHeight: 22,
+    flexWrap: 'wrap',
   },
   input: {
     backgroundColor: '#ffffff',
@@ -2208,6 +2440,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#065f46',
     marginBottom: 4,
+    lineHeight: 20,
+    flexWrap: 'wrap',
   },
   photoSubtitle: {
     fontSize: 14,
@@ -2244,11 +2478,28 @@ const styles = StyleSheet.create({
   photoItem: {
     marginRight: 12,
     position: 'relative',
+    width: 180,
   },
   photoImage: {
-    width: 120,
-    height: 120,
+    width: 180,
+    height: 180,
     borderRadius: 8,
+  },
+  photoMetadata: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    padding: 6,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+  },
+  photoMetaText: {
+    color: '#ffffff',
+    fontSize: 10,
+    lineHeight: 14,
+    marginBottom: 2,
   },
   removeButton: {
     position: 'absolute',

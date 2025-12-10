@@ -11,7 +11,6 @@ import { supabase } from '../../services/supabase';
 import Stepper from '../../components/common/Stepper';
 import Input from '../../components/common/Input';
 import DateInput from '../../components/common/DateInput';
-import DateTimeInput from '../../components/common/DateTimeInput';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
 import PhotoUpload from '../../components/PhotoUpload';
@@ -44,6 +43,9 @@ export default function PahuvaidhakiyaTapasaniScreen() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [photoMetas, setPhotoMetas] = useState<Array<{ latitude?: number; longitude?: number; accuracy?: number }>>([]);
   const [location, setLocation] = useState<LocationData | null>(null);
+  // Step 2: Location Information
+  const [locationName, setLocationName] = useState('');
+  const [plannedDate, setPlannedDate] = useState('');
   // Step 1: Basic Information
   const [instituteNameAddress, setInstituteNameAddress] = useState('');
   const [headNameContact, setHeadNameContact] = useState('');
@@ -238,6 +240,8 @@ export default function PahuvaidhakiyaTapasaniScreen() {
         if (!inspection) return;
 
         // Load location data
+        setLocationName(inspection.location_name || '');
+        setPlannedDate(inspection.planned_date ? inspection.planned_date.split('T')[0] : '');
         setLocation({
           latitude: inspection.location_latitude || 0,
           longitude: inspection.location_longitude || 0,
@@ -495,9 +499,15 @@ export default function PahuvaidhakiyaTapasaniScreen() {
     }
 
     // Validate Step 1: Location required
-    if (currentStep === 1 && !location) {
-      Alert.alert(t('common.error'), 'Please capture location');
-      return;
+    if (currentStep === 1) {
+      if (!locationName || !locationName.trim()) {
+        Alert.alert(t('common.error'), 'Please fill location name');
+        return;
+      }
+      if (!location) {
+        Alert.alert(t('common.error'), 'Please capture location');
+        return;
+      }
     }
 
     // Validate Step 5: Disease Information - Date fields required
@@ -734,6 +744,8 @@ export default function PahuvaidhakiyaTapasaniScreen() {
         inspector_id: user?.id,
         filled_by_name: inspectorNameDesignation || user?.email || '',
         status: 'submitted',
+        location_name: locationName,
+        planned_date: plannedDate || null,
         location_latitude: location?.latitude,
         location_longitude: location?.longitude,
         location_address: location?.address || null
@@ -949,7 +961,7 @@ export default function PahuvaidhakiyaTapasaniScreen() {
             <Text style={styles.sectionTitle}>मूलभूत माहिती</Text>
             {/* <Text style={styles.sectionSubtitle}>Basic Institution Information</Text> */}
             <Input
-              label="संस्थेचे नाव व पत्ता / Institution Name & Address *"
+              label="संस्थेचे नाव व पत्ता *"
               value={instituteNameAddress}
               onChangeText={setInstituteNameAddress}
               multiline
@@ -967,12 +979,13 @@ export default function PahuvaidhakiyaTapasaniScreen() {
               value={inspectorNameDesignation}
               onChangeText={setInspectorNameDesignation}
             />
-            <DateTimeInput
-              // label="भेट दिनांक व वेळ / Visit Date & Time"
-              label="भेट दिनांक व वेळ *"
+            <DateInput
+              // label="भेट दिनांक / Visit Date"
+              label="भेट दिनांक *"
               value={visitDateTime}
-              onChangeDateTime={setVisitDateTime}
-              placeholder="YYYY-MM-DD HH:MM"
+              onChangeDate={setVisitDateTime}
+              placeholder="YYYY-MM-DD"
+              minimumDate={new Date(new Date().setHours(0, 0, 0, 0) + 86400000)}
             />
             <View>
               {/* <Text style={styles.pickerLabel}>तपासणीचा उद्देश / Inspection Purpose *</Text> */}
@@ -1000,6 +1013,18 @@ export default function PahuvaidhakiyaTapasaniScreen() {
           <View>
             <Text style={styles.sectionTitle}>स्थान तपशील</Text>
             <Text style={styles.sectionSubtitle}>Location Information</Text>
+            <Input
+              label="स्थानाचे नाव *"
+              value={locationName}
+              onChangeText={setLocationName}
+              placeholder="स्थानाचे नाव प्रविष्ट करा"
+            />
+            <DateInput
+              label="नियोजित तारीख"
+              value={plannedDate}
+              onChangeDate={setPlannedDate}
+              minimumDate={new Date()}
+            />
             <LocationPicker location={location} onLocationChange={setLocation} />
           </View>
         );
