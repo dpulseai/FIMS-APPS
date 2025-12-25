@@ -2,7 +2,7 @@
   "expo": {
     "name": "FIMS Mobile",
     "slug": "fims-mobile",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "jsEngine": "hermes",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -30,7 +30,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.zpchandrapur.fims",
-      "versionCode": 6,
+      "versionCode": 7,
       "targetSdkVersion": 35,
       "permissions": [
         "CAMERA",
